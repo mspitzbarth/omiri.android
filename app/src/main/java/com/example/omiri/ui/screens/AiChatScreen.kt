@@ -47,6 +47,7 @@ fun AiChatScreen(
     val messages by viewModel.messages.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val isOnline by viewModel.isOnline.collectAsState()
 
     val listState = rememberLazyListState()
 
@@ -83,7 +84,53 @@ fun AiChatScreen(
                 .background(Color.White)
         ) {
             com.example.omiri.ui.components.OmiriHeader(
-                notificationCount = 2,
+                startContent = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                         // Avatar/Icon
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .background(Color(0xFFEA580B), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = androidx.compose.ui.res.painterResource(id = com.example.omiri.R.drawable.ic_omiri_logo),
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        
+                        Spacer(Modifier.width(8.dp))
+
+                        Column {
+                            Text(
+                                text = "AI Assistant",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF111827)
+                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .background(
+                                            if (isOnline) Color(0xFF10B981) else Color(0xFF9CA3AF),
+                                            CircleShape
+                                        )
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    text = if (isOnline) "Online" else "Offline",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (isOnline) Color(0xFF10B981) else Color(0xFF6B7280),
+                                    fontSize = androidx.compose.ui.unit.TextUnit(10f, androidx.compose.ui.unit.TextUnitType.Sp)
+                                )
+                            }
+                        }
+                    }
+                },
+                notificationCount = 2, // Ideally from ViewModel check, but hardcoded in prev example too
                 onNotificationClick = onNotificationsClick,
                 customAction = {
                     IconButton(onClick = { viewModel.resetConversation() }) {
@@ -517,5 +564,7 @@ fun ChatInputBar(
         }
     }
 }
+
+
 
 

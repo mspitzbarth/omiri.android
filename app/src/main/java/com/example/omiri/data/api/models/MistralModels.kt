@@ -92,3 +92,10 @@ data class MistralErrorResponse(
     @SerializedName("error") val error: String,
     @SerializedName("detail") val detail: String?
 )
+
+/**
+ * Response from the health check endpoint
+ */
+data class HealthResponse(
+    @SerializedName("status") val status: String
+)

@@ -86,8 +86,14 @@ class MistralRepository {
 
     suspend fun checkHealth(): Result<Boolean> {
         return try {
-            apiService.healthCheck()
-            Result.success(true)
+            val response = apiService.healthCheck()
+            val isHealthy = response.status == "healthy"
+            
+            if (isHealthy) {
+                Result.success(true)
+            } else {
+                Result.success(false)
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }

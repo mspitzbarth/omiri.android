@@ -47,5 +47,5 @@ interface MistralApiService {
      * GET /api/v1/mistral/health
      */
     @GET("api/v1/mistral/health")
-    suspend fun healthCheck(): Map<String, Any>
+    suspend fun healthCheck(): com.example.omiri.data.api.models.HealthResponse
 }

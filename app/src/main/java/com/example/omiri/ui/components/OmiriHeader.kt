@@ -18,7 +18,15 @@ fun OmiriHeader(
     notificationCount: Int = 0,
     onNotificationClick: () -> Unit = {},
     customAction: (@Composable () -> Unit)? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    startContent: @Composable () -> Unit = {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_omiri_logo),
+            contentDescription = "Omiri Logo",
+            modifier = Modifier.height(28.dp),
+            tint = Color.Unspecified
+        )
+    }
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -38,13 +46,8 @@ fun OmiriHeader(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Omiri Logo
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_omiri_logo),
-                    contentDescription = "Omiri Logo",
-                    modifier = Modifier.height(28.dp),
-                    tint = Color.Unspecified
-                )
+                // Start Content (Logo or Custom)
+                startContent()
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (customAction != null) {

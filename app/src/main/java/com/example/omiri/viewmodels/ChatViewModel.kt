@@ -49,6 +49,20 @@ class ChatViewModel : ViewModel() {
     private val _conversationId = MutableStateFlow<String?>(null)
     val conversationId: StateFlow<String?> = _conversationId.asStateFlow()
 
+    private val _isOnline = MutableStateFlow(false)
+    val isOnline: StateFlow<Boolean> = _isOnline.asStateFlow()
+
+    init {
+        checkOnlineStatus()
+    }
+
+    fun checkOnlineStatus() {
+        viewModelScope.launch {
+            val result = repository.checkHealth()
+            _isOnline.value = result.getOrDefault(false)
+        }
+    }
+
     /**
      * Send a message to the AI
      */
