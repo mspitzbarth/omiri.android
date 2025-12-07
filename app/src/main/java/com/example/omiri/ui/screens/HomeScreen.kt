@@ -81,10 +81,10 @@ fun HomeScreen(
     // Collect state from ViewModel
     val featuredDeals by viewModel.featuredDeals.collectAsState()
     val shoppingListDeals by viewModel.shoppingListDeals.collectAsState()
-    val leavingSoonDeals by viewModel.leavingSoonDeals.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
     val categories by viewModel.categories.collectAsState()
+    val potentialSavings by viewModel.shoppingListSavings.collectAsState(initial = 0.0)
     
     // AdMob Interstitial
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -96,18 +96,6 @@ fun HomeScreen(
         adManager.loadAd()
     }
 
-    // Process Categories into Pills
-    val categoryPills = remember(categories) {
-        categories.map { catId ->
-            com.example.omiri.ui.components.CategoryPill(
-                id = catId,
-                name = catId.replace("_", " ").split(" ")
-                    .joinToString(" ") { it.replaceFirstChar { char -> if (char.isLowerCase()) char.titlecase(java.util.Locale.getDefault()) else char.toString() } },
-                emoji = com.example.omiri.util.EmojiHelper.getCategoryEmoji(catId).ifEmpty { "🏷️" }
-            )
-        }
-    }
-    
     // Pull to refresh
     @OptIn(ExperimentalMaterial3Api::class)
     val pullRefreshState = rememberPullToRefreshState()
@@ -129,155 +117,49 @@ fun HomeScreen(
         onRefresh = { isRefreshing = true },
         modifier = Modifier.fillMaxSize()
     ) {
-        // Main Content
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            // Header (Fixed or Scrollable handling)
-            // Note: Simplification - OmiriHeader is fixed at top usually in this design.
-            // We will keep the fixed header pattern as per request (fixedHeader param).
-            
-            if (fixedHeader) {
-                Column(
-                     modifier = Modifier.background(Color(0xFFF9FAFB)) // Overall background Light Gray
-                ) {
-                    OmiriHeader(
-                        notificationCount = 2,
-                        onNotificationClick = onNotificationsClick
-                    )
-                    // Search Bar fixed below header? Or scrollable?
-                    // Plan said scrollable at top. Let's put it in the scrollable part.
-                }
-            }
-            
-            Box(modifier = Modifier.fillMaxSize()) {
-                 Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color(0xFFF9FAFB)) // Ensure background covers search area
-                        .verticalScroll(rememberScrollState())
-                ) {
-                     if (!fixedHeader) {
-                        OmiriHeader(
-                            notificationCount = 2,
-                            onNotificationClick = onNotificationsClick
-                        )
-                    }
-                    
-                    // SEARCH BAR
-                    Column(modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md)) {
-                        com.example.omiri.ui.components.HomeSearchBar(
-                            onSearchClick = onNavigateAllDeals // Navigate to search/all deals
-                        )
-                    }
-                    
-                    // HERO SECTION (First 5 Featured)
-                    if (featuredDeals.isNotEmpty()) {
-                        com.example.omiri.ui.components.HomeHeroCarousel(
-                            deals = featuredDeals.take(5),
-                            onDealClick = onDealClick
-                        )
-                    }
-                    
-                    // CATEGORIES
-                    if (categoryPills.isNotEmpty()) {
-                        com.example.omiri.ui.components.CategoryPillsRow(
-                            categories = categoryPills,
-                            onCategoryClick = { /* Navigate to category */ onNavigateAllDeals() } // TODO: Pass category filter
-                        )
-                        Spacer(Modifier.height(Spacing.xl))
-                    }
-                    
-                    // SAVINGS DASHBOARD
-                    Column(modifier = Modifier.padding(horizontal = Spacing.lg)) {
-                         // Connect real data correctly
-                         val potentialSavings by viewModel.shoppingListSavings.collectAsState(initial = 0.0)
-                         com.example.omiri.ui.components.SavingsDashboard(potentialSavings = potentialSavings)
-                         Spacer(Modifier.height(Spacing.xl))
-                    }
+        Column(modifier = Modifier.fillMaxSize()) {
+            // 0. Omiri Header (Fixed at top)
+            com.example.omiri.ui.components.OmiriHeader(
+                notificationCount = 2,
+                onNotificationClick = onNotificationsClick
+            )
 
-                    // --- Section: More Daily Drops (Remaining Featured) ---
-                    if (featuredDeals.size > 5) {
-                         Column(modifier = Modifier.padding(horizontal = Spacing.lg)) {
-                            SectionHeader(
-                                title = "More Daily Drops",
-                                actionText = "View All",
-                                onActionClick = onNavigateAllDeals
-                            )
-                            Spacer(Modifier.height(Spacing.md))
-                        }
-                        DealsCarousel(
-                            deals = featuredDeals.drop(5),
-                            onDealClick = onDealClick,
-                            onToggleShoppingList = onToggleShoppingList
-                        )
-                         Spacer(Modifier.height(Spacing.xl))
-                    }
+            // Scrollable Content
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFFF9FAFB)) // Overall background
+                    .verticalScroll(rememberScrollState())
+            ) {
+                // 1. Header with Name and Savings Summary
+                com.example.omiri.ui.components.HomeHeader(
+                    potentialSavings = "€%.2f".format(if (potentialSavings > 0) potentialSavings else 18.40) // Mock default if 0
+                )
 
-                    // --- Section: Shopping List ---
-                    Column(
-                        modifier = Modifier.padding(horizontal = Spacing.lg)
-                    ) {
-                        SectionHeader(
-                            title = "Your Shopping List",
-                            actionText = "View All",
-                            onActionClick = onNavigateAllDeals
-                        )
-                        Spacer(Modifier.height(Spacing.md))
-                    }
+                // 2. Smart Plan Card
+                Spacer(Modifier.height(Spacing.md))
+                com.example.omiri.ui.components.SmartPlanCard(
+                    onStartPlan = {},
+                    onAdjustPlan = {}
+                )
 
-                    // Shopping list deals from API
-                    DealsCarousel(
-                        deals = shoppingListDeals,
-                        onDealClick = onDealClick,
-                        onToggleShoppingList = onToggleShoppingList
-                    )
-                    
-                    Spacer(Modifier.height(Spacing.md))
-                    
-                    // Shopping List Widget
-                    Column(modifier = Modifier.padding(horizontal = Spacing.lg)) {
-                         ShoppingListPreviewCard()
-                    }
+                // 3. Smart Alerts
+                Spacer(Modifier.height(Spacing.lg))
+                com.example.omiri.ui.components.SmartAlertsCard()
 
-                    Spacer(Modifier.height(Spacing.xl))
+                // 4. Shopping Lists
+                Spacer(Modifier.height(Spacing.xl))
+                com.example.omiri.ui.components.ShoppingListsSection(
+                    onViewAll = onNavigateAllDeals
+                )
 
-                    // --- Section: Leaving Soon ---
-                    Column(
-                        modifier = Modifier.padding(horizontal = Spacing.lg)
-                    ) {
-                        SectionHeader(
-                            title = "Leaving soon",
-                            actionText = "View All",
-                            onActionClick = onNavigateAllDeals
-                        )
-
-                        Spacer(Modifier.height(Spacing.md))
-                    }
-
-                    // Leaving soon deals from API
-                    DealsCarousel(
-                        deals = leavingSoonDeals,
-                        onDealClick = onDealClick,
-                        onToggleShoppingList = onToggleShoppingList
-                    )
-
-                    Spacer(Modifier.height(Spacing.xxxl))
-                }
-                
-                // Loading Overlay
-                if (isLoading && featuredDeals.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.background),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(
-                            color = Color(0xFFEA580C) // Orange
-                        )
-                    }
-                }
+                // 5. Featured Deals
+                Spacer(Modifier.height(Spacing.xl))
+                com.example.omiri.ui.components.FeaturedDealsRow(
+                    deals = featuredDeals.take(5), // Dynamically use real deals
+                    onViewAll = onNavigateAllDeals,
+                    onDealClick = onDealClick
+                )
             }
         }
     }
