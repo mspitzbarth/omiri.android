@@ -5,28 +5,27 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.MoreHoriz
-import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.outlined.ShoppingCart
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import com.example.omiri.ui.models.NotificationUiModel
 import com.example.omiri.ui.theme.Spacing
 
 @Composable
 fun NotificationCard(
-    title: String,
-    subtitle: String,
-    time: String,
-    icon: ImageVector,
-    color: Color,
-    chips: List<String> = emptyList(),
+    notification: NotificationUiModel,
+    onCardClick: () -> Unit = {},
+    onActionClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -35,118 +34,224 @@ fun NotificationCard(
         ),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp), // Small side padding for shadow visibility
+        onClick = onCardClick
     ) {
         Row(
-            modifier = Modifier.height(IntrinsicSize.Min) // For full height divider
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth()
         ) {
-            // Colored Left Border
+            // Icon
             Box(
                 modifier = Modifier
-                    .fillMaxHeight()
-                    .width(6.dp)
-                    .background(color)
-            )
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(notification.iconColor),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = notification.icon,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
 
             Column(
-                modifier = Modifier
-                    .padding(Spacing.md)
-                    .weight(1f)
+                modifier = Modifier.weight(1f)
             ) {
+                // Header (Title + Time + Unread Dot)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier.weight(1f),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Icon Circle
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .background(color.copy(alpha = 0.1f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = icon,
-                                contentDescription = null,
-                                tint = color,
-                                modifier = Modifier.size(24.dp)
+                    Text(
+                        text = notification.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1F2937)
+                    )
+                    
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = notification.time,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF6B7280)
+                        )
+                        if (!notification.isRead) {
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .background(Color(0xFFF97316), CircleShape) // Orange dot
                             )
                         }
+                    }
+                }
 
-                        Spacer(Modifier.width(Spacing.md))
+                Spacer(modifier = Modifier.height(4.dp))
 
-                        // Text Content
-                        Column {
-                            Text(
-                                text = title,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF111827)
+                // Description and Content
+                when (notification) {
+                    is NotificationUiModel.FlashSale -> {
+                        Text(
+                            text = notification.description,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color(0xFF4B5563)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            NotificationTag(
+                                text = notification.timeLeft,
+                                backgroundColor = Color(0xFFFEE2E2), // Light Red
+                                contentColor = Color(0xFFEF4444)
                             )
-                            Spacer(Modifier.height(2.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = subtitle,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color(0xFF6B7280)
-                                )
-                                Text(
-                                    text = " • $time",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color(0xFF9CA3AF)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = notification.savings,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF10B981) // Green
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Button(
+                                onClick = onActionClick,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFFF97316) // Orange
+                                ),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(notification.actionLabel, color = Color.White)
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            FilledTonalIconButton(
+                                onClick = { /* Save/Bookmark */ },
+                                colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                    containerColor = Color(0xFFF3F4F6)
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.BookmarkBorder,
+                                    contentDescription = "Save",
+                                    tint = Color(0xFF4B5563)
                                 )
                             }
                         }
                     }
-                    
-                    // Menu Icon
-                    IconButton(
-                        onClick = { /* TODO */ },
-                        modifier = Modifier
-                            .size(24.dp)
-                            .background(Color(0xFFF3F4F6), CircleShape)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.MoreHoriz,
-                            contentDescription = "More",
-                            tint = Color(0xFF9CA3AF),
-                            modifier = Modifier.size(16.dp)
+                    is NotificationUiModel.PriceDrop -> {
+                        Text(
+                            text = notification.description,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color(0xFF4B5563)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = notification.currentPrice,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = notification.originalPrice,
+                                style = MaterialTheme.typography.bodyMedium.copy(textDecoration = TextDecoration.LineThrough),
+                                color = Color(0xFF9CA3AF)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            NotificationTag(
+                                text = notification.discountPercentage,
+                                backgroundColor = Color(0xFFD1FAE5), // Light Green
+                                contentColor = Color(0xFF10B981)
+                            )
+                        }
+                    }
+                    is NotificationUiModel.ListUpdate -> {
+                        Text(
+                            text = notification.description,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color(0xFF4B5563)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        NotificationTag(
+                            text = notification.locationTag,
+                            backgroundColor = Color(0xFFDBEAFE), // Light Blue
+                            contentColor = Color(0xFF3B82F6)
                         )
                     }
-                }
-
-                Spacer(Modifier.height(Spacing.md))
-
-                // Chips
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
-                ) {
-                    chips.forEachIndexed { index, text ->
-                        // First chip is store/brand (colored bg), others are green (deals)
-                        val isFirst = index == 0
-                        val chipColor = if (isFirst) color else Color(0xFF10B981)
-                        val chipText = text
-
-                        Surface(
-                            color = chipColor.copy(alpha = 0.1f),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text(
-                                text = chipText,
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Medium,
-                                color = chipColor,
-                                modifier = Modifier.padding(horizontal = Spacing.sm, vertical = 4.dp)
+                    is NotificationUiModel.Reward -> {
+                        Text(
+                            text = notification.description,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color(0xFF4B5563)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        NotificationTag(
+                            text = notification.pointsTag,
+                            backgroundColor = Color(0xFFF3E8FF), // Light Purple
+                            contentColor = Color(0xFFA855F7)
+                        )
+                    }
+                    is NotificationUiModel.General -> {
+                        Text(
+                            text = notification.description,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color(0xFF4B5563)
+                        )
+                        if (notification.tag != null) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            NotificationTag(
+                                text = notification.tag,
+                                backgroundColor = Color(0xFFFEF3C7), // Light Yellow/Orange
+                                contentColor = Color(0xFFD97706)
                             )
+                        }
+                        if (notification.actionLabel != null) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Button(
+                                onClick = onActionClick,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFFDBEAFE), // Light Blue for secondary action?
+                                    contentColor = Color(0xFF1D4ED8)
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(notification.actionLabel)
+                            }
                         }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun NotificationTag(
+    text: String,
+    backgroundColor: Color,
+    contentColor: Color
+) {
+    Surface(
+        color = backgroundColor,
+        shape = RoundedCornerShape(4.dp)
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Medium,
+            color = contentColor,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+        )
     }
 }
