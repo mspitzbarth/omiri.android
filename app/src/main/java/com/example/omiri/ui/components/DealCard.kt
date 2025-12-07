@@ -1,6 +1,7 @@
 package com.example.omiri.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -13,11 +14,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.omiri.data.models.Deal
 import com.example.omiri.ui.theme.AppColors
 import com.example.omiri.ui.theme.Spacing
@@ -33,13 +36,22 @@ fun DealCard(
 ) {
     var isFav by remember(deal.id) { mutableStateOf(deal.isFavorite) }
 
+    val shape = MaterialTheme.shapes.medium
+    val borderColor = Color(0xFFF3F4F6)
+
     Card(
         modifier = modifier
             .fillMaxWidth()
+            .border(1.dp, borderColor, shape)
             .clickable { onClick(deal) },
-        shape = MaterialTheme.shapes.medium,
+        shape = shape,
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 1.dp,
+            pressedElevation = 2.dp,
+            focusedElevation = 2.dp,
+            hoveredElevation = 2.dp
+        )
     ) {
         // Image placeholder with time-left badge + favorite button
         Box(
@@ -50,19 +62,16 @@ fun DealCard(
             contentAlignment = Alignment.Center
         ) {
             if (!deal.imageUrl.isNullOrBlank() && deal.hasDiscount == true && deal.discountPercentage > 0) {
-                coil.compose.AsyncImage(
+                AsyncImage(
                     model = deal.imageUrl,
                     contentDescription = null,
-                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
                 val emoji = EmojiHelper.getProductEmoji(deal.title, deal.category)
                 if (emoji.isNotEmpty()) {
-                    Text(
-                        text = emoji,
-                        fontSize = 64.sp
-                    )
+                    Text(text = emoji, fontSize = 64.sp)
                 }
             }
 
@@ -96,8 +105,8 @@ fun DealCard(
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(Spacing.sm) // Same padding as badge
-                    .size(28.dp) // Slightly larger than icon for touch target, but visual alignment is key
+                    .padding(Spacing.sm)
+                    .size(28.dp)
                     .background(
                         color = Color.White.copy(alpha = 0.9f),
                         shape = CircleShape
@@ -112,10 +121,9 @@ fun DealCard(
                     imageVector = if (isFav) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                     contentDescription = "Favorite",
                     tint = if (isFav) AppColors.Danger else Color(0xFF1F2937),
-                    modifier = Modifier.size(16.dp) // Slightly larger icon to match badge text weight
+                    modifier = Modifier.size(16.dp)
                 )
             }
-
         }
 
         // Content section
@@ -130,7 +138,7 @@ fun DealCard(
                     imageVector = Icons.Outlined.Store,
                     contentDescription = null,
                     modifier = Modifier.size(14.dp),
-                    tint = Color(0xFF6B7280) // Gray 500
+                    tint = Color(0xFF6B7280)
                 )
                 Text(
                     text = deal.store,
@@ -147,7 +155,7 @@ fun DealCard(
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                color = Color(0xFF1F2937) // Gray 900
+                color = Color(0xFF1F2937)
             )
 
             Spacer(Modifier.height(Spacing.sm))
@@ -160,13 +168,13 @@ fun DealCard(
                     text = deal.price,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFFEA580C) // Orange 600
+                    color = Color(0xFFEA580C)
                 )
                 if (!deal.originalPrice.isNullOrBlank()) {
                     Text(
                         text = deal.originalPrice!!,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF9CA3AF), // Gray 400
+                        color = Color(0xFF9CA3AF),
                         textDecoration = TextDecoration.LineThrough
                     )
                 }
@@ -175,12 +183,11 @@ fun DealCard(
             if (!deal.discountLabel.isNullOrBlank() || (deal.discountPercentage > 0)) {
                 Spacer(Modifier.height(Spacing.sm))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                     // Percentage Badge
-                     if (deal.discountPercentage > 0) {
+                    if (deal.discountPercentage > 0) {
                         Surface(
                             shape = MaterialTheme.shapes.small,
-                            color = Color(0xFFDCFCE7), // Green 100
-                            contentColor = Color(0xFF166534) // Green 800
+                            color = Color(0xFFDCFCE7),
+                            contentColor = Color(0xFF166534)
                         ) {
                             Text(
                                 text = "${deal.discountPercentage}% OFF",
@@ -189,7 +196,7 @@ fun DealCard(
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
-                     }
+                    }
                 }
             }
         }
