@@ -31,7 +31,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = viewModel()
 ) {
     val shoppingListNotifications by viewModel.shoppingListNotifications.collectAsState()
-    val monitorAllLists by viewModel.monitorAllLists.collectAsState()
+
     val debugMode by viewModel.debugMode.collectAsState()
     val selectedStoresCount by viewModel.selectedStoresCount.collectAsState()
     val selectedLanguage by viewModel.selectedLanguage.collectAsState()
@@ -99,17 +99,11 @@ fun SettingsScreen(
                 onCheckedChange = { viewModel.toggleShoppingListNotifications() }
             )
 
+
+
             Spacer(Modifier.height(Spacing.md))
 
-            SettingItemWithSwitch(
-                icon = Icons.Outlined.Visibility,
-                iconBackgroundColor = Color(0xFFDBEAFE),
-                iconTint = Color(0xFF3B82F6),
-                title = "Monitor All Lists",
-                subtitle = "Track all shopping lists",
-                checked = monitorAllLists,
-                onCheckedChange = { viewModel.toggleMonitorAllLists() }
-            )
+
 
             Spacer(Modifier.height(Spacing.xl))
 
@@ -164,6 +158,59 @@ fun SettingsScreen(
                 onCheckedChange = { viewModel.toggleDebugMode() }
             )
 
+            // Debug Tools
+            if (debugMode) {
+                Spacer(Modifier.height(Spacing.md))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF3F4F6))
+                ) {
+                    Column(modifier = Modifier.padding(Spacing.md)) {
+                        Text(
+                            text = "Test Notifications",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = Color(0xFF111827),
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(Modifier.height(Spacing.sm))
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+                        ) {
+                            Button(
+                                onClick = { viewModel.triggerFlashSaleNotification() },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
+                                contentPadding = PaddingValues(horizontal = 8.dp)
+                            ) { 
+                                Text("Flash Sale", maxLines = 1, fontSize = 12.sp) 
+                            }
+                            
+                            Button(
+                                onClick = { viewModel.triggerPriceDropNotification() },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                                contentPadding = PaddingValues(horizontal = 8.dp)
+                            ) { 
+                                Text("Price Drop", maxLines = 1, fontSize = 12.sp) 
+                            }
+                            
+                            Button(
+                                onClick = { viewModel.triggerListUpdateNotification() },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6)),
+                                contentPadding = PaddingValues(horizontal = 8.dp)
+                            ) { 
+                                Text("List Update", maxLines = 1, fontSize = 12.sp) 
+                            }
+                        }
+                    }
+                }
+            }
+            
             Spacer(Modifier.height(Spacing.xl))
 
             // Footer

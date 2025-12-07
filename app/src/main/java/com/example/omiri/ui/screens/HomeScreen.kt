@@ -160,6 +160,8 @@ fun HomeScreen(
                     onViewAll = onNavigateAllDeals,
                     onDealClick = onDealClick
                 )
+
+                Spacer(Modifier.height(Spacing.md))
             }
         }
     }

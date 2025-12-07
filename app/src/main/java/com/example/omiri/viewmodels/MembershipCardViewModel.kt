@@ -34,7 +34,7 @@ class MembershipCardViewModel(application: Application) : AndroidViewModel(appli
         }
     }
     
-    fun addCard(name: String, number: String, storeId: String?, imageBitmap: Bitmap?, imageUri: Uri?) {
+    fun addCard(name: String, number: String, tier: String?, storeId: String?, imageBitmap: Bitmap?, imageUri: Uri?) {
         viewModelScope.launch {
             val imagePath = when {
                 imageBitmap != null -> saveImageToInternalStorage(imageBitmap)
@@ -45,6 +45,7 @@ class MembershipCardViewModel(application: Application) : AndroidViewModel(appli
             val newCard = MembershipCard(
                 name = name,
                 cardNumber = number,
+                tier = tier,
                 storeId = storeId,
                 imagePath = imagePath
             )

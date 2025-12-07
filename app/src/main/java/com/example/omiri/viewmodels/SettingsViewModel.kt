@@ -5,25 +5,30 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.List
+import androidx.compose.material.icons.outlined.ArrowDownward
+import androidx.compose.material.icons.outlined.LocalFireDepartment
+import androidx.compose.ui.graphics.Color
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.omiri.R
+import com.example.omiri.data.local.UserPreferences
+import com.example.omiri.data.repository.NotificationRepository
+import com.example.omiri.ui.models.NotificationUiModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import com.example.omiri.R
-import com.example.omiri.data.local.UserPreferences
+import java.util.UUID
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
     private val userPreferences = UserPreferences(application)
     
     private val _shoppingListNotifications = MutableStateFlow(true)
     val shoppingListNotifications: StateFlow<Boolean> = _shoppingListNotifications.asStateFlow()
-
-    private val _monitorAllLists = MutableStateFlow(false)
-    val monitorAllLists: StateFlow<Boolean> = _monitorAllLists.asStateFlow()
 
     private val _debugMode = MutableStateFlow(false)
     val debugMode: StateFlow<Boolean> = _debugMode.asStateFlow()
@@ -80,17 +85,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun toggleMonitorAllLists() {
-        _monitorAllLists.value = !_monitorAllLists.value
-        if (_monitorAllLists.value) {
-            showNotification(
-                "Monitor All Lists",
-                "Now tracking all your shopping lists",
-                "👀"
-            )
-        }
-    }
-
     fun toggleDebugMode() {
         _debugMode.value = !_debugMode.value
         if (_debugMode.value) {
@@ -102,6 +96,77 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 "🛑"
             )
         }
+    }
+
+    // Debug Triggers
+    fun triggerFlashSaleNotification() {
+        // System Notification
+        showNotification(
+            "Flash Sale Alert!",
+            "Hamburger patties at Target now 30% off! Limited time only.",
+            "🔥"
+        )
+        
+        // App Notification
+        val notification = NotificationUiModel.FlashSale(
+            id = UUID.randomUUID().toString(),
+            title = "Flash Sale Alert!",
+            time = "Just now",
+            isRead = false,
+            icon = Icons.Outlined.LocalFireDepartment,
+            iconColor = Color(0xFFEF4444),
+            description = "Hamburger patties at Target now 30% off! Limited time only.",
+            timeLeft = "2 hours left",
+            savings = "Save $3.60"
+        )
+        NotificationRepository.instance.addNotification(notification)
+    }
+
+    fun triggerPriceDropNotification() {
+         // System Notification
+        showNotification(
+            "Price Drop Alert",
+            "Wireless Headphones dropped from $89 to $64 at Best Buy.",
+            "📉"
+        )
+        
+        // App Notification
+        val notification = NotificationUiModel.PriceDrop(
+            id = UUID.randomUUID().toString(),
+            title = "Price Drop",
+            time = "Just now",
+            isRead = false,
+            icon = Icons.Outlined.ArrowDownward,
+            iconColor = Color(0xFF10B981),
+            description = "Wireless Headphones dropped from $89 to $64 at Best Buy",
+            currentPrice = "$64",
+            originalPrice = "$89",
+            discountPercentage = "28% off"
+        )
+        NotificationRepository.instance.addNotification(notification)
+    }
+
+    fun triggerListUpdateNotification() {
+         // System Notification
+        showNotification(
+            "Shopping List Update",
+            "3 items from 'BBQ Party List' are now on sale nearby.",
+            "🛒"
+        )
+        
+        // App Notification
+        val notification = NotificationUiModel.ListUpdate(
+            id = UUID.randomUUID().toString(),
+            title = "Shopping List Update",
+            time = "Just now",
+            isRead = false,
+            // Using AutoMirrored icon correctly
+            icon = Icons.AutoMirrored.Outlined.List,
+            iconColor = Color(0xFF3B82F6),
+            description = "3 items from \"BBQ Party List\" are now on sale nearby",
+            locationTag = "Walmart • 2.3 mi"
+        )
+        NotificationRepository.instance.addNotification(notification)
     }
 
     private fun showDebugNotification() {
@@ -130,6 +195,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle("$emoji $title")
             .setContentText(message)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
             .setColor(0xFFEA580B.toInt())
