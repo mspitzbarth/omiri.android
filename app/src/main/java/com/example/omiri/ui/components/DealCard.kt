@@ -42,16 +42,11 @@ fun DealCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .border(1.dp, borderColor, shape)
             .clickable { onClick(deal) },
         shape = shape,
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 1.dp,
-            pressedElevation = 2.dp,
-            focusedElevation = 2.dp,
-            hoveredElevation = 2.dp
-        )
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         // Image placeholder with time-left badge + favorite button
         Box(

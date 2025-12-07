@@ -30,7 +30,8 @@ fun FeaturedBanner(
             .fillMaxWidth()
             .height(180.dp),
         shape = MaterialTheme.shapes.extraLarge,
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB))
     ) {
         Box(
             modifier = Modifier

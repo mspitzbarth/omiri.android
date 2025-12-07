@@ -50,7 +50,8 @@ fun ListSelectionBottomSheet(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 color = Color.White,
-                shadowElevation = 4.dp
+                shadowElevation = 0.dp,
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB))
             ) {
                 Column(
                     modifier = Modifier

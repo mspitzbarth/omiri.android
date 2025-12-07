@@ -83,7 +83,8 @@ fun HeroDealCard(
             .height(200.dp)
             .clickable(onClick = onClick),
         shape = MaterialTheme.shapes.large,
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB))
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             // Background Image or Color

@@ -26,8 +26,8 @@ fun SmartAlertsCard() {
             .padding(horizontal = Spacing.lg),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-        // border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB))
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB))
     ) {
         Column(
             modifier = Modifier.padding(Spacing.lg)

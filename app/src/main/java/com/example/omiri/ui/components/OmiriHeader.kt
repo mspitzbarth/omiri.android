@@ -30,7 +30,8 @@ fun OmiriHeader(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shadowElevation = 1.dp,
+        shadowElevation = 0.dp,
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
         color = MaterialTheme.colorScheme.background
     ) {
         Column(

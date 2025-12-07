@@ -35,8 +35,9 @@ fun DealOfTheDay(
         ),
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 2.dp
-        )
+            defaultElevation = 0.dp
+        ),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF374151))
     ) {
         Column(
             modifier = Modifier.padding(Spacing.lg)

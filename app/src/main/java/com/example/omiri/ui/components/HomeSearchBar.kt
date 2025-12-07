@@ -11,7 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
+import androidx.compose.foundation.border
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.omiri.ui.theme.Spacing
@@ -25,10 +25,10 @@ fun HomeSearchBar(
         modifier = modifier
             .fillMaxWidth()
             .height(56.dp)
-            .shadow(
-                elevation = 2.dp,
-                shape = RoundedCornerShape(28.dp),
-                spotColor = Color.Black.copy(alpha = 0.1f)
+            .border(
+                width = 1.dp,
+                color = Color(0xFFE5E7EB),
+                shape = RoundedCornerShape(28.dp)
             )
             .clickable(onClick = onSearchClick),
         shape = RoundedCornerShape(28.dp),

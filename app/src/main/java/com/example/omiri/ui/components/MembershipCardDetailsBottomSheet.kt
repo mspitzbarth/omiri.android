@@ -53,7 +53,8 @@ fun MembershipCardDetailsBottomSheet(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
                 color = Color.White,
-                shadowElevation = 8.dp
+                shadowElevation = 0.dp,
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB))
             ) {
                 Column(
                     modifier = Modifier

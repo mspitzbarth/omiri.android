@@ -66,8 +66,9 @@ private fun StatCard(
             containerColor = Color.White
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 2.dp
+            defaultElevation = 0.dp
         ),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
         shape = MaterialTheme.shapes.large
     ) {
         Column(
