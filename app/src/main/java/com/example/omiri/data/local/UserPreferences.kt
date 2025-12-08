@@ -169,6 +169,8 @@ class UserPreferences(private val context: Context) {
         const val DEFAULT_COUNTRY = "US"
         
         private val CACHED_RETAILERS_STRING = stringPreferencesKey("cached_retailers_string")
+        private val SMART_PLAN = stringPreferencesKey("smart_plan")
+        private val SHOPPING_LIST_MATCHES_RESPONSE = stringPreferencesKey("shopping_list_matches_response")
     }
     
     /**
@@ -228,6 +230,60 @@ class UserPreferences(private val context: Context) {
         val json = gson.toJson(cards)
         context.dataStore.edit { preferences ->
             preferences[MEMBERSHIP_CARDS] = json
+        }
+    }
+    
+    /**
+     * Get cached Smart Plan
+     */
+    val smartPlan: Flow<com.example.omiri.data.api.models.ShoppingListOptimizeResponse?> = context.dataStore.data.map { preferences ->
+        val json = preferences[SMART_PLAN] ?: ""
+        if (json.isNotEmpty()) {
+            try {
+                val type = object : TypeToken<com.example.omiri.data.api.models.ShoppingListOptimizeResponse>() {}.type
+                gson.fromJson(json, type)
+            } catch (e: Exception) {
+                null
+            }
+        } else {
+            null
+        }
+    }
+    
+    /**
+     * Save Smart Plan
+     */
+    suspend fun saveSmartPlan(plan: com.example.omiri.data.api.models.ShoppingListOptimizeResponse?) {
+        val json = if (plan != null) gson.toJson(plan) else ""
+        context.dataStore.edit { preferences ->
+            preferences[SMART_PLAN] = json
+        }
+    }
+    
+    /**
+     * Get cached Shopping List Matches Response (for offline/startup calculation)
+     */
+    val shoppingListMatchesResponse: Flow<com.example.omiri.data.api.models.ShoppingListSearchResponse?> = context.dataStore.data.map { preferences ->
+        val json = preferences[SHOPPING_LIST_MATCHES_RESPONSE] ?: ""
+        if (json.isNotEmpty()) {
+            try {
+                val type = object : TypeToken<com.example.omiri.data.api.models.ShoppingListSearchResponse>() {}.type
+                gson.fromJson(json, type)
+            } catch (e: Exception) {
+                null
+            }
+        } else {
+            null
+        }
+    }
+    
+    /**
+     * Save Shopping List Matches Response
+     */
+    suspend fun saveShoppingListMatchesResponse(response: com.example.omiri.data.api.models.ShoppingListSearchResponse?) {
+        val json = if (response != null) gson.toJson(response) else ""
+        context.dataStore.edit { preferences ->
+            preferences[SHOPPING_LIST_MATCHES_RESPONSE] = json
         }
     }
 }

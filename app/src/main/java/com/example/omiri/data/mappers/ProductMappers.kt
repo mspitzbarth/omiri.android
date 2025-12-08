@@ -45,7 +45,8 @@ fun ProductResponse.toDeal(): Deal {
         heroColor = getHeroColor(categories?.firstOrNull(), id.toString()),
         discountPercentage = discountPercentage?.roundToInt() ?: 0,
         hasDiscount = hasDiscount,
-        isOnShoppingList = false // Default, updated by ViewModel if needed
+        isOnShoppingList = false, // Default, updated by ViewModel if needed
+        searchTerm = searchTerm // Map search term
     )
 }
 

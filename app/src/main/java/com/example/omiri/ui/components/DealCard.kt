@@ -5,8 +5,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Store
 import androidx.compose.material3.*
@@ -56,7 +58,7 @@ fun DealCard(
                 .background(backgroundColor ?: deal.heroColor ?: AppColors.SurfaceAlt),
             contentAlignment = Alignment.Center
         ) {
-            if (!deal.imageUrl.isNullOrBlank() && deal.hasDiscount == true && deal.discountPercentage > 0) {
+            if (!deal.imageUrl.isNullOrBlank()) {
                 AsyncImage(
                     model = deal.imageUrl,
                     contentDescription = null,
@@ -70,59 +72,75 @@ fun DealCard(
                 }
             }
 
-            if (!deal.timeLeftLabel.isNullOrBlank()) {
-                val badgeColor = when {
-                    deal.timeLeftLabel!!.contains("hour", ignoreCase = true) -> Color(0xFFDC2626)
-                    deal.timeLeftLabel!!.contains("today", ignoreCase = true) -> Color(0xFFEA580C)
-                    deal.timeLeftLabel!!.contains("1 day", ignoreCase = true) ||
-                            deal.timeLeftLabel!!.contains("2 day", ignoreCase = true) -> Color(0xFFFB923C)
-                    else -> Color(0xFF0EA5E9)
-                }
-
-                Surface(
-                    modifier = Modifier
-                        .padding(Spacing.sm)
-                        .align(Alignment.TopStart),
-                    shape = MaterialTheme.shapes.small,
-                    color = badgeColor,
-                    tonalElevation = 0.dp,
-                    shadowElevation = 0.dp
-                ) {
-                    Text(
-                        text = deal.timeLeftLabel!!,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
-                }
-            }
-            
-            if (deal.isOnShoppingList) {
-                Surface(
-                    modifier = Modifier
-                        .padding(Spacing.sm)
-                        .align(Alignment.BottomStart),
-                    shape = MaterialTheme.shapes.small,
-                    color = Color(0xFFA12AF9), // Shopping List Purple
-                    tonalElevation = 0.dp,
-                    shadowElevation = 0.dp
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
+            // Badges Container at Top Start (Discount, Time Left, In List)
+            Column(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(8.dp)
+            ) {
+                // 1. Discount Badge
+                if (deal.discountPercentage > 0) {
+                    Surface(
+                        color = Color(0xFFDC2626), // Red
+                        shape = RoundedCornerShape(4.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Favorite, // Or ShoppingCart/List icon
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(12.dp)
-                        )
-                        Spacer(Modifier.width(4.dp))
                         Text(
-                            text = "In your list",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.White
+                            text = "-${deal.discountPercentage}%",
+                            color = Color.White,
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
+                
+                // 2. Time Left Badge
+                if (!deal.timeLeftLabel.isNullOrBlank()) {
+                     val badgeColor = when {
+                        deal.timeLeftLabel!!.contains("hour", ignoreCase = true) -> Color(0xFFDC2626)
+                        deal.timeLeftLabel!!.contains("today", ignoreCase = true) -> Color(0xFFEA580C)
+                        deal.timeLeftLabel!!.contains("1 day", ignoreCase = true) ||
+                                deal.timeLeftLabel!!.contains("2 day", ignoreCase = true) -> Color(0xFFFB923C)
+                        else -> Color(0xFF0EA5E9)
+                    }
+                    
+                    Surface(
+                        color = badgeColor,
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            text = deal.timeLeftLabel!!,
+                            color = Color.White,
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
+                
+                // 3. In List Badge
+                if (deal.isOnShoppingList) {
+                    Surface(
+                        color = Color(0xFFF3E8FF), // Light Purple
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ShoppingCart,
+                                contentDescription = null,
+                                tint = Color(0xFFA12AF9), // Purple
+                                modifier = Modifier.size(10.dp)
+                            )
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Text(
+                                text = "In List",
+                                color = Color(0xFFA12AF9), // Purple
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold)
+                            )
+                        }
                     }
                 }
             }

@@ -6,6 +6,7 @@ data class Deal(
     val id: String,
     val title: String,
     val store: String,
+    val searchTerm: String? = null, // The shopping list item this deal matches
     val price: String,
     val originalPrice: String? = null,
     val discountLabel: String? = null,

@@ -26,22 +26,23 @@ class ShoppingListWorker(
     private val storeRepository = StoreRepository()
     private val userPreferences = UserPreferences(appContext)
 
-    override suspend fun doWork(): Result {
+    override suspend fun doWork(): Result = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         Log.d(TAG, "Starting Shopping List Check...")
 
         try {
+            // ... (keep existing logic structure)
             // 1. Get Shopping List Items
             val items = userPreferences.shoppingListItems.first()
             if (items.isBlank()) {
                 Log.d(TAG, "No shopping list items found. Skipping.")
-                return Result.success()
+                return@withContext Result.success()
             }
 
             // 2. Get User Context (Country, Retailers)
             val country = userPreferences.selectedCountry.first()
             val selectedStores = userPreferences.selectedStores.first()
             
-            // Map selectedStore IDs to Retailer Names (Simplified logic from ViewModel)
+            // Map selectedStore IDs to Retailer Names
             val storesForCountry = selectedStores.filter { it.endsWith("_$country", ignoreCase = true) }
             
             val retailers = if (storesForCountry.isNotEmpty()) {
@@ -85,13 +86,13 @@ class ShoppingListWorker(
                 }
             } else {
                 Log.e(TAG, "Search failed: ${result.exceptionOrNull()?.message}")
-                return Result.retry()
+                return@withContext Result.retry()
             }
 
-            return Result.success()
+            return@withContext Result.success()
         } catch (e: Exception) {
             Log.e(TAG, "Error in ShoppingListWorker", e)
-            return Result.failure()
+            return@withContext Result.failure()
         }
     }
 
@@ -112,7 +113,7 @@ class ShoppingListWorker(
         val intent = Intent(applicationContext, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra("SHOW_FULLSCREEN_AD", true)
-            putExtra("NAVIGATE_TO", "shopping_list_matches") // Or just open app, UI handles logic
+            putExtra("NAVIGATE_TO", "shopping_list_matches")
         }
         
         val pendingIntent = PendingIntent.getActivity(
@@ -122,9 +123,9 @@ class ShoppingListWorker(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Build Notification
+        // Build Notification with guaranteed system icon
         val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground) // Use app icon
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle("Omiri: Deals Found!")
             .setContentText("Found $dealCount deals for your list: ${items.take(20)}...")
             .setPriority(NotificationCompat.PRIORITY_HIGH)

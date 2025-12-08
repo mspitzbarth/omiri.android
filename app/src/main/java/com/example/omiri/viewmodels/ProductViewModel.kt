@@ -13,7 +13,9 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -28,6 +30,8 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
     private val repository = ProductRepository()
     private val storeRepository = com.example.omiri.data.repository.StoreRepository()
     private val userPreferences = UserPreferences(application)
+    // Inject or get repository singleton
+    private val shoppingListRepository = com.example.omiri.data.repository.ShoppingListRepository
     
     // Cache for stores to avoid redundant API calls
     private var cachedStores: List<com.example.omiri.data.api.models.StoreListResponse>? = null
@@ -65,6 +69,26 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
     private val _totalCount = MutableStateFlow(0)
     val totalCount: StateFlow<Int> = _totalCount.asStateFlow()
     
+    // Categories
+    private val _categories = MutableStateFlow<List<String>>(emptyList())
+    val categories: StateFlow<List<String>> = _categories.asStateFlow()
+
+    // Stores (Moved from below)
+    data class StoreFilterOption(val id: String, val name: String, val emoji: String = "🛒")
+    private val _availableStores = MutableStateFlow<List<StoreFilterOption>>(emptyList())
+    val availableStores: StateFlow<List<StoreFilterOption>> = _availableStores.asStateFlow()
+
+    // Persistent set of IDs valid for the current shopping list
+    private val _matchedDealIds =  java.util.Collections.synchronizedSet(mutableSetOf<String>())
+    
+    // Smart Features (Moved from below)
+    private val _smartAlerts = MutableStateFlow<List<com.example.omiri.data.api.models.SmartAlert>>(emptyList())
+    val smartAlerts: StateFlow<List<com.example.omiri.data.api.models.SmartAlert>> = _smartAlerts.asStateFlow()
+
+    private val _smartPlan = MutableStateFlow<com.example.omiri.data.api.models.ShoppingListOptimizeResponse?>(null)
+    val smartPlan: StateFlow<com.example.omiri.data.api.models.ShoppingListOptimizeResponse?> = _smartPlan.asStateFlow()
+    
+    
     // Savings Calculation
     // We derive this from shoppingListDeals whenever it changes
     val shoppingListSavings: kotlinx.coroutines.flow.Flow<Double> = _shoppingListDeals.map { deals ->
@@ -86,8 +110,59 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
     
     init {
         Log.d(TAG, "ProductViewModel initialized")
+        // Load initial data
+        viewModelScope.launch {
+             // Load cached Smart Plan immediately
+             val cachedPlan = userPreferences.smartPlan.firstOrNull()
+             if (cachedPlan != null) {
+                 _smartPlan.value = cachedPlan
+                 generateSmartAlerts(cachedPlan)
+             }
+             
+             // Load cached matches (to allow re-calc on startup)
+             val cachedMatches = userPreferences.shoppingListMatchesResponse.firstOrNull()
+             if (cachedMatches != null) {
+                 val categories = cachedMatches.categories ?: emptyMap()
+                 val itemsString = userPreferences.shoppingListItems.first()
+                 val requestedItemsList = itemsString.split(",").map { it.trim() }
+                 
+                 val allProducts = categories.values.flatMap { it.products }
+                 
+                 // Group by searchTerm or fuzzy match (Replicate logic from checkShoppingListMatches)
+                 val groupedMap = allProducts.groupBy { product -> 
+                        product.searchTerm ?: requestedItemsList.find { 
+                            product.title.contains(it, ignoreCase = true) 
+                        } ?: "Groceries"
+                 }
+                 
+                 val dealMap = groupedMap.mapValues { entry -> 
+                        val deals = entry.value.toDeals()
+                        deals.map { it.copy(isOnShoppingList = true) }
+                 }
+                 
+                 _shoppingListMatches.value = dealMap
+                 val flatDeals = dealMap.values.flatten()
+                 _shoppingListDeals.value = flatDeals
+                 
+                 _matchedDealIds.clear()
+                 _matchedDealIds.addAll(flatDeals.map { it.id })
+                 
+                 // If cached plan was null, calculate one now using these matches
+                 if (_smartPlan.value == null) {
+                     val calculatedPlan = calculateLocalSmartPlan()
+                     _smartPlan.value = calculatedPlan
+                     generateSmartAlerts(calculatedPlan)
+                 }
+             }
+             
+             // Initial loads
+             // ...
+             loadCategoriesIfNeeded()
+             // We don't loadProducts() effectively here until we know country...
+             // But we can trigger it.
+        }
         
-        // Observe store selection changes and reload products automatically
+        // Observe Shopping List changes to keep Smart Plan / Badges in syncts automatically
         viewModelScope.launch {
             userPreferences.selectedStores.collect { stores ->
                 Log.d(TAG, "Store selection changed: ${stores.size} stores selected")
@@ -117,9 +192,8 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    // Categories
-    private val _categories = MutableStateFlow<List<String>>(emptyList())
-    val categories: StateFlow<List<String>> = _categories.asStateFlow()
+    // Categories definition moved to top
+
 
     fun loadCategoriesIfNeeded() {
         if (_categories.value.isEmpty()) {
@@ -136,11 +210,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    // Stores
-    private val _availableStores = MutableStateFlow<List<StoreFilterOption>>(emptyList())
-    val availableStores: StateFlow<List<StoreFilterOption>> = _availableStores.asStateFlow()
 
-    data class StoreFilterOption(val id: String, val name: String, val emoji: String = "🛒")
 
     private suspend fun getAllStores(country: String): List<com.example.omiri.data.api.models.StoreListResponse> {
         if (cachedStores != null && cachedStoresCountry == country) {
@@ -394,18 +464,31 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun checkShoppingListMatches() {
+    fun checkShoppingListMatches(itemsList: List<String>? = null) {
         viewModelScope.launch {
             _isLoading.value = true
+            _error.value = null
+            
             try {
-                val items = userPreferences.shoppingListItems.first()
-                if (items.isBlank()) {
+                // Determine items to check: Passed list OR saved list from prefs
+                val itemsString = if (itemsList != null) {
+                     itemsList.joinToString(",") 
+                } else {
+                     userPreferences.shoppingListItems.first()
+                }
+                
+                if (itemsString.isBlank()) {
                     _shoppingListMatches.value = emptyMap()
                     _shoppingListDeals.value = emptyList()
+                    _matchedDealIds.clear()
+                    generateSmartPlan() // Should clear plan
                     _isLoading.value = false
                     return@launch
                 }
-
+                
+                val items = itemsString // Repository expects comma-separated string
+                val requestedItemsList = itemsString.split(",").map { it.trim() }
+                
                 val country = userPreferences.selectedCountry.first()
                 val selectedStores = userPreferences.selectedStores.first()
                 val storesForCountry = selectedStores.filter { it.endsWith("_$country", ignoreCase = true) }
@@ -423,28 +506,36 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
                     val categories = response.categories ?: emptyMap()
                     
                     val allProducts = categories.values.flatMap { it.products }
-                    val groupedMap = allProducts.groupBy { it.searchTerm ?: "Unknown" }
+                    
+                    // Group by searchTerm. If missing, fuzzy match against requested items.
+                    val groupedMap = allProducts.groupBy { product -> 
+                        product.searchTerm ?: requestedItemsList.find { 
+                            product.title.contains(it, ignoreCase = true) 
+                        } ?: "Groceries"
+                    }
                     
                     val dealMap = groupedMap.mapValues { entry -> 
                         val deals = entry.value.toDeals()
                         // These are definitely on the list, so mark them
                         deals.map { it.copy(isOnShoppingList = true) }
-                    }.filterKeys { it != "Unknown" }
+                    }
                         
                     _shoppingListMatches.value = dealMap
                     val flatDeals = dealMap.values.flatten()
                     _shoppingListDeals.value = flatDeals
                     
-                    // Sync with other lists
-                    val matchIds = flatDeals.map { it.id }.toSet()
-                    if (matchIds.isNotEmpty()) {
-                        _featuredDeals.value = _featuredDeals.value.map { 
-                            if (it.id in matchIds) it.copy(isOnShoppingList = true) else it
-                        }
-                        _allDeals.value = _allDeals.value.map {
-                            if (it.id in matchIds) it.copy(isOnShoppingList = true) else it
-                        }
-                    }
+                    // Update persistent set of matched IDs
+                    _matchedDealIds.clear()
+                    _matchedDealIds.addAll(flatDeals.map { it.id })
+                    
+                    // Sync current views immediately
+                    _featuredDeals.value = syncDealsWithMatches(_featuredDeals.value)
+                    _allDeals.value = syncDealsWithMatches(_allDeals.value)
+                    
+                    // Save matches for offline/startup calculation
+                    userPreferences.saveShoppingListMatchesResponse(response)
+                    
+                    generateSmartPlan()
                     
                 }.onFailure {
                     _error.value = "Failed to load matches: ${it.message}"
@@ -457,31 +548,35 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
         }
     }
     
-    // Smart Alerts
-    private val _smartAlerts = MutableStateFlow<List<com.example.omiri.data.api.models.SmartAlert>>(emptyList())
-    val smartAlerts: StateFlow<List<com.example.omiri.data.api.models.SmartAlert>> = _smartAlerts.asStateFlow()
 
-    // Smart Plan
-    private val _smartPlan = MutableStateFlow<com.example.omiri.data.api.models.ShoppingListOptimizeResponse?>(null)
-    val smartPlan: StateFlow<com.example.omiri.data.api.models.ShoppingListOptimizeResponse?> = _smartPlan.asStateFlow()
+    
+    // Helper to apply badge state
+    private fun syncDealsWithMatches(deals: List<com.example.omiri.data.models.Deal>): List<com.example.omiri.data.models.Deal> {
+        if (_matchedDealIds.isEmpty()) return deals
+        return deals.map { deal ->
+            if (_matchedDealIds.contains(deal.id)) deal.copy(isOnShoppingList = true) else deal
+        }
+    }
+    
+
+
+
     
     private fun generateSmartPlan() {
         viewModelScope.launch {
             // ... (existing call to repo) ...
             val result = repository.optimizeShoppingList(maxStores = 3)
-            result.onSuccess { 
-                if (it.steps.isNotEmpty() && it.totalSavings > 0) {
-                    _smartPlan.value = it
-                    generateSmartAlerts(it)
-                } else {
-                    _smartPlan.value = null
-                    generateSmartAlerts(null)
-                }
-            }.onFailure {
-                val bestPlan = calculateLocalSmartPlan()
-                _smartPlan.value = bestPlan
-                generateSmartAlerts(bestPlan)
+            val finalPlan = if (result.isSuccess && result.getOrNull()?.steps?.isNotEmpty() == true) {
+                result.getOrNull()
+            } else {
+                 calculateLocalSmartPlan()
             }
+            
+            _smartPlan.value = finalPlan
+            generateSmartAlerts(finalPlan)
+            
+            // Persist the plan
+            userPreferences.saveSmartPlan(finalPlan)
         }
     }
     
@@ -553,7 +648,8 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
                 if (o > p) o - p else 0.0
             }
              val cost = deals.sumOf { it.price.replace(Regex("[^0-9.]"), "").toDoubleOrNull() ?: 0.0 }
-             val items = deals.map { it.title }.distinct()
+             // Use searchTerm (list item name) for counting distinct needs, fall back to title if missing
+             val items = deals.map { it.searchTerm ?: it.title }.distinct()
              
              OptimizationStep(
                  storeName = store,
@@ -571,8 +667,14 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
         
         if (storeAnalysis.isEmpty()) return null
         
-        // Pick top 3 stores by savings
-        val topStores = storeAnalysis.sortedByDescending { it.stepSavings }.take(3)
+        // Pick top 3 stores by: 
+        // 1. Coverage (How many items can I get there?)
+        // 2. Savings (How much do I save?)
+        val topStores = storeAnalysis
+            .sortedWith(compareByDescending<OptimizationStep> { it.itemsCount }
+            .thenByDescending { it.stepSavings })
+            .take(3)
+            
         val totalSavings = topStores.sumOf { it.stepSavings }
         val totalCost = topStores.sumOf { it.totalCost }
         
