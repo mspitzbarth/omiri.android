@@ -66,7 +66,6 @@ class MainActivity : ComponentActivity() {
             // Handle Transition Delay when progress hits 100%
             LaunchedEffect(loadingProgress, isOnboardingCompleted) {
                 if (loadingProgress >= 1.0f) {
-                    kotlinx.coroutines.delay(500) // 0.5s delay
                     isSplashVisible = false
                 }
                 

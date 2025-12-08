@@ -33,11 +33,24 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(progress: Float = 0f) {
-    val animatedProgress by animateFloatAsState(
-        targetValue = progress,
-        animationSpec = tween(durationMillis = 300, easing = LinearOutSlowInEasing),
-        label = "SplashProgress"
-    )
+    // Rotating messages
+    val messages = remember {
+        listOf(
+            "Finding the best deals...",
+            "Checking local stores...",
+            "Preparing your Smart Plan...",
+            "Mixing ingredients...",
+            "Loading fresh discounts..."
+        )
+    }
+    var currentMessageIndex by remember { mutableStateOf(0) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1500) // Change message every 1.5s
+            currentMessageIndex = (currentMessageIndex + 1) % messages.size
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -69,9 +82,9 @@ fun SplashScreen(progress: Float = 0f) {
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            // Tagline
+            // Tagline or Status Message
             Text(
-                text = "Deals. Lists. Smarter shopping.",
+                text = messages[currentMessageIndex], // Dynamic text
                 color = Color(0xFF64748B),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium
@@ -79,32 +92,17 @@ fun SplashScreen(progress: Float = 0f) {
             
             Spacer(modifier = Modifier.height(48.dp))
             
-            // Custom Progress Indicator 
-            Box(
-                modifier = Modifier
-                    .width(180.dp)
-                    .height(4.dp)
-                    .background(Color(0xFFE2E8F0), CircleShape) // Light gray background
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(animatedProgress) // Animate width based on progress (0f to 1f)
-                        .height(4.dp)
-                        .background(Color(0xFFFF7D29), CircleShape)
-                )
-            }
+            // Spinner
+            androidx.compose.material3.CircularProgressIndicator(
+                color = Color(0xFFFF7D29),
+                modifier = Modifier.size(32.dp),
+                strokeWidth = 3.dp
+            )
         }
         
-        // Bottom Dots
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 64.dp)
-        ) {
-            TypingDotsAnimation()
-        }
     }
 }
+// Removed TypingDotsAnimation composable as requested
 
 @Composable
 fun PennyPalLogo(modifier: Modifier = Modifier) {
@@ -139,57 +137,6 @@ fun PennyPalLogo(modifier: Modifier = Modifier) {
                 end = center.copy(y = center.y + 4.dp.toPx()),
                 strokeWidth = 3.dp.toPx(),
                 cap = StrokeCap.Round
-            )
-        }
-    }
-}
-
-@Composable
-fun TypingDotsAnimation(
-    dotSize: Dp = 6.dp,
-    dotColor: Color = Color(0xFFFFBB86), // Light Orange from image
-    spaceBetween: Dp = 6.dp,
-    travelDistance: Dp = 6.dp
-) {
-    val dots = listOf(
-        remember { Animatable(0f) },
-        remember { Animatable(0f) },
-        remember { Animatable(0f) }
-    )
-
-    dots.forEachIndexed { index, animatable ->
-        LaunchedEffect(animatable) {
-            delay(index * 150L)
-            animatable.animateTo(
-                targetValue = 1f,
-                animationSpec = infiniteRepeatable(
-                    animation = keyframes {
-                        durationMillis = 1200
-                        0.0f at 0 using LinearOutSlowInEasing
-                        1.0f at 300 using LinearOutSlowInEasing
-                        0.0f at 600 using LinearOutSlowInEasing
-                        0.0f at 1200 using LinearOutSlowInEasing
-                    },
-                    repeatMode = RepeatMode.Restart
-                )
-            )
-        }
-    }
-
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
-    ) {
-        dots.forEachIndexed { index, animatable ->
-            if (index > 0) {
-                Spacer(modifier = Modifier.width(spaceBetween))
-            }
-            Box(
-                modifier = Modifier
-                    .size(dotSize)
-                    .offset(y = -travelDistance * animatable.value)
-                    .clip(CircleShape)
-                    .background(dotColor)
             )
         }
     }

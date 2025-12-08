@@ -54,7 +54,7 @@ fun SavingsDashboard(
             Spacer(Modifier.height(Spacing.sm))
             
             Text(
-                text = "Shopping List Savings",
+                text = if (potentialSavings > 0) "Shopping List Savings" else "No Savings Yet",
                 style = MaterialTheme.typography.titleMedium,
                 color = Color(0xFF134E4A),
                 fontWeight = FontWeight.Medium
@@ -63,16 +63,16 @@ fun SavingsDashboard(
             Spacer(Modifier.height(4.dp))
             
             Text(
-                text = "€${String.format("%.2f", potentialSavings)}",
+                text = if (potentialSavings > 0) "€${String.format("%.2f", potentialSavings)}" else "--",
                 style = MaterialTheme.typography.displaySmall, // Bigger, hero style
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF059669) // Green 600
+                color = if (potentialSavings > 0) Color(0xFF059669) else Color(0xFF64748B) // Green 600 or Slate 500
             )
             
             Spacer(Modifier.height(Spacing.sm))
             
             Text(
-                text = "Potential savings from your list",
+                text = if (potentialSavings > 0) "Potential savings from your list" else "Find deals to start saving",
                 style = MaterialTheme.typography.labelMedium,
                 color = Color(0xFF0F766E)
             )

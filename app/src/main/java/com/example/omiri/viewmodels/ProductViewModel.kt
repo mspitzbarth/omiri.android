@@ -368,6 +368,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
             val deferredFeatured = viewModelScope.async { loadFeaturedDeals(country, retailers) }
             val deferredAll = viewModelScope.async { loadAllDeals(country, retailers) }
             
+            
             deferredFeatured.await()
             _loadingProgress.value = 0.6f // Halfway through data
             
@@ -375,6 +376,12 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
             _loadingProgress.value = 0.9f // Almost done
             
             Log.d(TAG, "All API calls completed successfully")
+            
+            // Trigger Smart Plan matches in background (non-blocking for splash)
+            viewModelScope.launch {
+                executeCheckShoppingListMatches() 
+            }
+            
         } catch (e: Exception) {
             val errorMsg = "Failed to load products: ${e.message}"
             Log.e(TAG, errorMsg, e)
@@ -539,110 +546,133 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
 
     fun checkShoppingListMatches(itemsList: List<String>? = null) {
         viewModelScope.launch {
-            _isLoading.value = true
-            _isPaging.value = false
-            _error.value = null
-            
-            try {
-                // 1. Get Text Items
-                val itemsString = if (itemsList != null) {
-                     itemsList.joinToString(",") 
-                } else {
-                     userPreferences.shoppingListItems.first()
-                }
-                val requestedItemsList = itemsString.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-                
-                // 2. Get Saved IDs
-                val savedIds = userPreferences.shoppingListDealIds.first()
-                
-                // If both empty, clear everything
-                if (requestedItemsList.isEmpty() && savedIds.isEmpty()) {
-                    _shoppingListMatches.value = emptyMap()
-                    _shoppingListDeals.value = emptyList()
-                    _matchedDealIds.clear()
-                    generateSmartPlan()
-                    _isLoading.value = false
-                    return@launch
-                }
-                
-                var dealMap: MutableMap<String, List<Deal>> = mutableMapOf()
-                
-                // 3. Text Search (if items exist)
-                if (requestedItemsList.isNotEmpty()) {
-                    val items = itemsString
-                    val country = userPreferences.selectedCountry.first()
-                    val selectedStores = userPreferences.selectedStores.first()
-                    val storesForCountry = selectedStores.filter { it.endsWith("_$country", ignoreCase = true) }
-                    
-                    val storesResult = storeRepository.getStores(country)
-                    val allStores = storesResult.getOrNull() ?: emptyList()
-                    val retailers = if (storesForCountry.isNotEmpty()) {
-                        storesForCountry.mapNotNull { id -> allStores.find { it.id == id }?.retailer }.joinToString(",")
-                    } else null
+            executeCheckShoppingListMatches(itemsList)
+        }
+    }
 
-                    val result = repository.searchShoppingList(items, country, retailers)
+    private suspend fun executeCheckShoppingListMatches(itemsList: List<String>? = null) {
+        // Only show loading if we are not already part of a bigger loading flow?
+        // But for safety let's just set it. It's StateFlow, duplicates are fine.
+        _isLoading.value = true
+        _isPaging.value = false
+        _error.value = null
+        
+        try {
+            // 1. Get Text Items
+            val itemsString = if (itemsList != null) {
+                    itemsList.joinToString(",") 
+            } else {
+                    userPreferences.shoppingListItems.first()
+            }
+            val requestedItemsList = itemsString.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+            
+            // 2. Get Saved IDs
+            val savedIds = userPreferences.shoppingListDealIds.first()
+            
+            // If both empty, clear everything
+            if (requestedItemsList.isEmpty() && savedIds.isEmpty()) {
+                _shoppingListMatches.value = emptyMap()
+                _shoppingListDeals.value = emptyList()
+                _matchedDealIds.clear()
+                executeGenerateSmartPlan() // Suspend version
+                _isLoading.value = false
+                return
+            }
+            
+            var dealMap: MutableMap<String, List<Deal>> = mutableMapOf()
+            
+            // 3. Text Search (if items exist)
+            if (requestedItemsList.isNotEmpty()) {
+                val items = itemsString
+                val country = userPreferences.selectedCountry.first()
+                val selectedStores = userPreferences.selectedStores.first()
+                val storesForCountry = selectedStores.filter { it.endsWith("_$country", ignoreCase = true) }
+                
+                val allStores = getAllStores(country)
+                val retailers = if (storesForCountry.isNotEmpty()) {
+                    storesForCountry.mapNotNull { id -> allStores.find { it.id == id }?.retailer }.joinToString(",")
+                } else null
+
+                val result = repository.searchShoppingList(items, country, retailers)
+                
+                result.onSuccess { response ->
+                    val categories = response.categories ?: emptyMap()
+                    val allProducts = categories.values.flatMap { it.products }
                     
-                    result.onSuccess { response ->
-                        val categories = response.categories ?: emptyMap()
-                        val allProducts = categories.values.flatMap { it.products }
-                        
-                        val groupedMap = allProducts.groupBy { product -> 
-                            product.searchTerm ?: requestedItemsList.find { 
-                                product.title.contains(it, ignoreCase = true) 
-                            } ?: "Groceries"
-                        }
-                        
-                        dealMap = groupedMap.mapValues { entry -> 
-                            val deals = entry.value.toDeals()
-                            deals.map { it.copy(isOnShoppingList = true) }
-                        }.toMutableMap()
-                        
-                        userPreferences.saveShoppingListMatchesResponse(response)
+                    val groupedMap = allProducts.groupBy { product -> 
+                        product.searchTerm ?: requestedItemsList.find { 
+                            product.title.contains(it, ignoreCase = true) 
+                        } ?: "Groceries"
                     }
+                    
+                    dealMap = groupedMap.mapValues { entry -> 
+                        val deals = entry.value.toDeals()
+                        deals.map { it.copy(isOnShoppingList = true) }
+                    }.toMutableMap()
+                    
+                    userPreferences.saveShoppingListMatchesResponse(response)
                 }
-                
-                // 4. ID Search (Parallel Fetch/Cache Check)
-                val loadedDeals = _allDeals.value + _featuredDeals.value + _shoppingListDeals.value
-                
-                val idDealsDeferred = savedIds.map { id ->
+            }
+            
+            // 4. ID Search (Parallel Fetch/Cache Check)
+            val loadedDeals = _allDeals.value + _featuredDeals.value + _shoppingListDeals.value
+            
+            val idDealsDeferred = kotlinx.coroutines.coroutineScope {
+                savedIds.map { id ->
                     async {
                         val cached = loadedDeals.find { it.id == id }
                         if (cached != null) {
-                             cached.copy(isOnShoppingList = true)
+                            cached.copy(isOnShoppingList = true)
                         } else {
-                             repository.getProductById(id).getOrNull()?.toDeal()?.copy(isOnShoppingList = true)
+                            repository.getProductById(id).getOrNull()?.toDeal()?.copy(isOnShoppingList = true)
                         }
                     }
                 }
-                
-                val idDeals = idDealsDeferred.awaitAll().filterNotNull()
-                
-                // 5. Merge Matches
-                if (idDeals.isNotEmpty()) {
-                    val existing = dealMap["Manually Added"] ?: emptyList()
-                    dealMap["Manually Added"] = (existing + idDeals).distinctBy { it.id }
-                }
-                
-                val allMatches = dealMap.values.flatten().distinctBy { it.id }
-                
-                _shoppingListMatches.value = dealMap
-                _shoppingListDeals.value = allMatches
-                
-                _matchedDealIds.clear()
-                _matchedDealIds.addAll(allMatches.map { it.id })
-                
-                // 6. Sync View State
-                _featuredDeals.value = syncDealsState(_featuredDeals.value)
-                _allDeals.value = syncDealsState(_allDeals.value)
-                
-                generateSmartPlan()
-                
-            } catch (e: Exception) {
-               Log.e(TAG, "Error checking matches", e)
-               _error.value = "Error checking matches: ${e.message}"
-            } finally {
-                _isLoading.value = false
             }
+            
+            val nullableDeals: List<Deal?> = idDealsDeferred.awaitAll()
+            val idDeals: List<Deal> = nullableDeals.filterNotNull()
+            
+            // 5. Merge Matches
+            if (idDeals.isNotEmpty()) {
+                val existing = dealMap["Manually Added"] ?: emptyList()
+                dealMap["Manually Added"] = (existing + idDeals).distinctBy { it.id }
+            }
+            
+            val allMatches = dealMap.values.flatten().distinctBy { it.id }
+            
+            // Critical: Do NOT update state yet. Calculate Plan FIRST.
+            // This prevents "Matched Deals" from showing up without "Smart Plan".
+            
+            // 6. Generate Smart Plan (Suspend, Local)
+            // We need to use the calculated matches (allDeals) for this.
+            // But generateSmartPlan relies on repository which calls API usually?
+            // Wait, executeGenerateSmartPlan calls repo.optimizeShoppingList.
+            // It relies on backend having the list? Or does it send items?
+            // The repo call (lines 788) `repository.optimizeShoppingList` assumes server knows list state?
+            // Actually, we just saved the list in `toggleShoppingList`, so server *should* know.
+            // But here we are just searching by text.
+            
+            // Re-ordering:
+            // 1. Calculate Plan
+            executeGenerateSmartPlan()
+            
+            // 2. Update Matches State (NOW it appears in UI)
+            _shoppingListMatches.value = dealMap
+            _shoppingListDeals.value = allMatches
+            
+            _matchedDealIds.clear()
+            _matchedDealIds.addAll(allMatches.map { it.id } as List<String>)
+            
+            // 3. Sync View State for badges
+            _featuredDeals.value = syncDealsState(_featuredDeals.value)
+            _allDeals.value = syncDealsState(_allDeals.value)
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Error checking matches", e)
+            _error.value = "Error checking matches: ${e.message}"
+        } finally {
+            _isLoading.value = false
         }
     }
     
@@ -769,7 +799,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
                 
                 // Trigger full refresh of matches to ensure server-side consistency (e.g. better categorisation)
                 // This might overwrite the local plan eventually, but the immediate feedback is already done.
-                checkShoppingListMatches(currentItems)
+                executeCheckShoppingListMatches(currentItems)
                 
             } catch (e: Exception) {
                 Log.e(TAG, "Error persisting shopping list change", e)
@@ -784,20 +814,24 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
     
     private fun generateSmartPlan() {
         viewModelScope.launch {
-            // ... (existing call to repo) ...
-            val result = repository.optimizeShoppingList(maxStores = 3)
-            val finalPlan = if (result.isSuccess && result.getOrNull()?.steps?.isNotEmpty() == true) {
-                result.getOrNull()
-            } else {
-                 calculateLocalSmartPlan()
-            }
-            
-            _smartPlan.value = finalPlan
-            generateSmartAlerts(finalPlan)
-            
-            // Persist the plan
-            userPreferences.saveSmartPlan(finalPlan)
+            executeGenerateSmartPlan()
         }
+    }
+
+    private suspend fun executeGenerateSmartPlan() {
+        // ... (existing call to repo) ...
+        val result = repository.optimizeShoppingList(maxStores = 3)
+        val finalPlan = if (result.isSuccess && result.getOrNull()?.steps?.isNotEmpty() == true) {
+            result.getOrNull()
+        } else {
+                calculateLocalSmartPlan()
+        }
+        
+        _smartPlan.value = finalPlan
+        generateSmartAlerts(finalPlan)
+        
+        // Persist the plan
+        userPreferences.saveSmartPlan(finalPlan)
     }
     
     private fun generateSmartAlerts(plan: com.example.omiri.data.api.models.ShoppingListOptimizeResponse?) {
