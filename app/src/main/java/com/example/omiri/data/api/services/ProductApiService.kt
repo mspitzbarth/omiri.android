@@ -113,18 +113,22 @@ interface ProductApiService {
      * Search products for shopping list and group by category
      * GET /shopping-list/search
      */
+    /**
+     * Search shopping list items and check for deals
+     * GET /shopping-list/search
+     */
     @GET("shopping-list/search")
     suspend fun searchShoppingList(
         @Query("items") items: String,
-        @Query("retailer") retailer: String? = null,
-        @Query("retailers") retailers: String? = null,
         @Query("country") country: String? = null,
-        @Query("zipcode") zipcode: String? = null,
+        @Query("retailers") retailers: String? = null,
         @Query("stores") stores: String? = null,
         @Query("store_group_ids") storeGroupIds: String? = null,
-        @Query("limit_per_item") limitPerItem: Int = 3,
-        @Query("active_only") activeOnly: Boolean = true
-    ): Map<String, List<ProductResponse>>
+        @Query("zipcode") zipcode: String? = null,
+        @Query("active_only") activeOnly: Boolean? = null,
+        @Query("exclude_expired") excludeExpired: Boolean? = null,
+        @Query("limit") limit: Int? = null
+    ): retrofit2.Response<com.example.omiri.data.api.models.ShoppingListSearchResponse>
 
     /**
      * Get all categories
@@ -132,4 +136,13 @@ interface ProductApiService {
      */
     @GET("categories")
     suspend fun getCategories(): retrofit2.Response<List<String>>
+
+    /**
+     * Optimize shopping list
+     * POST /shopping-list/optimize
+     */
+    @POST("shopping-list/optimize")
+    suspend fun optimizeShoppingList(
+        @Body request: com.example.omiri.data.api.models.ShoppingListOptimizeRequest
+    ): retrofit2.Response<com.example.omiri.data.api.models.ShoppingListOptimizeResponse>
 }

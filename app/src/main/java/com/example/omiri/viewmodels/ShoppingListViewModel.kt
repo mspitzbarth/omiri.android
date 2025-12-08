@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -40,36 +42,112 @@ class ShoppingListViewModel(application: Application) : AndroidViewModel(applica
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    private val productRepository = com.example.omiri.data.repository.ProductRepository()
+
+    // ... (existing init) ...
     init {
-        // Sync open shopping list items to UserPreferences for background worker
         android.util.Log.d("ShoppingListViewModel", "Initializing ShoppingListViewModel sync")
+        
         viewModelScope.launch {
+            // 1. Load persisted lists first
+            val savedLists = userPreferences.savedShoppingLists.firstOrNull()
+            if (!savedLists.isNullOrEmpty()) {
+                repository.updateShoppingLists(savedLists)
+                // Ensure current ID is valid
+                if (repository.currentListId.value == null || savedLists.none { it.id == repository.currentListId.value }) {
+                    repository.switchList(savedLists.first().id)
+                }
+            }
+
+            // 2. Observer changes to save persistence & update background worker string
             shoppingLists.collect { lists ->
-                val allItems = lists.flatMap { it.items }
-                    .filter { !it.isDone } // Only active items
+                 // Save full object for persistence
+                 if (lists.isNotEmpty()) {
+                     userPreferences.saveShoppingLists(lists)
+                 }
+
+                 // Calculate string for worker
+                 val workerString = lists.flatMap { it.items }
+                    .filter { !it.isDone }
                     .map { it.name }
                     .filter { it.isNotBlank() }
                     .distinct()
+                    .sorted()
                     .joinToString(",")
-                
-                userPreferences.saveShoppingListItems(allItems)
+                    
+                 userPreferences.saveShoppingListItems(workerString)
+                 checkDealsForCurrentList()
             }
         }
     }
 
-    // Actions delegate to Repository
-    fun createList(name: String) = repository.createList(name)
-    fun switchList(listId: String) = repository.switchList(listId)
-    fun deleteList(listId: String) = repository.deleteList(listId)
-    fun renameList(listId: String, newName: String) = repository.renameList(listId, newName)
-    
+    private fun checkDealsForCurrentList() {
+        viewModelScope.launch {
+            val list = currentList.value ?: return@launch
+            val items = list.items.filter { !it.isDone }.map { it.name }.joinToString(",")
+            
+            if (items.isBlank()) return@launch
+            
+            val storesSet: Set<String> = userPreferences.selectedStores.firstOrNull() ?: emptySet()
+            val stores: String? = if (storesSet.isNotEmpty()) storesSet.joinToString(",") else null
+            
+            val country = userPreferences.selectedCountry.firstOrNull() ?: "DE"
+            
+            // We can also pass other filters if we have them accessable
+            val result = productRepository.searchShoppingList(
+                items = items,
+                stores = stores,
+                country = country,
+                limit = 3
+            )
+            
+            result.onSuccess { response ->
+                val categories = response.categories ?: emptyMap()
+                
+                // Flatten all found products to easily search by search_term
+                val allFoundProducts = categories.values.flatMap { it.products }
+                
+                // Also track which items were successfully found according to API (mapped by category)
+                // But relying on products list is safer for "isInDeals" check.
+                
+                list.items.forEach { item ->
+                    // Check if any product's search_term matches this item
+                    val hasDeals = allFoundProducts.any { product ->
+                        val term = product.searchTerm
+                        // Fallback: fuzzy match on title if search_term missing? 
+                        // The API provided search_term explicitly.
+                        // We compare item.name with product.searchTerm
+                        
+                        // Strict check:
+                        term.equals(item.name, ignoreCase = true)
+                        
+                        // Or looser check if item name is "Organic Milk" and term is "organic milk" -> match
+                        // If item name "Milk" and product found for "Milk" -> match.
+                    }
+                    
+                    if (item.isInDeals != hasDeals) {
+                        repository.setItemInDeals(item.id, hasDeals)
+                    }
+                }
+            }
+        }
+    }
+
+    // ... (rest of class) ...
+
     fun addItem(name: String, categoryId: String = PredefinedCategories.OTHER.id, isInDeals: Boolean = false, isRecurring: Boolean = false) {
         repository.addItem(name, categoryId, isInDeals, isRecurring)
+        // Check deals for the new item (or refresh all)
+        checkDealsForCurrentList()
     }
 
     fun toggleItemDone(itemId: String) = repository.toggleItemDone(itemId)
     fun deleteItem(itemId: String) = repository.deleteItem(itemId)
     fun resetRecurringItems() = repository.resetRecurringItems()
+    
+    fun createList(name: String) = repository.createList(name)
+    fun switchList(listId: String) = repository.switchList(listId)
+    fun deleteList(listId: String) = repository.deleteList(listId)
 
     fun updateSearchQuery(query: String) {
         _searchQuery.value = query

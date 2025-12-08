@@ -1,14 +1,18 @@
 package com.example.omiri.viewmodels
 
+import android.app.Application
 import android.util.Log
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.omiri.data.api.models.ConversationResponse
 import com.example.omiri.data.api.models.MessageResponse
 import com.example.omiri.data.repository.MistralRepository
+import com.example.omiri.data.repository.ProductRepository
+import com.example.omiri.data.local.UserPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import java.util.UUID
 
@@ -32,9 +36,11 @@ enum class AttachmentType {
 /**
  * ViewModel for managing Mistral AI chat conversations
  */
-class ChatViewModel : ViewModel() {
+class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = MistralRepository()
+    private val productRepository = ProductRepository()
+    private val userPreferences = UserPreferences(application)
 
     // UI State
     private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
@@ -175,7 +181,7 @@ class ChatViewModel : ViewModel() {
         
         return if (list != null && list.items.isNotEmpty()) {
             val items = list.items.joinToString(", ") { 
-                "${it.name} (${if(it.isDone) "Done" else "To Buy"}${if(it.isInDeals) ", Deal" else ""})" 
+                "${it.name} (${if(it.isDone) "Done" else "To Buy"}${if(it.isInDeals) ", DEAL AVAILABLE" else ""})" 
             }
             "Current User Shopping List '${list.name}': [$items]. When answering, check this list."
         } else {
@@ -231,11 +237,118 @@ class ChatViewModel : ViewModel() {
             toolCalls.forEach { toolCall ->
                 when (toolCall.function.name) {
                     "app-shopping_list_add" -> executeShoppingListAdd(toolCall.function.arguments)
-                    // "app-shopping_list_search" -> executeShoppingListSearch(toolCall.function.arguments)
+                    "app-shopping_list_search" -> executeShoppingListSearch(toolCall.function.arguments)
                     // "app-products_search" -> executeProductsSearch(toolCall.function.arguments)
                     else -> Log.w(TAG, "Unknown tool: ${toolCall.function.name}")
                 }
             }
+        }
+    }
+    
+    // ... manual parsing ...
+
+    private fun executeShoppingListSearch(argumentsJson: String) {
+        viewModelScope.launch {
+            try {
+                // We'll search for the *current* shopping list items plus any query in arguments
+                // Arguments might have "query" or be empty.
+                // For now, let's grab current list items basically.
+                
+                val listId = com.example.omiri.data.repository.ShoppingListRepository.currentListId.value
+                val list = com.example.omiri.data.repository.ShoppingListRepository.shoppingLists.value.find { it.id == listId }
+                
+                if (list == null || list.items.isEmpty()) {
+                     // Nothing to search
+                     submitToolOutput("Current shopping list is empty.")
+                     return@launch
+                }
+                
+                val items = list.items.filter { !it.isDone }.map { it.name }.joinToString(",")
+                if (items.isBlank()) {
+                    submitToolOutput("No active items in shopping list.")
+                    return@launch
+                }
+                
+                // Get filters
+                val storesSet: Set<String> = userPreferences.selectedStores.firstOrNull() ?: emptySet()
+                val stores: String? = if (storesSet.isNotEmpty()) storesSet.joinToString(",") else null
+                
+                // Search
+                val result = productRepository.searchShoppingList(
+                    items = items,
+                    stores = stores,
+                    country = "DE",
+                    limit = 3
+                )
+                
+                result.onSuccess { response ->
+                    // Format results for AI
+                    val sb = StringBuilder()
+                    sb.append("Search Results for Shopping List items ($items):\n")
+                    
+                    val categories = response.categories ?: emptyMap()
+                    val totalFound = response.itemsFound
+                    val notFound = response.itemsNotFound
+                    
+                    sb.append("Summary: Found $totalFound items, ${notFound.size} not found.\n")
+                    
+                    if (notFound.isNotEmpty()) {
+                        sb.append("Items not found: ${notFound.joinToString(", ")}\n")
+                    }
+
+                    if (categories.isEmpty()) {
+                        sb.append("No deals found.")
+                    } else {
+                        categories.forEach { (categoryName, categoryResult) ->
+                            if (categoryResult.products.isNotEmpty()) {
+                                 // Group by item name for clarity
+                                 val byItem = categoryResult.products.groupBy { it.searchTerm ?: "Other" }
+                                 
+                                 byItem.forEach { (itemName, products) ->
+                                     sb.append("- Item '$itemName' (Category: $categoryName):\n")
+                                     products.take(3).forEach { product ->
+                                        val validFrom = product.availableFrom ?: "?"
+                                        val validTo = product.availableUntil ?: "?"
+                                        sb.append("  * ${product.retailer}: ${product.title} - ${product.priceAmount} ${product.priceCurrency} (Valid: $validFrom to $validTo)\n")
+                                     }
+                                 }
+                            }
+                        }
+                    }
+                    
+                    submitToolOutput(sb.toString())
+                    
+                }.onFailure { e ->
+                    submitToolOutput("Tool execution failed: ${e.message}")
+                }
+                
+            } catch (e: Exception) {
+                Log.e(TAG, "Search execution failed", e)
+                submitToolOutput("Error executing search: ${e.message}")
+            }
+        }
+    }
+
+    private suspend fun submitToolOutput(output: String) {
+        val convId = conversationId.value ?: return
+        Log.d(TAG, "Submitting tool output: $output")
+        
+        // Send as system/tool message to Mistral
+        // We assume sending a message will trigger the AI to continue generation
+        val messageWithContext = "[System Tool Output]: $output"
+        
+        val result = repository.sendMessage(convId, messageWithContext)
+        
+        result.onSuccess { response ->
+            val aiText = extractAssistantTextFromMessage(response)
+            if (!aiText.isNullOrBlank()) {
+                 _messages.value = _messages.value + ChatMessage(
+                    text = aiText,
+                    isUser = false
+                )
+            }
+        }.onFailure { error ->
+             Log.e(TAG, "Failed to submit tool output", error)
         }
     }
 

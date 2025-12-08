@@ -57,14 +57,19 @@ fun ShoppingListsSection(
             // Take top 2
             shoppingLists.take(2).forEachIndexed { index, list ->
                 val itemCount = list.items.size
-                val activeItems = list.items.count { !it.isDone }
+                // val activeItems = list.items.count { !it.isDone } // We use total items usually
+                val dealCount = list.items.count { it.isInDeals }
+                
+                val completionText = if (itemCount > 0) {
+                    val doneCount = list.items.count { it.isDone }
+                    if (doneCount > 0) "${(doneCount * 100) / itemCount}% done" else null
+                } else "New"
                 
                 ShoppingListItemRow(
                     title = list.name,
-                    subtitle = "$activeItems items to buy",
-                    pillText = if (itemCount > 0) "${(list.items.count { it.isDone } * 100) / itemCount}% done" else "New",
-                    pillColor = if (itemCount > 0) Color(0xFFECFDF5) else Color(0xFFFFF7ED),
-                    pillTextColor = if (itemCount > 0) Color(0xFF047857) else Color(0xFFC2410C),
+                    subtitle = "$itemCount items",
+                    dealCount = dealCount,
+                    completionText = completionText,
                     onClick = { onListClick(list.id) }
                 )
                 
@@ -80,9 +85,8 @@ fun ShoppingListsSection(
 private fun ShoppingListItemRow(
     title: String,
     subtitle: String,
-    pillText: String,
-    pillColor: Color,
-    pillTextColor: Color,
+    completionText: String? = null,
+    dealCount: Int = 0,
     onClick: () -> Unit = {}
 ) {
     Card(
@@ -115,18 +119,37 @@ private fun ShoppingListItemRow(
                         style = MaterialTheme.typography.bodySmall,
                         color = Color(0xFF6B7280)
                     )
-                    Spacer(Modifier.width(8.dp))
-                    Surface(
-                        color = pillColor,
-                        shape = RoundedCornerShape(4.dp)
-                    ) {
-                        Text(
-                            text = pillText,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = pillTextColor,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            fontWeight = FontWeight.Medium
-                        )
+                    
+                    if (completionText != null) {
+                        Spacer(Modifier.width(8.dp))
+                        Surface(
+                            color = Color(0xFFF3F4F6),
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Text(
+                                text = completionText,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color(0xFF4B5563),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+
+                    if (dealCount > 0) {
+                        Spacer(Modifier.width(8.dp))
+                        Surface(
+                            color = Color(0xFFF3E8FF), // Light Purple
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Text(
+                                text = "$dealCount matched ${if(dealCount == 1) "deal" else "deals"}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color(0xFFA12AF9), // Purple
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
                 }
             }

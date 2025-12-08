@@ -17,7 +17,11 @@ import androidx.compose.ui.unit.dp
 import com.example.omiri.ui.theme.Spacing
 
 @Composable
-fun SmartPlanCard() {
+fun SmartPlanCard(
+    plan: com.example.omiri.data.api.models.ShoppingListOptimizeResponse? = null
+) {
+    if (plan == null) return
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -40,7 +44,7 @@ fun SmartPlanCard() {
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.Lightbulb, // Fallback icon
+                        imageVector = Icons.Outlined.Lightbulb,
                         contentDescription = null,
                         tint = Color.White,
                         modifier = Modifier.size(24.dp)
@@ -65,11 +69,25 @@ fun SmartPlanCard() {
             Spacer(Modifier.height(Spacing.lg))
 
             // Steps
-            PlanStep(color = Color(0xFF3B82F6), text = "Go to Lidl for 5 list items (save €9.10)")
-            Spacer(Modifier.height(Spacing.sm))
-            PlanStep(color = Color(0xFF3B82F6), text = "Then Aldi for 2 items (save €4.30)")
-            Spacer(Modifier.height(Spacing.sm))
-            PlanStep(color = Color(0xFF3B82F6), text = "Or one-stop option: Kaufland (save €10.20)")
+            plan.steps.take(3).forEachIndexed { index, step ->
+                val color = when(index) {
+                    0 -> Color(0xFF3B82F6) // Blue
+                    1 -> Color(0xFF8B5CF6) // Violet
+                    else -> Color(0xFF10B981) // Green
+                }
+                
+                // Format: "StoreName for X items (save €Y)"
+                // Or: "Go to StoreName for X items (save €Y)"
+                // Or combined logic based on index
+                val instruction = if (index == 0) "Go to ${step.storeName}" else "Then ${step.storeName}"
+                val text = "$instruction for ${step.itemsCount} items (save €${String.format("%.2f", step.stepSavings)})"
+                
+                PlanStep(color = color, text = text)
+                
+                if (index < plan.steps.size - 1 && index < 2) {
+                    Spacer(Modifier.height(Spacing.sm))
+                }
+            }
         }
     }
 }

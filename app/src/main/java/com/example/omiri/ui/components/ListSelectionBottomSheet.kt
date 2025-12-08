@@ -95,7 +95,25 @@ fun ListSelectionBottomSheet(
                                     )
                                 },
                                 supportingContent = {
-                                    Text("${list.totalItems} items")
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text("${list.totalItems} items")
+                                        
+                                        val dealCount = list.items.count { it.isInDeals }
+                                        if (dealCount > 0) {
+                                            Spacer(Modifier.width(Spacing.sm))
+                                            Surface(
+                                                color = if (dealCount == 1) Color(0xFFDCFCE7) else Color(0xFFFFEDD5),
+                                                shape = RoundedCornerShape(4.dp)
+                                            ) {
+                                                Text(
+                                                    text = "$dealCount matched ${if(dealCount == 1) "deal" else "deals"}",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = if (dealCount == 1) Color(0xFF166534) else Color(0xFF9A3412),
+                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                )
+                                            }
+                                        }
+                                    }
                                 },
                                 trailingContent = {
                                     Row(verticalAlignment = Alignment.CenterVertically) {

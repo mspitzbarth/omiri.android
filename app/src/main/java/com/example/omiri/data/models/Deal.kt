@@ -15,5 +15,6 @@ data class Deal(
     val heroColor: Color? = null, // for placeholder images
     val imageUrl: String? = null,
     val discountPercentage: Int = 0,
-    val hasDiscount: Boolean = false
+    val hasDiscount: Boolean = false,
+    val isOnShoppingList: Boolean = false
 )

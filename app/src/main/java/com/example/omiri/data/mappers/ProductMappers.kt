@@ -43,9 +43,9 @@ fun ProductResponse.toDeal(): Deal {
         category = categories?.firstOrNull() ?: "General",
         isFavorite = false,
         heroColor = getHeroColor(categories?.firstOrNull(), id.toString()),
-        imageUrl = productImageUrl,
         discountPercentage = discountPercentage?.roundToInt() ?: 0,
-        hasDiscount = hasDiscount
+        hasDiscount = hasDiscount,
+        isOnShoppingList = false // Default, updated by ViewModel if needed
     )
 }
 

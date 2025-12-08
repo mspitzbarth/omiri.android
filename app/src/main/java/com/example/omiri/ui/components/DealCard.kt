@@ -96,6 +96,36 @@ fun DealCard(
                     )
                 }
             }
+            
+            if (deal.isOnShoppingList) {
+                Surface(
+                    modifier = Modifier
+                        .padding(Spacing.sm)
+                        .align(Alignment.BottomStart),
+                    shape = MaterialTheme.shapes.small,
+                    color = Color(0xFFA12AF9), // Shopping List Purple
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Favorite, // Or ShoppingCart/List icon
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = "In your list",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.White
+                        )
+                    }
+                }
+            }
 
             Box(
                 modifier = Modifier

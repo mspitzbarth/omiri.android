@@ -185,20 +185,57 @@ class ProductRepository {
     /**
      * Search shopping list items
      */
+    /**
+     * Search shopping list items
+     */
     suspend fun searchShoppingList(
         items: String,
         country: String? = null,
         retailers: String? = null,
-        limitPerItem: Int = 3
-    ): Result<Map<String, List<ProductResponse>>> {
+        stores: String? = null,
+        storeGroupIds: String? = null,
+        zipcode: String? = null,
+        activeOnly: Boolean? = null,
+        excludeExpired: Boolean? = null,
+        limit: Int? = null
+    ): Result<com.example.omiri.data.api.models.ShoppingListSearchResponse> {
         return try {
-            val results = apiService.searchShoppingList(
+            val response = apiService.searchShoppingList(
                 items = items,
                 country = country,
                 retailers = retailers,
-                limitPerItem = limitPerItem
+                stores = stores,
+                storeGroupIds = storeGroupIds,
+                zipcode = zipcode,
+                activeOnly = activeOnly,
+                excludeExpired = excludeExpired,
+                limit = limit
             )
-            Result.success(results)
+            
+            if (response.isSuccessful) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Search shopping list failed: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    suspend fun optimizeShoppingList(
+        userZipcode: String? = null,
+        maxStores: Int = 3
+    ): Result<com.example.omiri.data.api.models.ShoppingListOptimizeResponse> {
+        return try {
+            val request = com.example.omiri.data.api.models.ShoppingListOptimizeRequest(
+                userZipcode = userZipcode,
+                maxStores = maxStores
+            )
+            val response = apiService.optimizeShoppingList(request)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Optimization failed: ${response.code()}"))
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }

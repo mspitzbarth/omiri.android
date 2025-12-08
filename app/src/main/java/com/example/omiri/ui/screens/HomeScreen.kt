@@ -66,6 +66,8 @@ fun HomeScreen(
     val error by viewModel.error.collectAsState()
     val categories by viewModel.categories.collectAsState()
     val potentialSavings by viewModel.shoppingListSavings.collectAsState(initial = 0.0)
+    val smartPlan by viewModel.smartPlan.collectAsState()
+    val smartAlerts by viewModel.smartAlerts.collectAsState()
     
     // AdMob Interstitial
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -113,44 +115,61 @@ fun HomeScreen(
                     .verticalScroll(rememberScrollState())
             ) {
                 // 1. Header with Name and Savings Summary
+                // If smart plan exists, usage totalSavings from it, else fallback to potentialSavings or 0
+                val displaySavings = smartPlan?.totalSavings ?: potentialSavings
+                
                 com.example.omiri.ui.components.HomeHeader(
-                    potentialSavings = "€%.2f".format(if (potentialSavings > 0) potentialSavings else 18.40) // Mock default if 0
+                    potentialSavings = "€%.2f".format(if (displaySavings > 0) displaySavings else 0.00) // Don't mock 18.40 anymore if requested
                 )
 
                 // 2 & 3. Smart Plan / Alerts Carousel
-                Spacer(Modifier.height(Spacing.md))
                 
-                val pagerState = androidx.compose.foundation.pager.rememberPagerState(pageCount = { 2 })
+                // Determine pages. 
+                val pages = mutableListOf<@Composable () -> Unit>()
                 
-                androidx.compose.foundation.pager.HorizontalPager(
-                    state = pagerState,
-                    contentPadding = PaddingValues(horizontal = 0.dp),
-                    pageSpacing = Spacing.md
-                ) { page ->
-                    when(page) {
-                        0 -> com.example.omiri.ui.components.SmartPlanCard()
-                        1 -> com.example.omiri.ui.components.SmartAlertsCard()
+                if (smartPlan != null && smartPlan!!.steps.isNotEmpty()) {
+                    pages.add { com.example.omiri.ui.components.SmartPlanCard(plan = smartPlan) }
+                }
+                
+                if (smartAlerts.isNotEmpty()) {
+                     pages.add { com.example.omiri.ui.components.SmartAlertsCard(alerts = smartAlerts) }
+                }
+                
+                if (pages.isNotEmpty()) {
+                    Spacer(Modifier.height(Spacing.md))
+                    val pagerState = androidx.compose.foundation.pager.rememberPagerState(pageCount = { pages.size })
+                    
+                    androidx.compose.foundation.pager.HorizontalPager(
+                        state = pagerState,
+                        contentPadding = PaddingValues(horizontal = 0.dp),
+                        pageSpacing = Spacing.md
+                    ) { page ->
+                        pages.getOrNull(page)?.invoke()
+                    }
+                    
+                    // Indicators (only if > 1 page)
+                    if (pagerState.pageCount > 1) {
+                        Spacer(Modifier.height(Spacing.sm))
+                        Row(
+                            Modifier
+                                .wrapContentHeight()
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            repeat(pagerState.pageCount) { iteration ->
+                                 val color = if (pagerState.currentPage == iteration) Color(0xFFEA580B) else Color(0xFFD1D5DB)
+                                Box(
+                                    modifier = Modifier
+                                        .padding(2.dp)
+                                        .size(6.dp)
+                                        .background(color, androidx.compose.foundation.shape.CircleShape)
+                                )
+                            }
+                        }
                     }
                 }
                 
-                // Indicators
-                Spacer(Modifier.height(Spacing.sm))
-                Row(
-                    Modifier
-                        .wrapContentHeight()
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    repeat(pagerState.pageCount) { iteration ->
-                         val color = if (pagerState.currentPage == iteration) Color(0xFFEA580B) else Color(0xFFD1D5DB)
-                        Box(
-                            modifier = Modifier
-                                .padding(2.dp)
-                                .size(6.dp)
-                                .background(color, androidx.compose.foundation.shape.CircleShape)
-                        )
-                    }
-                }
+
 
                 // 4. Shopping Lists
                 Spacer(Modifier.height(Spacing.lg))

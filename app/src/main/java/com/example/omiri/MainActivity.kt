@@ -17,7 +17,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 
+import kotlinx.coroutines.launch
+
 class MainActivity : ComponentActivity() {
+    // ... existing onCreate ...
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(R.style.Theme_Omiri) // Switch back to main theme
         super.onCreate(savedInstanceState)
@@ -65,15 +70,32 @@ class MainActivity : ComponentActivity() {
                 .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
                 .build()
                 
-            val workRequest = androidx.work.PeriodicWorkRequestBuilder<com.example.omiri.workers.ShoppingListWorker>(1, java.util.concurrent.TimeUnit.HOURS)
+            val workManager = androidx.work.WorkManager.getInstance(this)
+            
+            // 1. Periodic Work (Every 1 hour)
+            val periodicWorkRequest = androidx.work.PeriodicWorkRequestBuilder<com.example.omiri.workers.ShoppingListWorker>(1, java.util.concurrent.TimeUnit.HOURS)
                 .setConstraints(constraints)
                 .build()
                 
-            androidx.work.WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-                "ShoppingListWorker",
-                androidx.work.ExistingPeriodicWorkPolicy.KEEP,
-                workRequest
+            workManager.enqueueUniquePeriodicWork(
+                "ShoppingListWorker_Periodic",
+                androidx.work.ExistingPeriodicWorkPolicy.KEEP, // Keep existing if running
+                periodicWorkRequest
             )
+            
+            // 2. One Time Work (Immediate check on app start)
+            // This ensures "before app starts" behavior effectively if app was killed and restarted, 
+            // or verifies logic immediately for the user.
+            val oneTimeWorkRequest = androidx.work.OneTimeWorkRequestBuilder<com.example.omiri.workers.ShoppingListWorker>()
+                .setConstraints(constraints)
+                .build()
+                
+            workManager.enqueueUniqueWork(
+                "ShoppingListWorker_Immediate",
+                androidx.work.ExistingWorkPolicy.REPLACE, // Replace old immediate checks
+                oneTimeWorkRequest
+            )
+            
         } catch (e: Exception) {
             // WorkManager might not be initialized or dependency missing
             e.printStackTrace()
@@ -110,6 +132,24 @@ class MainActivity : ComponentActivity() {
             } catch (e: Exception) {
                 e.printStackTrace()
             }
+        }
+    }
+    override fun onStart() {
+        super.onStart()
+        val userPreferences = com.example.omiri.data.local.UserPreferences(this)
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            userPreferences.setAppForeground(true)
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        val userPreferences = com.example.omiri.data.local.UserPreferences(this)
+        // GlobalScope/ProcessLifecycleOwner usage might be safer but for simplicity:
+        // Using lifecycleScope might be cancelled before saving? 
+        // Using GlobalScope or a dedicated scope is better for "onStop" cleanups.
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            userPreferences.setAppForeground(false)
         }
     }
 }

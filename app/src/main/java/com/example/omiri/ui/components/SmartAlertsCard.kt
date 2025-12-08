@@ -6,6 +6,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Percent
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material3.*
@@ -19,7 +21,11 @@ import androidx.compose.ui.unit.dp
 import com.example.omiri.ui.theme.Spacing
 
 @Composable
-fun SmartAlertsCard() {
+fun SmartAlertsCard(
+    alerts: List<com.example.omiri.data.api.models.SmartAlert> = emptyList()
+) {
+    if (alerts.isEmpty()) return
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -40,22 +46,33 @@ fun SmartAlertsCard() {
             )
             Spacer(Modifier.height(Spacing.md))
             
-            AlertItem(
-                icon = Icons.Default.Home,
-                iconColor = Color(0xFF3B82F6), // Blue
-                text = "Milk is cheapest at Lidl this week"
-            )
-            AlertItem(
-                icon = Icons.Default.Percent,
-                iconColor = Color(0xFF10B981), // Green
-                text = "Your coffee brand dropped 25%"
-            )
-            AlertItem(
-                icon = Icons.Filled.CheckCircle,
-                iconColor = Color(0xFFF97316), // Orange
-                text = "Your list can be completed in 1 store today"
-            )
+            alerts.take(3).forEach { alert ->
+                AlertItem(
+                    icon = getIconForName(alert.iconName),
+                    iconColor = getColorForType(alert.type),
+                    text = alert.title
+                )
+            }
         }
+    }
+}
+
+private fun getIconForName(name: String): ImageVector {
+    return when(name) {
+        "PERCENT" -> Icons.Default.Percent
+        "HOME" -> Icons.Default.Home
+        "CHECK_CIRCLE" -> Icons.Filled.CheckCircle
+        "CLOCK" -> Icons.Default.AccessTime // Need AccessTime or use CheckCircle fallback
+        else -> Icons.Default.Info
+    }
+}
+
+private fun getColorForType(type: String): Color {
+    return when(type) {
+        "PRICE_DROP" -> Color(0xFF10B981) // Green
+        "CHEAPEST" -> Color(0xFF3B82F6) // Blue
+        "EXPIRING" -> Color(0xFFEA580C) // Orange
+        else -> Color(0xFFF97316) // Orange default
     }
 }
 

@@ -93,12 +93,12 @@ fun ShoppingListItem(
                     if (item.isInDeals) {
                         Surface(
                             shape = RoundedCornerShape(4.dp),
-                            color = Color(0xFFA12AF9)
+                            color = Color(0xFFF3E8FF) // Light Purple
                         ) {
                             Text(
-                                text = "In deals",
+                                text = "Deal found",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Color.White,
+                                color = Color(0xFFA12AF9), // Purple
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }

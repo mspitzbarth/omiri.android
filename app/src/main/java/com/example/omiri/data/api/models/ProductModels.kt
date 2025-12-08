@@ -29,7 +29,8 @@ data class ProductResponse(
     @SerializedName("available_until") val availableUntil: String?,
     @SerializedName("availability_text") val availabilityText: String?,
     @SerializedName("pdf_source_url") val pdfSourceUrl: String?,
-    @SerializedName("product_image_url") val productImageUrl: String?
+    @SerializedName("product_image_url") val productImageUrl: String?,
+    @SerializedName("search_term") val searchTerm: String? = null
 )
 
 /**
@@ -69,4 +70,10 @@ data class ProductsResponse(
     val totalCount: Int,
     val totalPages: Int,
     val hasMore: Boolean
+)
+
+data class SmartAlert(
+    val title: String,
+    val type: String, // "PRICE_DROP", "CHEAPEST", "EXPIRING", "INFO"
+    val iconName: String = "INFO" // For UI mapping
 )

@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.util.Calendar
+import com.example.omiri.data.api.models.OptimizationStep
+import com.example.omiri.data.api.models.ShoppingListOptimizeResponse
 
 /**
  * ViewModel for managing product data from API
@@ -416,10 +418,34 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
 
                 val result = repository.searchShoppingList(items, country, retailers)
                 
-                result.onSuccess { map ->
-                    val dealMap = map.mapValues { entry -> entry.value.toDeals() }
+
+                result.onSuccess { response ->
+                    val categories = response.categories ?: emptyMap()
+                    
+                    val allProducts = categories.values.flatMap { it.products }
+                    val groupedMap = allProducts.groupBy { it.searchTerm ?: "Unknown" }
+                    
+                    val dealMap = groupedMap.mapValues { entry -> 
+                        val deals = entry.value.toDeals()
+                        // These are definitely on the list, so mark them
+                        deals.map { it.copy(isOnShoppingList = true) }
+                    }.filterKeys { it != "Unknown" }
+                        
                     _shoppingListMatches.value = dealMap
-                    _shoppingListDeals.value = dealMap.values.flatten()
+                    val flatDeals = dealMap.values.flatten()
+                    _shoppingListDeals.value = flatDeals
+                    
+                    // Sync with other lists
+                    val matchIds = flatDeals.map { it.id }.toSet()
+                    if (matchIds.isNotEmpty()) {
+                        _featuredDeals.value = _featuredDeals.value.map { 
+                            if (it.id in matchIds) it.copy(isOnShoppingList = true) else it
+                        }
+                        _allDeals.value = _allDeals.value.map {
+                            if (it.id in matchIds) it.copy(isOnShoppingList = true) else it
+                        }
+                    }
+                    
                 }.onFailure {
                     _error.value = "Failed to load matches: ${it.message}"
                 }
@@ -429,6 +455,133 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
                 _isLoading.value = false
             }
         }
+    }
+    
+    // Smart Alerts
+    private val _smartAlerts = MutableStateFlow<List<com.example.omiri.data.api.models.SmartAlert>>(emptyList())
+    val smartAlerts: StateFlow<List<com.example.omiri.data.api.models.SmartAlert>> = _smartAlerts.asStateFlow()
+
+    // Smart Plan
+    private val _smartPlan = MutableStateFlow<com.example.omiri.data.api.models.ShoppingListOptimizeResponse?>(null)
+    val smartPlan: StateFlow<com.example.omiri.data.api.models.ShoppingListOptimizeResponse?> = _smartPlan.asStateFlow()
+    
+    private fun generateSmartPlan() {
+        viewModelScope.launch {
+            // ... (existing call to repo) ...
+            val result = repository.optimizeShoppingList(maxStores = 3)
+            result.onSuccess { 
+                if (it.steps.isNotEmpty() && it.totalSavings > 0) {
+                    _smartPlan.value = it
+                    generateSmartAlerts(it)
+                } else {
+                    _smartPlan.value = null
+                    generateSmartAlerts(null)
+                }
+            }.onFailure {
+                val bestPlan = calculateLocalSmartPlan()
+                _smartPlan.value = bestPlan
+                generateSmartAlerts(bestPlan)
+            }
+        }
+    }
+    
+    private fun generateSmartAlerts(plan: com.example.omiri.data.api.models.ShoppingListOptimizeResponse?) {
+        val alerts = mutableListOf<com.example.omiri.data.api.models.SmartAlert>()
+        val matches = _shoppingListDeals.value
+        
+        // 1. Check for significant price drops
+        val bigDiscounts = matches.filter { it.discountPercentage >= 30 }
+        if (bigDiscounts.isNotEmpty()) {
+            val topItem = bigDiscounts.maxByOrNull { it.discountPercentage }!!
+            alerts.add(com.example.omiri.data.api.models.SmartAlert(
+                title = "${topItem.title} dropped ${topItem.discountPercentage}% at ${topItem.store}",
+                type = "PRICE_DROP",
+                iconName = "PERCENT"
+            ))
+        }
+        
+        // 2. Check for Cheapest Store (lowest total cost from plan)
+        if (plan != null && plan.steps.isNotEmpty()) {
+             // If valid plan, maybe suggest 1-stop?
+             if (plan.steps.size == 1) {
+                  alerts.add(com.example.omiri.data.api.models.SmartAlert(
+                    title = "Your list can be completed in 1 store: ${plan.steps.first().storeName}",
+                    type = "INFO",
+                    iconName = "CHECK_CIRCLE"
+                ))
+             } else {
+                 val mainStore = plan.steps.maxByOrNull { it.itemsCount }
+                 if (mainStore != null) {
+                     alerts.add(com.example.omiri.data.api.models.SmartAlert(
+                        title = "${mainStore.storeName} has ${mainStore.itemsCount} of your items cheapest",
+                        type = "CHEAPEST",
+                        iconName = "HOME"
+                    ))
+                 }
+             }
+        }
+        
+        // 3. Check for expiring deals
+        val expiring = matches.filter { it.timeLeftLabel?.contains("hour", ignoreCase = true) == true || it.timeLeftLabel?.contains("today", ignoreCase = true) == true }
+        if (expiring.isNotEmpty()) {
+             alerts.add(com.example.omiri.data.api.models.SmartAlert(
+                title = "${expiring.size} deals expiring today! don't miss out",
+                type = "EXPIRING",
+                iconName = "CLOCK" // Need to handle icon mapping
+            ))
+        }
+        
+        _smartAlerts.value = alerts
+    }
+    
+    private fun calculateLocalSmartPlan(): com.example.omiri.data.api.models.ShoppingListOptimizeResponse? {
+        val matches = _shoppingListMatches.value
+        if (matches.isEmpty()) return null
+        
+        // Flatten all deals
+        val allDeals = matches.values.flatten()
+        if (allDeals.isEmpty()) return null
+        
+        // Simple strategy: Group by Store, pick top 3 stores with most savings
+        // Calculate savings per deal: original - price
+        // Map: Store -> Total Savings, List of Items
+        
+        val storeAnalysis = allDeals.groupBy { it.store }.map { (store, deals) ->
+            val savings = deals.sumOf { deal ->
+                val p = deal.price.replace(Regex("[^0-9.]"), "").toDoubleOrNull() ?: 0.0
+                val o = deal.originalPrice?.replace(Regex("[^0-9.]"), "")?.toDoubleOrNull() ?: 0.0
+                if (o > p) o - p else 0.0
+            }
+             val cost = deals.sumOf { it.price.replace(Regex("[^0-9.]"), "").toDoubleOrNull() ?: 0.0 }
+             val items = deals.map { it.title }.distinct()
+             
+             OptimizationStep(
+                 storeName = store,
+                 storeColor = null,
+                 itemsCount = items.size,
+                 items = items,
+                 stepSavings = savings,
+                 totalCost = cost
+             )
+        }
+        
+        // Allow stores with 0 savings if they have matches (e.g. cheapest option)
+        // .filter { it.stepSavings > 0 } -> Removed to show Plan even if just matches without discount
+
+        
+        if (storeAnalysis.isEmpty()) return null
+        
+        // Pick top 3 stores by savings
+        val topStores = storeAnalysis.sortedByDescending { it.stepSavings }.take(3)
+        val totalSavings = topStores.sumOf { it.stepSavings }
+        val totalCost = topStores.sumOf { it.totalCost }
+        
+        return com.example.omiri.data.api.models.ShoppingListOptimizeResponse(
+            totalSavings = totalSavings,
+            originalPrice = totalCost + totalSavings,
+            optimizedPrice = totalCost,
+            steps = topStores
+        )
     }
     
     fun setPriceRange(range: ClosedFloatingPointRange<Float>?) {

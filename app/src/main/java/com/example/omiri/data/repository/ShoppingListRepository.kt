@@ -27,69 +27,11 @@ object ShoppingListRepository {
     }
 
     private fun createDefaultList() {
-        val defaultItems = listOf(
-            ShoppingItem(
-                id = UUID.randomUUID().toString(),
-                name = "Organic Milk",
-                isDone = false,
-                isInDeals = false,
-                categoryId = PredefinedCategories.DAIRY_EGGS.id
-            ),
-            ShoppingItem(
-                id = UUID.randomUUID().toString(),
-                name = "Fresh Oranges",
-                isDone = false,
-                isInDeals = true,
-                categoryId = PredefinedCategories.FRUITS_VEGETABLES.id
-            ),
-            ShoppingItem(
-                id = UUID.randomUUID().toString(),
-                name = "Whole Wheat Bread",
-                isDone = false,
-                isInDeals = false,
-                categoryId = PredefinedCategories.BREAD_BAKERY.id
-            ),
-            ShoppingItem(
-                id = UUID.randomUUID().toString(),
-                name = "Coffee Beans",
-                isDone = false,
-                isInDeals = true,
-                categoryId = PredefinedCategories.BEVERAGES.id
-            ),
-            ShoppingItem(
-                id = UUID.randomUUID().toString(),
-                name = "Greek Yogurt",
-                isDone = false,
-                isInDeals = false,
-                categoryId = PredefinedCategories.DAIRY_EGGS.id
-            ),
-            ShoppingItem(
-                id = UUID.randomUUID().toString(),
-                name = "Bananas",
-                isDone = true,
-                isInDeals = false,
-                categoryId = PredefinedCategories.FRUITS_VEGETABLES.id
-            ),
-            ShoppingItem(
-                id = UUID.randomUUID().toString(),
-                name = "Chicken Breast",
-                isDone = true,
-                isInDeals = false,
-                categoryId = PredefinedCategories.MEAT_POULTRY.id
-            ),
-            ShoppingItem(
-                id = UUID.randomUUID().toString(),
-                name = "Pasta Sauce",
-                isDone = true,
-                isInDeals = false,
-                categoryId = PredefinedCategories.PANTRY_STAPLES.id
-            )
-        )
-
+        // Start with an empty list
         val defaultList = ShoppingList(
             id = UUID.randomUUID().toString(),
             name = "My List",
-            items = defaultItems
+            items = emptyList() // Empty!
         )
 
         _shoppingLists.value = listOf(defaultList)
@@ -184,6 +126,28 @@ object ShoppingListRepository {
             lists.map { list ->
                 if (list.id == listId) {
                     list.copy(items = list.items.filter { it.id != itemId })
+                } else {
+                    list
+                }
+            }
+        }
+    }
+    
+    fun setItemInDeals(itemId: String, isInDeals: Boolean) {
+        val listId = _currentListId.value ?: return
+        
+        _shoppingLists.update { lists ->
+            lists.map { list ->
+                if (list.id == listId) {
+                    list.copy(
+                        items = list.items.map { item ->
+                            if (item.id == itemId) {
+                                item.copy(isInDeals = isInDeals)
+                            } else {
+                                item
+                            }
+                        }
+                    )
                 } else {
                     list
                 }

@@ -62,15 +62,26 @@ class ShoppingListWorker(
 
             // 4. Process Results
             if (result.isSuccess) {
-                val matches = result.getOrNull()
-                if (!matches.isNullOrEmpty()) {
-                    val totalDeals = matches.values.sumOf { it.size }
+                val response = result.getOrNull()
+                val categories = response?.categories
+                
+                if (!categories.isNullOrEmpty()) {
+                    val totalDeals = categories.values.sumOf { it.products.size }
                     if (totalDeals > 0) {
                         Log.d(TAG, "Found $totalDeals deals matching shopping list.")
-                        sendNotification(totalDeals, items)
+                        
+                        // Check if app is foreground
+                        val isForeground = userPreferences.isAppForeground.first()
+                        if (!isForeground) {
+                             sendNotification(totalDeals, items)
+                        } else {
+                             Log.d(TAG, "App is in foreground, suppressing notification.")
+                        }
                     } else {
                         Log.d(TAG, "No deals found for shopping list.")
                     }
+                } else {
+                     Log.d(TAG, "No matching categories or deals found.")
                 }
             } else {
                 Log.e(TAG, "Search failed: ${result.exceptionOrNull()?.message}")
