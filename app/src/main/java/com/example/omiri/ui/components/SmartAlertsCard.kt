@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Percent
+import androidx.compose.material.icons.filled.Store
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -60,7 +61,7 @@ fun SmartAlertsCard(
 private fun getIconForName(name: String): ImageVector {
     return when(name) {
         "PERCENT" -> Icons.Default.Percent
-        "HOME" -> Icons.Default.Home
+        "HOME" -> Icons.Default.Store
         "CHECK_CIRCLE" -> Icons.Filled.CheckCircle
         "CLOCK" -> Icons.Default.AccessTime // Need AccessTime or use CheckCircle fallback
         else -> Icons.Default.Info

@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -65,10 +66,12 @@ fun MyStoresScreen(
     
     val totalSelectedCount = viewModel.getTotalSelectedCount()
     
+    val availableCountries by viewModel.availableCountries.collectAsState()
+    
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFFAFBFC))
+            .background(Color.White)
     ) {
         // Header
         ScreenHeader(
@@ -83,55 +86,45 @@ fun MyStoresScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .simpleVerticalScrollbar(listState),
-            contentPadding = PaddingValues(Spacing.lg),
+            contentPadding = PaddingValues(horizontal = Spacing.lg, vertical = Spacing.md),
             verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
-            // Country Selector
+            // Country Selector (Inline)
             item {
-                CountrySelector(
+                CountrySelectionRow(
+                    availableCountries = availableCountries,
                     selectedCountry = selectedCountry,
-                    onClick = { showCountryPicker = true }
+                    onCountrySelected = { viewModel.selectCountry(it) }
                 )
             }
             
-            // Filter by Location Button
+            // Selected Count Header
             item {
-                FilterByLocationButton(
-                    onClick = { /* TODO: Implement location filter */ }
-                )
-            }
-            
-            // Info Banner
-            item {
-                InfoBanner(
-                    selectedCount = totalSelectedCount,
-                    maxCount = 5
-                )
-            }
-            
-            // Popular Categories
-            item {
-                Text(
-                    text = "Popular Categories",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF111827)
-                )
-            }
-            
-            item {
-                PopularCategories()
-            }
-            
-            // Available Stores Header
-            item {
-                Spacer(Modifier.height(Spacing.sm))
-                Text(
-                    text = "Available Stores",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF111827)
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Use selectedStores.size directly for reactive updates
+                    Text(
+                        text = "${selectedStores.size} stores selected",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFF111827),
+                        fontWeight = FontWeight.Medium
+                    )
+                    
+                    if (selectedStores.isNotEmpty()) {
+                        Text(
+                            text = "Clear all",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color(0xFFEA580B),
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.clickable { 
+                                viewModel.clearAllSelections() 
+                            }
+                        )
+                    }
+                }
             }
             
             // Error message
@@ -164,7 +157,7 @@ fun MyStoresScreen(
             items(availableStores) { store ->
                 StoreItem(
                     store = store,
-                    isSelected = selectedStores.contains(store.id),  // Use state directly for reactivity
+                    isSelected = selectedStores.contains(store.id),
                     selectedLocationCount = storeLocations[store.id]?.size ?: 0,
                     onToggle = {
                         if (store.hasMultipleLocations) {
@@ -207,18 +200,6 @@ fun MyStoresScreen(
         }
     }
     
-    // Country Picker Dialog
-    if (showCountryPicker) {
-        CountryPickerDialog(
-            selectedCountry = selectedCountry,
-            onCountrySelected = { country ->
-                viewModel.selectCountry(country)
-                showCountryPicker = false
-            },
-            onDismiss = { showCountryPicker = false }
-        )
-    }
-    
     // Location Modal
     locationModalStore?.let { store ->
         StoreLocationModal(
@@ -249,62 +230,54 @@ fun MyStoresScreen(
 }
 
 @Composable
-private fun PopularCategories() {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.md)
-    ) {
-        CategoryChip(
-            icon = Icons.Outlined.Computer,
-            label = "Electronics",
-            modifier = Modifier.weight(1f)
-        )
-        CategoryChip(
-            icon = Icons.Outlined.ShoppingBag,
-            label = "Fashion",
-            modifier = Modifier.weight(1f)
-        )
-        CategoryChip(
-            icon = Icons.Outlined.Restaurant,
-            label = "Food",
-            modifier = Modifier.weight(1f)
-        )
-    }
-}
-
-@Composable
-private fun CategoryChip(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
-    modifier: Modifier = Modifier
+fun CountrySelectionRow(
+    availableCountries: List<String>,
+    selectedCountry: String,
+    onCountrySelected: (String) -> Unit
 ) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        ),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB))
+    if (availableCountries.isEmpty()) return
+    
+    Column(
+        verticalArrangement = Arrangement.spacedBy(Spacing.sm)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(Spacing.md),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+        Text(
+            text = "COUNTRY / REGION",
+            style = MaterialTheme.typography.labelSmall,
+            color = Color(0xFF6B7280),
+            fontWeight = FontWeight.Bold
+        )
+        
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+            contentPadding = PaddingValues(horizontal = 2.dp)
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = Color(0xFF8B5CF6),
-                modifier = Modifier.size(32.dp)
-            )
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodySmall,
-                color = Color(0xFF111827),
-                fontWeight = FontWeight.Medium
-            )
+            items(availableCountries) { code ->
+                val isSelected = code == selectedCountry
+                FilterChip(
+                    selected = isSelected,
+                    onClick = { onCountrySelected(code) },
+                    label = { 
+                        Text(
+                            text = "${getCountryFlag(code)} $code", // Flag + Code (e.g. 🇺🇸 US)
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = Color(0xFFEA580B),
+                        selectedLabelColor = Color.White,
+                        containerColor = Color.White,
+                        labelColor = Color(0xFF111827)
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = isSelected,
+                        borderColor = if (isSelected) Color(0xFFEA580B) else Color(0xFFE5E7EB),
+                        borderWidth = 1.dp
+                    ),
+                    shape = RoundedCornerShape(20.dp)
+                )
+            }
         }
     }
 }
@@ -316,7 +289,7 @@ private fun ErrorBanner(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFFFEE2E2)
         ),
@@ -332,7 +305,7 @@ private fun ErrorBanner(
             // Circular icon background
             Box(
                 modifier = Modifier
-                    .size(32.dp)
+                    .size(24.dp)
                     .background(
                         color = Color(0xFFDC2626),
                         shape = CircleShape
@@ -341,7 +314,7 @@ private fun ErrorBanner(
             ) {
                 Text(
                     text = "!",
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = Color.White,
                     fontWeight = FontWeight.Bold
                 )
@@ -349,9 +322,9 @@ private fun ErrorBanner(
             
             Text(
                 text = message,
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodyMedium,
                 color = Color(0xFF991B1B),
-                fontWeight = FontWeight.SemiBold,
+                fontWeight = FontWeight.Medium,
                 modifier = Modifier.weight(1f)
             )
             
@@ -363,7 +336,7 @@ private fun ErrorBanner(
                     imageVector = Icons.Outlined.Close,
                     contentDescription = "Dismiss",
                     tint = Color(0xFF991B1B),
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(16.dp)
                 )
             }
         }

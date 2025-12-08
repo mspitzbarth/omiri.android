@@ -51,19 +51,64 @@ class MyStoresViewModel(application: Application) : AndroidViewModel(application
     private val _isLoadingLocations = MutableStateFlow(false)
     val isLoadingLocations: StateFlow<Boolean> = _isLoadingLocations.asStateFlow()
     
+    // List of available countries from API
+    private val _availableCountries = MutableStateFlow<List<String>>(emptyList())
+    val availableCountries: StateFlow<List<String>> = _availableCountries.asStateFlow()
+
     init {
         Log.d(TAG, "MyStoresViewModel initialized")
-        loadSavedPreferences()
+        loadData()
     }
     
     /**
+     * Load initial data
+     */
+    private fun loadData() {
+        viewModelScope.launch {
+            try {
+                // 1. Fetch ALL stores to determine available countries
+                // We call getStores() without country filter
+                val result = repository.getStores(country = null)
+                
+                result.onSuccess { allStores ->
+                    // Extract unique countries
+                    val countries = allStores.map { it.country }.distinct().sorted()
+                    _availableCountries.value = countries
+                    Log.d(TAG, "Loaded countries: $countries")
+                    
+                    // 2. Load preferences after countries are loaded
+                    loadSavedPreferences(countries)
+                }.onFailure { error ->
+                    Log.e(TAG, "Failed to load initial stores for countries", error)
+                    _error.value = "Failed to load countries: ${error.message}"
+                     // Fallback to basic load if API fails
+                    loadSavedPreferences(emptyList())
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading data", e)
+                 loadSavedPreferences(emptyList())
+            }
+        }
+    }
+
+    /**
      * Load saved preferences
      */
-    private fun loadSavedPreferences() {
+    private fun loadSavedPreferences(availableCountries: List<String>) {
         viewModelScope.launch {
             try {
                 // Load selected country
-                val country = userPreferences.selectedCountry.first()
+                var country = userPreferences.selectedCountry.first()
+                
+                // If no country selected or selected country not in available list (and list not empty),
+                // select the first available one (e.g., US)
+                if (country.isEmpty() || (availableCountries.isNotEmpty() && !availableCountries.contains(country))) {
+                     // Default to US if available, else first one
+                     country = if (availableCountries.contains("US")) "US" else availableCountries.firstOrNull() ?: "US"
+                     // Save this default
+                     userPreferences.saveSelectedCountry(country)
+                }
+                
                 _selectedCountry.value = country
                 Log.d(TAG, "Loaded country: $country")
                 
@@ -113,9 +158,10 @@ class MyStoresViewModel(application: Application) : AndroidViewModel(application
     }
     
     /**
-     * Load stores from API
+     * Load stores from API for selected country
      */
     fun loadStores() {
+        // ... (existing implementation)
         Log.d(TAG, "Loading stores for country: ${_selectedCountry.value}")
         viewModelScope.launch {
             _isLoading.value = true
@@ -142,6 +188,8 @@ class MyStoresViewModel(application: Application) : AndroidViewModel(application
         }
     }
     
+    // ... (rest of methods: toggleStore, openLocationModal, etc.) remain the same
+    
     /**
      * Toggle store selection
      */
@@ -160,13 +208,9 @@ class MyStoresViewModel(application: Application) : AndroidViewModel(application
                 userPreferences.saveStoreLocations(storeId, emptySet())
             }
         } else {
-            // No limit on number of stores
-            // For multi-location stores, the 5 zipcode limit is enforced in the location modal
-            // For single-location stores, just add them directly
             if (!hasMultipleLocations) {
                 currentSelected.add(storeId)
             }
-            // If hasMultipleLocations, the modal will open and handle zipcode selection
         }
         
         _selectedStores.value = currentSelected
@@ -176,15 +220,15 @@ class MyStoresViewModel(application: Application) : AndroidViewModel(application
             updateRetailersCache(currentSelected, _availableStores.value)
         }
     }
-    
+
+    // ... (keep rest of class)
+
     /**
      * Open location modal for a store
      */
     fun openLocationModal(store: StoreListResponse) {
         Log.d(TAG, "Opening location modal for: ${store.retailer} (id: ${store.id})")
         _locationModalStore.value = store
-        // Use the retailer field directly for the API call
-        // The API expects the retailer name (e.g., "ALDI USA") which will be URL-encoded automatically
         loadStoreLocations(store.retailer, store.country)
     }
     
@@ -232,12 +276,10 @@ class MyStoresViewModel(application: Application) : AndroidViewModel(application
         val currentSelected = _selectedStores.value.toMutableSet()
         
         if (zipcodes.isEmpty()) {
-            // If no zipcodes selected, deselect the store entirely
             currentLocations.remove(storeId)
             currentSelected.remove(storeId)
             Log.d(TAG, "Deselecting store: $storeId")
         } else {
-            // Save locations and add store to selected stores
             currentLocations[storeId] = zipcodes
             if (!currentSelected.contains(storeId)) {
                 currentSelected.add(storeId)
@@ -277,19 +319,29 @@ class MyStoresViewModel(application: Application) : AndroidViewModel(application
     }
     
     /**
-     * Get total count of selected zipcodes across all stores
+     * Clear all selected stores
+     */
+    fun clearAllSelections() {
+        Log.d(TAG, "Clearing all selections")
+        val previouslySelected = _selectedStores.value.toList()
+        
+        _selectedStores.value = emptySet()
+        _storeLocations.value = emptyMap()
+        
+        viewModelScope.launch {
+            userPreferences.saveSelectedStores(emptySet())
+            previouslySelected.forEach { storeId ->
+                userPreferences.saveStoreLocations(storeId, emptySet())
+            }
+            updateRetailersCache(emptySet(), _availableStores.value)
+        }
+    }
+    
+    /**
+     * Get total count of selected stores
      */
     fun getTotalSelectedCount(): Int {
-        var count = 0
-        _selectedStores.value.forEach { storeId ->
-            val locations = _storeLocations.value[storeId]
-            count += if (locations != null && locations.isNotEmpty()) {
-                locations.size  // Count each zipcode
-            } else {
-                1  // Single location store counts as 1
-            }
-        }
-        return count
+        return _selectedStores.value.size
     }
     
     /**
@@ -312,7 +364,7 @@ class MyStoresViewModel(application: Application) : AndroidViewModel(application
     fun clearError() {
         _error.value = null
     }
-    
+
     companion object {
         private const val TAG = "MyStoresViewModel"
     }

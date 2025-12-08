@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -29,19 +30,20 @@ fun CountrySelector(
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFFFF7ED)
-        )
+            containerColor = Color(0xFFF3F4F6) // Light gray
+        ),
+        elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(Spacing.md)
+                .padding(horizontal = Spacing.md, vertical = Spacing.sm)
         ) {
             Text(
-                text = "Country",
-                style = MaterialTheme.typography.labelMedium,
+                text = "COUNTRY / REGION",
+                style = MaterialTheme.typography.labelSmall,
                 color = Color(0xFF6B7280),
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Bold
             )
             Spacer(Modifier.height(Spacing.xs))
             Row(
@@ -59,9 +61,9 @@ fun CountrySelector(
                     )
                     Text(
                         text = getCountryName(selectedCountry),
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         color = Color(0xFF111827),
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
                 Icon(
@@ -75,59 +77,44 @@ fun CountrySelector(
 }
 
 @Composable
-fun FilterByLocationButton(onClick: () -> Unit) {
-    Card(
+fun StoreSearchBar(
+    query: String = "",
+    onQueryChange: (String) -> Unit = {},
+    onClick: () -> Unit = {}
+) {
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        ),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB))
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0xFFF3F4F6))
+            .clickable(onClick = onClick)
+            .padding(horizontal = Spacing.md, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(Spacing.md),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.LocationOn,
-                    contentDescription = null,
-                    tint = Color(0xFFEA580B),
-                    modifier = Modifier.size(24.dp)
-                )
-                Column {
-                    Text(
-                        text = "Filter by Location",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = Color(0xFF111827),
-                        fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                        text = "Search by zipcode, city, or store name",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF6B7280)
-                    )
-                }
-            }
-            Icon(
-                imageVector = Icons.Outlined.ChevronRight,
-                contentDescription = "Filter",
-                tint = Color(0xFF9CA3AF)
-            )
-        }
+        Icon(
+            imageVector = Icons.Outlined.Search,
+            contentDescription = null,
+            tint = Color(0xFF9CA3AF),
+            modifier = Modifier.size(20.dp)
+        )
+        Text(
+            text = if (query.isEmpty()) "Search stores..." else query,
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (query.isEmpty()) Color(0xFF9CA3AF) else Color(0xFF111827)
+        )
     }
+}
+
+// Deprecated: Use StoreSearchBar instead
+@Composable
+fun FilterByLocationButton(onClick: () -> Unit) {
+    StoreSearchBar(onClick = onClick)
 }
 
 @Composable
 fun InfoBanner(selectedCount: Int, maxCount: Int) {
+    // Replaced by the header row in the main screen, but keeping for compatibility if needed
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -148,32 +135,11 @@ fun InfoBanner(selectedCount: Int, maxCount: Int) {
                 tint = Color(0xFFF59E0B),
                 modifier = Modifier.size(20.dp)
             )
-            Column {
-                Text(
-                    text = "You can select up to $maxCount stores for deal notifications",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF92400E)
-                )
-                Text(
-                    text = "Selected Stores",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF92400E),
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            Spacer(Modifier.weight(1f))
-            Surface(
-                shape = CircleShape,
-                color = Color(0xFFEA580B)
-            ) {
-                Text(
-                    text = "$selectedCount/$maxCount",
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+            Text(
+                text = "You can select up to $maxCount stores",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color(0xFF92400E)
+            )
         }
     }
 }
@@ -189,81 +155,107 @@ fun StoreItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onToggle),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color.White
         ),
-        border = if (isSelected) {
-            androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFEA580B))
-        } else null
+        elevation = CardDefaults.cardElevation(0.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)) // Always gray border, no active orange border
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(Spacing.md),
-            horizontalArrangement = Arrangement.SpaceBetween,
+                .padding(horizontal = Spacing.md, vertical = 12.dp), // SettingsItem padding
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(Spacing.md),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f)
-            ) {
-                // Store icon placeholder
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .background(
-                            color = getStoreIconColor(store.retailer),
-                            shape = RoundedCornerShape(12.dp)
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Store,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-                
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(Spacing.xxs)
-                ) {
-                    Text(
-                        text = store.retailer,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = Color(0xFF111827),
-                        fontWeight = FontWeight.Medium
-                    )
-                    
-                    if (store.hasMultipleLocations) {
-                        Text(
-                            text = "${store.storeCount} locations available",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF6B7280)
-                        )
-                    }
-                    
-                    if (selectedLocationCount > 0) {
-                        Text(
-                            text = "$selectedLocationCount location${if (selectedLocationCount > 1) "s" else ""} selected",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFFEA580B),
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-            }
-            
+            // Checkbox (Left)
             Checkbox(
                 checked = isSelected,
                 onCheckedChange = { onToggle() },
                 colors = CheckboxDefaults.colors(
-                    checkedColor = Color(0xFFEA580B),
-                    uncheckedColor = Color(0xFFD1D5DB)
+                    checkedColor = Color(0xFFEA580B), // Orange (Agentic Orange)
+                    uncheckedColor = Color(0xFFD1D5DB),
+                    checkmarkColor = Color.White
                 )
             )
+
+            Spacer(modifier = Modifier.width(Spacing.sm))
+
+            // Store Icon (SettingsItem style: 40dp, rounded 10dp)
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(getStoreIconColor(store.retailer).copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                val firstLetter = store.retailer.firstOrNull()?.uppercase() ?: "S"
+                Text(
+                    text = firstLetter,
+                    style = MaterialTheme.typography.titleMedium, // Adjusted for smaller box
+                    color = getStoreIconColor(store.retailer),
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.width(Spacing.md))
+
+            // Info
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = store.retailer,
+                    style = MaterialTheme.typography.bodyLarge, // SettingsItem style
+                    fontWeight = FontWeight.Medium, // SettingsItem style
+                    color = Color(0xFF111827)
+                )
+                
+                // Location Stats (Only for multiple locations)
+                if (store.hasMultipleLocations) {
+                    // No Spacer needed if we want tight packing, or small spacer
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 2.dp)
+                    ) {
+                        // Total Locations Icon + Text
+                        Icon(
+                            imageVector = Icons.Outlined.Store,
+                            contentDescription = null,
+                            tint = Color(0xFF6B7280),
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "${store.storeCount} locations",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF6B7280)
+                        )
+
+                        // Selected Count
+                        if (selectedLocationCount > 0) {
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "$selectedLocationCount selected",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFFEA580B),
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Chevron (Only if multiple locations to drill down)
+            if (store.hasMultipleLocations) {
+                Icon(
+                    imageVector = Icons.Outlined.ChevronRight,
+                    contentDescription = null,
+                    tint = Color(0xFF9CA3AF),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
     }
 }
