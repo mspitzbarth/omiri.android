@@ -10,6 +10,7 @@ import com.example.omiri.data.mappers.toDeals
 import com.example.omiri.data.models.Deal
 import com.example.omiri.data.repository.ProductRepository
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -59,6 +60,9 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
     
     private val _shoppingListMatches = MutableStateFlow<Map<String, List<Deal>>>(emptyMap())
     val shoppingListMatches: StateFlow<Map<String, List<Deal>>> = _shoppingListMatches.asStateFlow()
+
+    private val _isPaging = MutableStateFlow(false)
+    val isPaging: StateFlow<Boolean> = _isPaging.asStateFlow()
     
     // Pagination state
     private val _currentPage = MutableStateFlow(1)
@@ -180,9 +184,17 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
         
         // Observe Shopping List changes to keep Smart Plan / Badges in sync automatically
         viewModelScope.launch {
+            var isFirstStoreEmission = true
             userPreferences.selectedStores.distinctUntilChanged().collect { stores ->
                 Log.d(TAG, "Store selection changed: ${stores.size} stores selected")
                 updateAvailableStores(stores)
+                
+                if (isFirstStoreEmission) {
+                    isFirstStoreEmission = false
+                    // Skip reload on first emission to allow initial hydration to proceed naturally
+                    return@collect
+                }
+
                 // Reload products when stores change (only if we have already loaded data)
                 if (_featuredDeals.value.isNotEmpty() || _allDeals.value.isNotEmpty()) {
                     Log.d(TAG, "Reloading products due to store selection change")
@@ -312,6 +324,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
         Log.d(TAG, "fetchProducts() called at ${System.currentTimeMillis()}")
         val start = System.currentTimeMillis()
         _isLoading.value = true
+        _isPaging.value = false
         _error.value = null
         
         try {
@@ -431,46 +444,33 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
         Log.d(TAG, "Loading more deals, page ${_currentPage.value + 1}")
         _currentPage.value += 1
         _isLoading.value = true
+        _isPaging.value = true // Set paging flag
         
         viewModelScope.launch {
-            try {
-                val country = userPreferences.selectedCountry.first()
-                val selectedStores = userPreferences.selectedStores.first()
-                
-                // Re-calculate retailers string (duplicated logic, ideally refactor but fine for now)
-                val storesForCountry = selectedStores.filter { storeId ->
-                     storeId.endsWith("_$country", ignoreCase = true)
-                }
-                
-                // We need the store list to map IDs to Names again. 
-                // To avoid complexity, we can cache retailers or just re-fetch/re-map.
-                // Or simplified: fetch directly.
-                // For this insertion, I will call loadAllDeals with null logic or handle it.
-                // Actually loadAllDeals expects arguments.
-                
-                // Optimization: Store retailers string in a variable or re-use logic?
-                // I'll refactor loadAllDeals to *get* arguments itself or store them?
-                // The current structure passes them.
-                // I'll reproduce the fetching logic briefly or make a helper.
-                
-                // Quick fix: Just re-run the retailer mapping logic if needed, or pass null if not strict.
-                // But filtering matters.
-                // I should probably store `currentRetailers` in the ViewModel state?
-                
-                // Let's rely on loadProducts's state? No.
-                
-                // I will duplicate the retailer mapping logic for safety, ensuring consistency.
-                val storesResult = storeRepository.getStores(country)
-                val allStores = storesResult.getOrNull() ?: emptyList()
-                val retailers = if (storesForCountry.isNotEmpty()) {
-                    storesForCountry.mapNotNull { id -> allStores.find { it.id == id }?.retailer }.joinToString(",")
-                } else null
-                
-                loadAllDeals(country, retailers)
-                
-            } catch (e: Exception) {
-               // Handle error
+        try {
+            val country = userPreferences.selectedCountry.first()
+            val selectedStores = userPreferences.selectedStores.first()
+            
+            val storesForCountry = selectedStores.filter { storeId ->
+                 storeId.endsWith("_$country", ignoreCase = true)
             }
+            
+            val storesResult = storeRepository.getStores(country)
+            val allStores = storesResult.getOrNull() ?: emptyList()
+            val retailers = if (storesForCountry.isNotEmpty()) {
+                storesForCountry.mapNotNull { id -> allStores.find { it.id == id }?.retailer }.joinToString(",")
+            } else null
+            
+            loadAllDeals(country, retailers)
+            
+        } catch (e: Exception) {
+           Log.e(TAG, "Error loading more deals", e)
+           _error.value = "Error loading more: ${e.message}"
+        } finally {
+            _isLoading.value = false
+            _isPaging.value = false
+        }
+
         }
     }
 
@@ -528,81 +528,106 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
     fun checkShoppingListMatches(itemsList: List<String>? = null) {
         viewModelScope.launch {
             _isLoading.value = true
+            _isPaging.value = false
             _error.value = null
             
             try {
-                // Determine items to check: Passed list OR saved list from prefs
+                // 1. Get Text Items
                 val itemsString = if (itemsList != null) {
                      itemsList.joinToString(",") 
                 } else {
                      userPreferences.shoppingListItems.first()
                 }
+                val requestedItemsList = itemsString.split(",").map { it.trim() }.filter { it.isNotEmpty() }
                 
-                if (itemsString.isBlank()) {
+                // 2. Get Saved IDs
+                val savedIds = userPreferences.shoppingListDealIds.first()
+                
+                // If both empty, clear everything
+                if (requestedItemsList.isEmpty() && savedIds.isEmpty()) {
                     _shoppingListMatches.value = emptyMap()
                     _shoppingListDeals.value = emptyList()
                     _matchedDealIds.clear()
-                    generateSmartPlan() // Should clear plan
+                    generateSmartPlan()
                     _isLoading.value = false
                     return@launch
                 }
                 
-                val items = itemsString // Repository expects comma-separated string
-                val requestedItemsList = itemsString.split(",").map { it.trim() }
+                var dealMap: MutableMap<String, List<Deal>> = mutableMapOf()
                 
-                val country = userPreferences.selectedCountry.first()
-                val selectedStores = userPreferences.selectedStores.first()
-                val storesForCountry = selectedStores.filter { it.endsWith("_$country", ignoreCase = true) }
-                
-                val storesResult = storeRepository.getStores(country)
-                val allStores = storesResult.getOrNull() ?: emptyList()
-                val retailers = if (storesForCountry.isNotEmpty()) {
-                    storesForCountry.mapNotNull { id -> allStores.find { it.id == id }?.retailer }.joinToString(",")
-                } else null
+                // 3. Text Search (if items exist)
+                if (requestedItemsList.isNotEmpty()) {
+                    val items = itemsString
+                    val country = userPreferences.selectedCountry.first()
+                    val selectedStores = userPreferences.selectedStores.first()
+                    val storesForCountry = selectedStores.filter { it.endsWith("_$country", ignoreCase = true) }
+                    
+                    val storesResult = storeRepository.getStores(country)
+                    val allStores = storesResult.getOrNull() ?: emptyList()
+                    val retailers = if (storesForCountry.isNotEmpty()) {
+                        storesForCountry.mapNotNull { id -> allStores.find { it.id == id }?.retailer }.joinToString(",")
+                    } else null
 
-                val result = repository.searchShoppingList(items, country, retailers)
-                
-
-                result.onSuccess { response ->
-                    val categories = response.categories ?: emptyMap()
+                    val result = repository.searchShoppingList(items, country, retailers)
                     
-                    val allProducts = categories.values.flatMap { it.products }
-                    
-                    // Group by searchTerm. If missing, fuzzy match against requested items.
-                    val groupedMap = allProducts.groupBy { product -> 
-                        product.searchTerm ?: requestedItemsList.find { 
-                            product.title.contains(it, ignoreCase = true) 
-                        } ?: "Groceries"
-                    }
-                    
-                    val dealMap = groupedMap.mapValues { entry -> 
-                        val deals = entry.value.toDeals()
-                        // These are definitely on the list, so mark them
-                        deals.map { it.copy(isOnShoppingList = true) }
-                    }
+                    result.onSuccess { response ->
+                        val categories = response.categories ?: emptyMap()
+                        val allProducts = categories.values.flatMap { it.products }
                         
-                    _shoppingListMatches.value = dealMap
-                    val flatDeals = dealMap.values.flatten()
-                    _shoppingListDeals.value = flatDeals
-                    
-                    // Update persistent set of matched IDs
-                    _matchedDealIds.clear()
-                    _matchedDealIds.addAll(flatDeals.map { it.id })
-                    
-                    // Sync current views immediately
-                    _featuredDeals.value = syncDealsState(_featuredDeals.value)
-                    _allDeals.value = syncDealsState(_allDeals.value)
-                    
-                    // Save matches for offline/startup calculation
-                    userPreferences.saveShoppingListMatchesResponse(response)
-                    
-                    generateSmartPlan()
-                    
-                }.onFailure {
-                    _error.value = "Failed to load matches: ${it.message}"
+                        val groupedMap = allProducts.groupBy { product -> 
+                            product.searchTerm ?: requestedItemsList.find { 
+                                product.title.contains(it, ignoreCase = true) 
+                            } ?: "Groceries"
+                        }
+                        
+                        dealMap = groupedMap.mapValues { entry -> 
+                            val deals = entry.value.toDeals()
+                            deals.map { it.copy(isOnShoppingList = true) }
+                        }.toMutableMap()
+                        
+                        userPreferences.saveShoppingListMatchesResponse(response)
+                    }
                 }
+                
+                // 4. ID Search (Parallel Fetch/Cache Check)
+                val loadedDeals = _allDeals.value + _featuredDeals.value + _shoppingListDeals.value
+                
+                val idDealsDeferred = savedIds.map { id ->
+                    async {
+                        val cached = loadedDeals.find { it.id == id }
+                        if (cached != null) {
+                             cached.copy(isOnShoppingList = true)
+                        } else {
+                             repository.getProductById(id).getOrNull()?.toDeal()?.copy(isOnShoppingList = true)
+                        }
+                    }
+                }
+                
+                val idDeals = idDealsDeferred.awaitAll().filterNotNull()
+                
+                // 5. Merge Matches
+                if (idDeals.isNotEmpty()) {
+                    val existing = dealMap["Manually Added"] ?: emptyList()
+                    dealMap["Manually Added"] = (existing + idDeals).distinctBy { it.id }
+                }
+                
+                val allMatches = dealMap.values.flatten().distinctBy { it.id }
+                
+                _shoppingListMatches.value = dealMap
+                _shoppingListDeals.value = allMatches
+                
+                _matchedDealIds.clear()
+                _matchedDealIds.addAll(allMatches.map { it.id })
+                
+                // 6. Sync View State
+                _featuredDeals.value = syncDealsState(_featuredDeals.value)
+                _allDeals.value = syncDealsState(_allDeals.value)
+                
+                generateSmartPlan()
+                
             } catch (e: Exception) {
-                _error.value = "Error checking matches: ${e.message}"
+               Log.e(TAG, "Error checking matches", e)
+               _error.value = "Error checking matches: ${e.message}"
             } finally {
                 _isLoading.value = false
             }
@@ -650,42 +675,94 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
     }
     
     fun toggleShoppingList(deal: com.example.omiri.data.models.Deal) {
+        val currentDeal = deal // Capture for closure
         viewModelScope.launch {
-            val currentItemsStr = userPreferences.shoppingListItems.first()
-            val currentItems = currentItemsStr.split(",").map { it.trim() }.filter { it.isNotEmpty() }.toMutableList()
+            // 1. Optimistic Update (Immediate UI Feedback)
+            val isAdding = !_matchedDealIds.contains(currentDeal.id)
             
-            // Logic: Toggle based on Product Title or ID?
-            // The system uses TEXT matching.
-            // If we remove, we remove the text.
-            // If we add, we add the text.
-            
-            // But we also want to mark the specific ID as "matched".
-            // Since `_matchedDealIds` is derived from text search, we should add the *Title* to the text list.
-            
-            val itemToAdd = deal.title.replace(",", "") // Sanitize
-            
-            // Check if already in list (fuzzy or exact)
-            val exists = currentItems.any { it.equals(itemToAdd, ignoreCase = true) } || _matchedDealIds.contains(deal.id)
-            
-            if (exists) {
-                // Remove
-                currentItems.removeAll { it.equals(itemToAdd, ignoreCase = true) }
-                // Also trigger remove from ID set? `checkShoppingListMatches` will handle sync.
-            } else {
-                // Add
-                currentItems.add(itemToAdd)
+            if (isAdding) {
+                // Add to Set
+                _matchedDealIds.add(currentDeal.id)
+                val newDeal = currentDeal.copy(isOnShoppingList = true)
                 
-                // USER REQUEST: Sync Heart
-                if (!_favoriteDealIds.value.contains(deal.id)) {
-                    toggleFavorite(deal.id)
+                // Update List
+                val currentList = _shoppingListDeals.value.toMutableList()
+                if (currentList.none { it.id == newDeal.id }) {
+                    currentList.add(newDeal)
+                    _shoppingListDeals.value = currentList
                 }
+                
+                // Update Map (Add to "Manually Added" section if not present)
+                val currentMap = _shoppingListMatches.value.toMutableMap()
+                val manualList = currentMap["Manually Added"]?.toMutableList() ?: mutableListOf()
+                if (manualList.none { it.id == newDeal.id }) {
+                     manualList.add(newDeal)
+                     currentMap["Manually Added"] = manualList.distinctBy { it.id } // Safety
+                     _shoppingListMatches.value = currentMap
+                }
+                
+                // Auto-Favorite if needed
+                 if (!_favoriteDealIds.value.contains(newDeal.id)) {
+                     toggleFavorite(newDeal.id) 
+                 }
+                
+            } else {
+                // Remove from Set
+                _matchedDealIds.remove(currentDeal.id)
+                
+                // Update List
+                val currentList = _shoppingListDeals.value.filter { it.id != currentDeal.id }
+                _shoppingListDeals.value = currentList
+                
+                // Update Map (Remove from ALL sections)
+                val currentMap = _shoppingListMatches.value.toMutableMap()
+                val newMap = currentMap.mapValues { (_, deals) -> 
+                     deals.filter { it.id != currentDeal.id }
+                }.filterValues { it.isNotEmpty() }
+                _shoppingListMatches.value = newMap
             }
             
-            val newItemsStr = currentItems.joinToString(",")
-            userPreferences.saveShoppingListItems(newItemsStr)
+            // 2. Trigger Smart Features Update Immediately (Local calc)
+            // This responds to the user "as soon as new products are in the list"
+            val localPlan = calculateLocalSmartPlan()
+            _smartPlan.value = localPlan
+            generateSmartAlerts(localPlan)
             
-            // Trigger refresh of matches
-            checkShoppingListMatches(currentItems)
+            // 3. Persistence & Eventual Consistency (Background)
+            try {
+                val currentItemsStr = userPreferences.shoppingListItems.first()
+                val currentItems = currentItemsStr.split(",").map { it.trim() }.filter { it.isNotEmpty() }.toMutableList()
+                
+                val itemToAdd = deal.title.replace(",", "") // Sanitize
+                
+                // ID Handling for persistence
+                val currentIds = userPreferences.shoppingListDealIds.first().toMutableSet()
+                val idExists = currentIds.contains(deal.id)
+                
+                // Check if already in persistent list (fuzzy text or exact ID)
+                val exists = currentItems.any { it.equals(itemToAdd, ignoreCase = true) } || idExists
+                
+                if (exists) {
+                    // Remove
+                    currentItems.removeAll { it.equals(itemToAdd, ignoreCase = true) }
+                    currentIds.remove(deal.id)
+                } else {
+                    // Add
+                    currentItems.add(itemToAdd)
+                    currentIds.add(deal.id)
+                }
+                
+                userPreferences.saveShoppingListItems(currentItems.joinToString(","))
+                userPreferences.saveShoppingListDealIds(currentIds)
+                
+                // Trigger full refresh of matches to ensure server-side consistency (e.g. better categorisation)
+                // This might overwrite the local plan eventually, but the immediate feedback is already done.
+                checkShoppingListMatches(currentItems)
+                
+            } catch (e: Exception) {
+                Log.e(TAG, "Error persisting shopping list change", e)
+                // If persistence fails, we might want to revert UI, but for now we log.
+            }
         }
     }
     
@@ -754,6 +831,15 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
                 title = "${expiring.size} deals expiring today! don't miss out",
                 type = "EXPIRING",
                 iconName = "CLOCK" // Need to handle icon mapping
+            ))
+        }
+        
+        // 4. Fallback: Ensure visibility if we have matches but no specific alerts
+        if (alerts.isEmpty() && matches.isNotEmpty()) {
+            alerts.add(com.example.omiri.data.api.models.SmartAlert(
+                title = "You have ${matches.size} items on your shopping list matched with deals",
+                type = "INFO",
+                iconName = "CHECK_CIRCLE"
             ))
         }
         
@@ -962,7 +1048,23 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
     /**
      * Get product by ID
      */
+    /**
+     * Get product by ID
+     */
     fun getProductById(productId: String, onResult: (Deal?) -> Unit) {
+        // 1. Check Memory Cache
+        val cachedDeal = _allDeals.value.find { it.id == productId }
+            ?: _featuredDeals.value.find { it.id == productId }
+            ?: _shoppingListDeals.value.find { it.id == productId }
+            ?: _shoppingListMatches.value.values.flatten().find { it.id == productId }
+            
+        if (cachedDeal != null) {
+            Log.d(TAG, "Product $productId found in cache")
+            onResult(cachedDeal)
+            return
+        }
+
+        // 2. Fetch from API
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 val result = repository.getProductById(productId)

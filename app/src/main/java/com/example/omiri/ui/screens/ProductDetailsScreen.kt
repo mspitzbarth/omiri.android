@@ -26,6 +26,15 @@ import com.example.omiri.ui.theme.Spacing
 import com.example.omiri.ui.theme.AppColors
 import java.text.SimpleDateFormat
 import java.util.Locale
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Add
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,252 +87,221 @@ fun ProductDetailsScreen(
     }
 
     if (isLoading) {
-        Box(modifier = Modifier.fillMaxSize().background(AppColors.Bg), contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
+            contentAlignment = Alignment.Center
+        ) {
             CircularProgressIndicator(color = Color(0xFFEA580B))
         }
-        return
-    }
-
-    Scaffold(
-        containerColor = AppColors.Bg,
-        topBar = {
-             // Custom Header matching Settings
-             ScreenHeader(
-                 title = if (currentDeal != null) currentDeal.store else "Product Details",
-                 onBackClick = onBackClick,
-                 action = {
-                     IconButton(onClick = { shareDeal() }) {
-                         Icon(
-                             imageVector = Icons.Outlined.Share,
-                             contentDescription = "Share",
-                             tint = Color(0xFF111827)
-                         )
-                     }
-                 }
-             )
+    } else if (deal == null) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("Product not found", color = MaterialTheme.colorScheme.onBackground)
         }
-    ) { padding ->
-        if (currentDeal == null) {
-             Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("Product not found")
-            }
-        } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .verticalScroll(rememberScrollState())
-            ) {
-                // Product Image Section
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(280.dp) // Taller image area
-                        .background(currentDeal.heroColor ?: Color(0xFFF3F4F6))
-                ) {
-                     // Placeholder for Image
-                     // If imageUrl exists, load it.
-                     
-                    // Time left badge
-                    if (currentDeal.timeLeftLabel != null) {
-                        Surface(
-                            modifier = Modifier
-                                .padding(Spacing.md)
-                                .align(Alignment.TopStart),
-                            shape = MaterialTheme.shapes.small,
-                            color = Color(0xFFEF4444)
-                        ) {
-                            Text(
-                                text = currentDeal.timeLeftLabel,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-                        }
-                    }
-
-                    // Discount badge
-                    if (currentDeal.discountLabel != null) {
-                        Surface(
-                            modifier = Modifier
-                                .padding(start = Spacing.md, top = if (currentDeal.timeLeftLabel != null) 52.dp else Spacing.md)
-                                .align(Alignment.TopStart),
-                            shape = MaterialTheme.shapes.small,
-                            color = Color(0xFF10B981)
-                        ) {
-                            Text(
-                                text = currentDeal.discountLabel,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-                        }
-                    }
-                    
-                    // Brand Badge (New)
-                    if (!currentDeal.brand.isNullOrBlank()) {
-                         Surface(
-                            modifier = Modifier
-                                .padding(end = Spacing.md, bottom = Spacing.md)
-                                .align(Alignment.BottomEnd),
-                            shape = MaterialTheme.shapes.extraSmall,
-                            color = Color.Black.copy(alpha = 0.6f)
-                        ) {
-                            Text(
-                                text = currentDeal.brand,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = Color.White,
-                                fontWeight = FontWeight.Medium,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-                        }
-                    }
-
-                    // Favorite button
-                    IconButton(
-                        onClick = { viewModel.toggleFavorite(currentDeal.id) },
-                        modifier = Modifier
-                            .padding(Spacing.md)
-                            .align(Alignment.TopEnd)
-                            .size(44.dp)
-                            .background(Color.White, CircleShape)
-                            .padding(4.dp) // Inner padding
-                    ) {
+    } else {
+        val currentDeal = deal!! // Safe unwrapping as we checked for null
+        
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(AppColors.Bg)
+        ) {
+            // Header (Settings Style)
+            ScreenHeader(
+                title = currentDeal.store,
+                onBackClick = onBackClick,
+                action = {
+                    IconButton(onClick = { shareDeal() }) {
                         Icon(
-                            imageVector = if (isFavorite) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder,
-                            contentDescription = "Favorite",
-                            tint = if (isFavorite) Color(0xFFEF4444) else Color(0xFF6B7280)
+                            imageVector = Icons.Default.Share,
+                            contentDescription = "Share",
+                            tint = AppColors.BrandInk
                         )
                     }
                 }
+            )
 
-                Column(
-                    modifier = Modifier.padding(Spacing.lg)
+            // Scrollable Content
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                // Image or Emoji
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp)
+                        .background(Color.White),
+                    contentAlignment = Alignment.Center
                 ) {
-
-                    // Product Title & Brand
+                    if (!currentDeal.imageUrl.isNullOrBlank()) {
+                        AsyncImage(
+                            model = currentDeal.imageUrl,
+                            contentDescription = currentDeal.title,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                         // Emoji Fallback
+                         val emoji = com.example.omiri.util.EmojiHelper.getProductEmoji(currentDeal.title, currentDeal.category)
+                         if (emoji.isNotEmpty()) {
+                             Text(text = emoji, fontSize = 96.sp)
+                         } else {
+                             Icon(
+                                 imageVector = Icons.Outlined.ShoppingBag,
+                                 contentDescription = null,
+                                 tint = Color.LightGray,
+                                 modifier = Modifier.size(64.dp)
+                             )
+                         }
+                    }
+                }
+                
+                Column(modifier = Modifier.padding(16.dp)) {
+                    // Title & Price
                     Text(
                         text = currentDeal.title,
-                        style = MaterialTheme.typography.headlineMedium.copy(fontSize = 24.sp),
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF111827)
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = AppColors.BrandInk
                     )
                     
                     if (!currentDeal.brand.isNullOrBlank()) {
-                        Spacer(Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = currentDeal.brand,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = Color(0xFF6B7280),
-                            fontWeight = FontWeight.Medium
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = AppColors.MutedText
                         )
                     }
-
-                    Spacer(Modifier.height(Spacing.md))
                     
-                    // Price Row
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
                     Row(
                         verticalAlignment = Alignment.Bottom,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
                             text = currentDeal.price,
-                            style = MaterialTheme.typography.displaySmall.copy(fontSize = 32.sp),
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFFEA580B)
+                            style = MaterialTheme.typography.displaySmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = AppColors.BrandOrange
+                            )
                         )
-                        if (currentDeal.originalPrice != null) {
+                        if (!currentDeal.originalPrice.isNullOrBlank()) {
+                            Spacer(modifier = Modifier.width(12.dp))
                             Text(
                                 text = currentDeal.originalPrice,
-                                style = MaterialTheme.typography.titleLarge,
-                                color = Color(0xFF9CA3AF),
-                                textDecoration = TextDecoration.LineThrough,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    textDecoration = TextDecoration.LineThrough,
+                                    color = AppColors.SubtleText
+                                ),
                                 modifier = Modifier.padding(bottom = 6.dp)
                             )
                         }
                     }
                     
-                    Spacer(Modifier.height(Spacing.lg))
+                    Spacer(modifier = Modifier.height(24.dp))
                     
-                    // Description Block
+                    // Main Actions (Heart & Flyer)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        // Heart Button (Primary Action) - Red Styled
+                        Button(
+                            onClick = { onAddToList(currentDeal) },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(56.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isOnList) Color(0xFFDC2626) else Color.White,
+                                contentColor = if (isOnList) Color.White else Color(0xFFDC2626)
+                            ),
+                            border = if (!isOnList) androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFDC2626)) else null,
+                            elevation = ButtonDefaults.buttonElevation(0.dp)
+                        ) {
+                             Icon(
+                                imageVector = if (isOnList) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
+                                contentDescription = if (isOnList) "Remove from list" else "Add to list",
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                        
+                        // Flyer Button (Secondary) - Solid Orange
+                        if (!currentDeal.pdfSourceUrl.isNullOrBlank()) {
+                            Button(
+                                onClick = { onViewFlyer(currentDeal.pdfSourceUrl) },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(56.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = AppColors.BrandOrange,
+                                    contentColor = Color.White
+                                ),
+                                elevation = ButtonDefaults.buttonElevation(0.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Description, 
+                                    contentDescription = null
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    "Flyer", 
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(32.dp))
+                    
+                    // Description
                     if (!currentDeal.description.isNullOrBlank()) {
-                        Text(
-                            text = "Description",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF111827)
-                        )
-                        Spacer(Modifier.height(4.dp))
+                        SectionHeader(title = "Description")
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = currentDeal.description,
                             style = MaterialTheme.typography.bodyLarge,
-                            color = Color(0xFF4B5563),
+                            color = AppColors.MutedText,
                             lineHeight = 24.sp
                         )
-                        Spacer(Modifier.height(Spacing.lg))
+                        Spacer(modifier = Modifier.height(32.dp))
                     }
 
                     // Details Card
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(containerColor = Color.White),
-                        shape = MaterialTheme.shapes.medium
+                        shape = MaterialTheme.shapes.medium,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.Border),
+                        elevation = CardDefaults.cardElevation(0.dp)
                     ) {
                         Column(
                             modifier = Modifier.padding(Spacing.md)
                         ) {
                             DealInfoRow("Retailer", currentDeal.store, icon = Icons.Outlined.Store)
                             if (!currentDeal.country.isNullOrBlank()) {
-                                HorizontalDivider(color = Color(0xFFF3F4F6), modifier = Modifier.padding(vertical = 8.dp))
+                                HorizontalDivider(color = AppColors.SurfaceAlt, modifier = Modifier.padding(vertical = 12.dp))
                                 DealInfoRow("Location", "${currentDeal.country}${if (currentDeal.zipcode != null) ", ${currentDeal.zipcode}" else ""}", icon = Icons.Outlined.Place)
                             }
                             if (!currentDeal.category.isNullOrBlank()) {
-                                HorizontalDivider(color = Color(0xFFF3F4F6), modifier = Modifier.padding(vertical = 8.dp))
+                                HorizontalDivider(color = AppColors.SurfaceAlt, modifier = Modifier.padding(vertical = 12.dp))
                                 DealInfoRow("Category", currentDeal.category, icon = Icons.Outlined.Category)
                             }
                             
                             // Dates
                             if (currentDeal.availableFrom != null || currentDeal.availableUntil != null) {
-                                HorizontalDivider(color = Color(0xFFF3F4F6), modifier = Modifier.padding(vertical = 8.dp))
+                                HorizontalDivider(color = AppColors.SurfaceAlt, modifier = Modifier.padding(vertical = 12.dp))
                                 val from = formatIsoDate(currentDeal.availableFrom)
                                 val to = formatIsoDate(currentDeal.availableUntil)
                                 val dateStr = if (from != null && to != null) "$from - $to" else (to ?: from ?: "")
                                 DealInfoRow("Valid", dateStr, icon = Icons.Outlined.DateRange, isHighlight = true)
-                            }
-                        }
-                    }
-
-                    Spacer(Modifier.height(Spacing.xl))
-
-                    // Buttons
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.md)
-                    ) {
-                        Button(
-                            onClick = { viewModel.toggleShoppingList(currentDeal) },
-                            modifier = Modifier.weight(1f).height(50.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = if (isOnList) Color(0xFF10B981) else Color(0xFFEA580B)),
-                            shape = MaterialTheme.shapes.medium
-                        ) {
-                            Icon(if (isOnList) Icons.Outlined.Check else Icons.Outlined.PlaylistAdd, null)
-                            Spacer(Modifier.width(8.dp))
-                            Text(if (isOnList) "Added" else "Add to List", fontWeight = FontWeight.Bold)
-                        }
-                        
-                        if (currentDeal.pdfSourceUrl != null) {
-                            OutlinedButton(
-                                onClick = { onViewFlyer(currentDeal.pdfSourceUrl) },
-                                modifier = Modifier.weight(1f).height(50.dp),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFEA580B)),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFEA580B)),
-                                shape = MaterialTheme.shapes.medium
-                            ) {
-                                Icon(Icons.Outlined.Description, null)
-                                Spacer(Modifier.width(8.dp))
-                                Text("Flyer", fontWeight = FontWeight.Bold)
                             }
                         }
                     }

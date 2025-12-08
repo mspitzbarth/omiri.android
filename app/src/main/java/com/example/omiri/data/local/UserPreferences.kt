@@ -443,10 +443,28 @@ class UserPreferences(private val context: Context) {
         }
     }
 
+    /**
+     * Get shopping list deal IDs
+     */
+    val shoppingListDealIds: Flow<Set<String>> = context.dataStore.data.map { preferences ->
+        preferences[SHOPPING_LIST_DEAL_IDS] ?: emptySet()
+    }
+
+    /**
+     * Save shopping list deal IDs
+     */
+    suspend fun saveShoppingListDealIds(ids: Set<String>) {
+        context.dataStore.edit { preferences ->
+            preferences[SHOPPING_LIST_DEAL_IDS] = ids
+        }
+    }
+
+
     companion object {
         private val SELECTED_COUNTRY = stringPreferencesKey("selected_country")
         private val SELECTED_STORES = stringSetPreferencesKey("selected_stores")
         private val SHOPPING_LIST_ITEMS = stringPreferencesKey("shopping_list_items")
+        private val SHOPPING_LIST_DEAL_IDS = stringSetPreferencesKey("shopping_list_deal_ids")
         private val MEMBERSHIP_CARDS = stringPreferencesKey("membership_cards")
         private val IS_ONBOARDING_COMPLETED = booleanPreferencesKey("is_onboarding_completed")
         private val SAVED_SHOPPING_LISTS = stringPreferencesKey("saved_shopping_lists")

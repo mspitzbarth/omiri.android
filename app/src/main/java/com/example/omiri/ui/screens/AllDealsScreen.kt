@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -67,6 +68,7 @@ fun AllDealsScreen(
     // Collect state from ViewModel
     val allDeals by viewModel.allDeals.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val isPaging by viewModel.isPaging.collectAsState()
     val hasMore by viewModel.hasMore.collectAsState()
 
     // AdMob Interstitial
@@ -143,9 +145,19 @@ fun AllDealsScreen(
             onRefresh = { isRefreshing = true },
             modifier = Modifier.weight(1f) // Take remaining space
         ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize()
-            ) {
+            if (isLoading && !isPaging) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState()),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = Color(0xFFEA580B))
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize()
+                ) {
             // Search and Filters (non-sticky header content)
             item {
                 Column(modifier = Modifier.padding(horizontal = Spacing.lg)) {
@@ -404,6 +416,7 @@ fun AllDealsScreen(
             item {
                 Spacer(Modifier.height(Spacing.xxxl))
             }
+        }
         }
     }
     }
