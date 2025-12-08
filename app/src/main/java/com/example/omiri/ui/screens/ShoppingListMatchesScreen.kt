@@ -55,10 +55,11 @@ fun ShoppingListMatchesScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = com.example.omiri.ui.theme.AppColors.Bg
                 )
             )
-        }
+        },
+        containerColor = com.example.omiri.ui.theme.AppColors.Bg
     ) { padding ->
         Box(
             modifier = Modifier

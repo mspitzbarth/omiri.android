@@ -111,7 +111,7 @@ fun HomeScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFFF9FAFB)) // Overall background
+                    .background(com.example.omiri.ui.theme.AppColors.Bg) // Overall background
                     .verticalScroll(rememberScrollState())
             ) {
                 // 1. Header with Name and Savings Summary

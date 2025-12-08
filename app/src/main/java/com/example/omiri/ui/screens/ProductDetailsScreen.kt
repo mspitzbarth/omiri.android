@@ -82,10 +82,11 @@ fun ProductDetailsScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = com.example.omiri.ui.theme.AppColors.Bg
                 )
             )
-        }
+        },
+        containerColor = com.example.omiri.ui.theme.AppColors.Bg
     ) { padding ->
         if (currentDeal == null) {
              Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {

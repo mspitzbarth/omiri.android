@@ -14,7 +14,7 @@ object AppColors {
     val BrandInk = Color(0xFF0F172A)
 
     // Neutrals
-    val Bg = Color(0xF9FAFB)
+    val Bg = Color(0xFFF9FAFB)
     val Surface = Color(0xFFFFFFFF)
     val SurfaceAlt = Color(0xFFF3F5FA)
     val Border = Color(0xFFE6E8F0)

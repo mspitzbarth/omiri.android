@@ -38,8 +38,8 @@ fun MyStoresScreen(
     // Collect state from ViewModel
     val selectedCountry by viewModel.selectedCountry.collectAsState()
     val availableStores by viewModel.availableStores.collectAsState()
-    val selectedStores by viewModel.selectedStores.collectAsState()  // Observe for reactive updates
-    val storeLocations by viewModel.storeLocations.collectAsState()
+    val selectedStoresInitial by viewModel.selectedStores.collectAsState() 
+    val storeLocationsInitial by viewModel.storeLocations.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
     
@@ -50,41 +50,89 @@ fun MyStoresScreen(
     
     // Show country picker dialog
     var showCountryPicker by remember { mutableStateOf(false) }
-    var selectedZipcodes by remember { mutableStateOf(setOf<String>()) }
+
+    // Local buffers for edits
+    // We use a key to reset buffer if initial changes (e.g. first load)
+    // But we want to persist local edits.
+    // Initialize buffers once loaded
+    var selectedStoresBuffer by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var storeLocationsBuffer by remember { mutableStateOf<Map<String, Set<String>>>(emptyMap()) }
+    var isInitialized by remember { mutableStateOf(false) }
+    
+    // Sync with VM initial state only once
+    LaunchedEffect(selectedStoresInitial, storeLocationsInitial) {
+        if (!isInitialized && selectedStoresInitial.isNotEmpty()) {
+             selectedStoresBuffer = selectedStoresInitial
+             storeLocationsBuffer = storeLocationsInitial
+             isInitialized = true
+        } else if (!isInitialized && selectedStoresInitial.isEmpty() && !isLoading) {
+             // also init if empty but loaded
+             isInitialized = true
+        }
+    }
     
     // Load stores when country changes
     LaunchedEffect(selectedCountry) {
         viewModel.loadStores()
     }
     
+    /* 
+       Zipcode handling for Modal: 
+       We use a temp state 'selectedZipcodes' for the modal. 
+       When modal opens, init it from buffer.
+       When modal saves, update buffer.
+    */
+    var locationModalZipcodes by remember { mutableStateOf(setOf<String>()) }
+    
     // Update selected zipcodes when modal opens
     LaunchedEffect(locationModalStore) {
         locationModalStore?.let { store ->
-            selectedZipcodes = storeLocations[store.id] ?: emptySet()
+            locationModalZipcodes = storeLocationsBuffer[store.id] ?: emptySet()
         }
     }
     
-    val totalSelectedCount = viewModel.getTotalSelectedCount()
-    
     val availableCountries by viewModel.availableCountries.collectAsState()
     
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-    ) {
-        // Header
-        ScreenHeader(
-            title = "My Stores",
-            onBackClick = onBackClick
-        )
-        
+    Scaffold(
+        topBar = {
+             ScreenHeader(
+                title = "My Stores",
+                onBackClick = onBackClick 
+            )
+        },
+        bottomBar = {
+            Surface(
+                shadowElevation = 8.dp, // Optional shadow for valid elevation
+                color = Color.White
+            ) {
+                Column(Modifier.padding(Spacing.lg)) {
+                    Button(
+                        onClick = {
+                            viewModel.saveChanges(selectedStoresBuffer, storeLocationsBuffer)
+                            onBackClick()
+                        },
+                        enabled = selectedStoresBuffer.isNotEmpty(),
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFEA580B),
+                            disabledContainerColor = Color(0xFFFED7AA)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Save Stores", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        },
+        containerColor = com.example.omiri.ui.theme.AppColors.Bg
+    ) { padding ->
         val listState = rememberLazyListState()
 
         LazyColumn(
             state = listState,
             modifier = Modifier
                 .fillMaxSize()
+                .padding(padding)
                 .simpleVerticalScrollbar(listState),
             contentPadding = PaddingValues(horizontal = Spacing.lg, vertical = Spacing.md),
             verticalArrangement = Arrangement.spacedBy(Spacing.md)
@@ -105,22 +153,22 @@ fun MyStoresScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Use selectedStores.size directly for reactive updates
                     Text(
-                        text = "${selectedStores.size} stores selected",
+                        text = "${selectedStoresBuffer.size} stores selected",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color(0xFF111827),
                         fontWeight = FontWeight.Medium
                     )
                     
-                    if (selectedStores.isNotEmpty()) {
+                    if (selectedStoresBuffer.isNotEmpty()) {
                         Text(
                             text = "Clear all",
                             style = MaterialTheme.typography.bodyMedium,
                             color = Color(0xFFEA580B),
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.clickable { 
-                                viewModel.clearAllSelections() 
+                                selectedStoresBuffer = emptySet()
+                                storeLocationsBuffer = emptyMap()
                             }
                         )
                     }
@@ -155,15 +203,22 @@ fun MyStoresScreen(
             
             // Store list
             items(availableStores) { store ->
+                val isSelected = selectedStoresBuffer.contains(store.id)
                 StoreItem(
                     store = store,
-                    isSelected = selectedStores.contains(store.id),
-                    selectedLocationCount = storeLocations[store.id]?.size ?: 0,
+                    isSelected = isSelected,
+                    selectedLocationCount = storeLocationsBuffer[store.id]?.size ?: 0,
                     onToggle = {
                         if (store.hasMultipleLocations) {
                             viewModel.openLocationModal(store)
                         } else {
-                            viewModel.toggleStore(store.id, store.hasMultipleLocations)
+                            // Toggle local buffer
+                            if (isSelected) {
+                                selectedStoresBuffer = selectedStoresBuffer - store.id
+                                storeLocationsBuffer = storeLocationsBuffer - store.id
+                            } else {
+                                selectedStoresBuffer = selectedStoresBuffer + store.id
+                            }
                         }
                     }
                 )
@@ -205,22 +260,30 @@ fun MyStoresScreen(
         StoreLocationModal(
             storeName = store.retailer,
             locations = availableLocations,
-            selectedZipcodes = selectedZipcodes,
+            selectedZipcodes = locationModalZipcodes,
             isLoading = isLoadingLocations,
             onLocationToggle = { zipcode ->
-                selectedZipcodes = if (selectedZipcodes.contains(zipcode)) {
-                    selectedZipcodes - zipcode
+                locationModalZipcodes = if (locationModalZipcodes.contains(zipcode)) {
+                    locationModalZipcodes - zipcode
                 } else {
-                    // Allow up to 5 zipcodes per store
-                    if (selectedZipcodes.size < 5) {
-                        selectedZipcodes + zipcode
+                    if (locationModalZipcodes.size < 5) {
+                        locationModalZipcodes + zipcode
                     } else {
-                        selectedZipcodes  // Don't add if already at 5 for this store
+                        locationModalZipcodes
                     }
                 }
             },
             onSave = {
-                viewModel.saveStoreLocations(store.id, selectedZipcodes)
+                // Update buffers
+                if (locationModalZipcodes.isEmpty()) {
+                    // If no location selected, deselect store
+                    selectedStoresBuffer = selectedStoresBuffer - store.id
+                    storeLocationsBuffer = storeLocationsBuffer - store.id
+                } else {
+                    selectedStoresBuffer = selectedStoresBuffer + store.id
+                    storeLocationsBuffer = storeLocationsBuffer + (store.id to locationModalZipcodes)
+                }
+                viewModel.closeLocationModal()
             },
             onDismiss = {
                 viewModel.closeLocationModal()
@@ -231,6 +294,7 @@ fun MyStoresScreen(
 
 @Composable
 fun CountrySelectionRow(
+// ... (rest same as before)
     availableCountries: List<String>,
     selectedCountry: String,
     onCountrySelected: (String) -> Unit

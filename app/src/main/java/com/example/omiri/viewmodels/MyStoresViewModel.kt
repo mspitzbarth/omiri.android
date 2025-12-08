@@ -297,6 +297,37 @@ class MyStoresViewModel(application: Application) : AndroidViewModel(application
         
         closeLocationModal()
     }
+
+    /**
+     * Save all changes (selected stores and their locations) at once
+     */
+    fun saveChanges(
+        newSelectedStores: Set<String>,
+        newStoreLocations: Map<String, Set<String>>
+    ) {
+        Log.d(TAG, "Saving changes: ${newSelectedStores.size} stores, ${newStoreLocations.size} locations map entries")
+        
+        _selectedStores.value = newSelectedStores
+        _storeLocations.value = newStoreLocations
+        
+        viewModelScope.launch {
+            // Save selected stores list
+            userPreferences.saveSelectedStores(newSelectedStores)
+            
+            // Save locations for each store (or clear if not selected)
+            // Note: Efficiently only save what changed would be better, but for now save all relevant
+            newStoreLocations.forEach { (storeId, locations) ->
+                if (newSelectedStores.contains(storeId)) {
+                    userPreferences.saveStoreLocations(storeId, locations)
+                }
+            }
+            
+            // Update retailer cache string
+            updateRetailersCache(newSelectedStores, _availableStores.value)
+        }
+        
+        closeLocationModal()
+    }
     
     private suspend fun updateRetailersCache(selectedIds: Set<String>, allStores: List<StoreListResponse>) {
         try {
