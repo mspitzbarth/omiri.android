@@ -10,6 +10,10 @@ import com.example.omiri.data.api.services.StoreApiService
  */
 class StoreRepository {
     
+    companion object {
+        val instance by lazy { StoreRepository() }
+    }
+
     private val apiService: StoreApiService = RetrofitClient.createService()
     
     /**

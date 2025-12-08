@@ -66,6 +66,7 @@ fun AppNavGraph(
                     onNavigateToList = { listId ->
                         shoppingListViewModel.switchList(listId)
                         navController.navigate(Routes.ShoppingList)
+
                     },
                     shoppingListViewModel = shoppingListViewModel
                 )
@@ -74,7 +75,9 @@ fun AppNavGraph(
                 AllDealsScreen(
                     onDealClick = { dealId: String -> navController.navigate(Routes.productDetails(dealId)) },
                     onNotificationsClick = { navController.navigate(Routes.Notifications) },
-                    onToggleShoppingList = { deal, isListed -> shoppingListViewModel.setDealListed(deal, isListed) }
+                    onToggleShoppingList = { deal, isListed -> shoppingListViewModel.setDealListed(deal, isListed) },
+                    onNavigateToMyStores = { navController.navigate(Routes.MyStores) },
+                    settingsViewModel = settingsViewModel
                 )
             }
             composable(Routes.AiChat) {

@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Event
@@ -34,7 +35,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.omiri.R
 import com.example.omiri.ui.components.*
 import com.example.omiri.ui.theme.Spacing
+import com.example.omiri.viewmodels.SettingsViewModel
 import com.example.omiri.viewmodels.ProductViewModel
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -43,9 +47,19 @@ fun AllDealsScreen(
     onDealClick: (String) -> Unit = {},
     onNotificationsClick: () -> Unit = {},
     onToggleShoppingList: (com.example.omiri.data.models.Deal, Boolean) -> Unit = { _, _ -> },
-    viewModel: ProductViewModel = viewModel()
+    onNavigateToMyStores: () -> Unit = {},
+    viewModel: ProductViewModel = viewModel(),
+    settingsViewModel: SettingsViewModel = viewModel()
 ) {
     var showFilterModal by remember { mutableStateOf(false) }
+    val allStores by settingsViewModel.allStores.collectAsState()
+    val myStoreIds by settingsViewModel.selectedStoreIds.collectAsState()
+    
+    // Filter allStores to only show what is in myStoreIds (User's active/saved stores)
+    val myStoresList = remember(allStores, myStoreIds) {
+        allStores.filter { myStoreIds.contains(it.id) }
+    }
+
     var currentFilters by remember { mutableStateOf(FilterOptions()) }
     var currentPage by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
@@ -90,7 +104,6 @@ fun AllDealsScreen(
         currentDeals.groupBy { it.category ?: "Other" } 
     }
 
-    // ... Pull to refresh (kept same)
     // Pull to refresh
     @OptIn(ExperimentalMaterial3Api::class)
     val pullRefreshState = rememberPullToRefreshState()
@@ -138,13 +151,13 @@ fun AllDealsScreen(
                     OmiriSearchBar()
                     Spacer(Modifier.height(Spacing.md))
                     
-                    // Filters
+                    // Filters & Sort Row
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                         // Filter button (on the left) with badge
+                        // Filter button (on the left) with badge
                         val activeFilterCount = listOf(
                             currentFilters.priceRange != 0f..1000f,
                             currentFilters.selectedStores.isNotEmpty(),
@@ -198,35 +211,40 @@ fun AllDealsScreen(
                             unselectedTextColor = Color.Black
                         )
                     }
-                    Spacer(Modifier.height(Spacing.md))
-
-                    val storeOptions = listOf(
-                        StoreFilterOption(id = "aldi", name = "ALDI", emoji = "🛒"),
-                        StoreFilterOption(id = "lidl", name = "Lidl", emoji = "💙"),
-                        StoreFilterOption(id = "kaufland", name = "Kaufland", emoji = "🧺"),
-                        StoreFilterOption(id = "rewe", name = "REWE", emoji = "🍓"),
-                        StoreFilterOption(id = "edeka", name = "EDEKA", emoji = "🧀"),
-                        StoreFilterOption(id = "amazon", name = "Amazon", emoji = "📦"),
-                        StoreFilterOption(id = "mediamarkt", name = "MediaMarkt", emoji = "💻")
-                    )
-
-                    StoresSwipeFilterRow(
-                        stores = storeOptions,
-                        selectedStoreIds = currentFilters.selectedStores,
-                        onStoreToggle = { storeId ->
-                            val updated = currentFilters.selectedStores.toMutableSet().apply {
-                                if (contains(storeId)) remove(storeId) else add(storeId)
-                            }
-                            currentFilters = currentFilters.copy(selectedStores = updated)
-                        }
-                    )
-                    Spacer(Modifier.height(Spacing.lg))
                     
-                    // Categories Header Logic (if we wanted chips, but we do headers)
-                    // Spacer(Modifier.height(Spacing.lg))
+                    Spacer(Modifier.height(Spacing.lg))
                 }
             }
 
+            // "Active" Popular Stores Section (Acting as Filter)
+            if (myStoresList.isNotEmpty()) {
+                item {
+                     Column(modifier = Modifier.padding(horizontal = Spacing.lg)) {
+                         // Removed Title
+                     }
+                     
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = Spacing.lg),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.md)
+                    ) {
+                        items(myStoresList) { store -> 
+                            val isSelected = currentFilters.selectedStores.contains(store.id)
+                            PopularStoreItem(
+                                store = store,
+                                isSelected = isSelected,
+                                onClick = {
+                                    val updated = currentFilters.selectedStores.toMutableSet().apply {
+                                        if (contains(store.id)) remove(store.id) else add(store.id)
+                                    }
+                                    currentFilters = currentFilters.copy(selectedStores = updated)
+                                }
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(Spacing.xl))
+                }
+            }
+            
             // Track cumulative items for ad insertion
             var cumulativeItemCount = 0
             var justInsertedAd = false

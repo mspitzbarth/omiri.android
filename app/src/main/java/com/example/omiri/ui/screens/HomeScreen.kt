@@ -1,10 +1,18 @@
 package com.example.omiri.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -14,12 +22,21 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+
+import coil.compose.AsyncImage
 import com.example.omiri.R
+import com.example.omiri.data.api.models.ProductResponse
+import com.example.omiri.data.api.models.StoreListResponse
 import com.example.omiri.ui.components.DealsCarousel
 import com.example.omiri.ui.components.OmiriHeader
 import com.example.omiri.ui.components.SectionHeader
@@ -27,46 +44,6 @@ import com.example.omiri.ui.components.SectionHeader
 import com.example.omiri.ui.theme.Spacing
 import com.example.omiri.viewmodels.ProductViewModel
 
-@Composable
-private fun ShoppingListPreviewCard() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.extraLarge,
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Column(modifier = Modifier.padding(Spacing.lg)) {
-            Text(
-                text = "Quick List Preview",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            Spacer(Modifier.height(Spacing.xs))
-            Text(
-                text = "Add items from deals and organize them into lists.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(Modifier.height(Spacing.md))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
-            ) {
-                AssistChip(
-                    onClick = { },
-                    label = { Text("Groceries") }
-                )
-                AssistChip(
-                    onClick = { },
-                    label = { Text("Household") }
-                )
-                AssistChip(
-                    onClick = { },
-                    label = { Text("Next Week") }
-                )
-            }
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable

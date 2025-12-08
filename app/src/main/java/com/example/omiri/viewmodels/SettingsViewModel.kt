@@ -42,6 +42,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _isOnboardingCompleted = MutableStateFlow<Boolean?>(null)
     val isOnboardingCompleted: StateFlow<Boolean?> = _isOnboardingCompleted.asStateFlow()
 
+    private val _selectedStoreIds = MutableStateFlow<Set<String>>(emptySet())
+    val selectedStoreIds: StateFlow<Set<String>> = _selectedStoreIds.asStateFlow()
+
+    private val _allStores = MutableStateFlow<List<com.example.omiri.data.api.models.StoreListResponse>>(emptyList())
+    val allStores: StateFlow<List<com.example.omiri.data.api.models.StoreListResponse>> = _allStores.asStateFlow()
+
     private val context = application.applicationContext
 
     companion object {
@@ -58,11 +64,24 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             userPreferences.selectedStores.collect { stores ->
                 _selectedStoresCount.value = stores.size
+                _selectedStoreIds.value = stores
             }
         }
         viewModelScope.launch {
             userPreferences.isOnboardingCompleted.collect { completed ->
                 _isOnboardingCompleted.value = completed
+            }
+        }
+        // Fetch all stores for Popular Stores section
+        viewModelScope.launch {
+            try {
+                // Assuming "DE" as default for now, or fetch from prefs if available
+                val result = com.example.omiri.data.repository.StoreRepository.instance.getStores("DE")
+                result.onSuccess { stores ->
+                    _allStores.value = stores
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
