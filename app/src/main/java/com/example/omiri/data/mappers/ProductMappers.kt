@@ -46,7 +46,8 @@ fun ProductResponse.toDeal(): Deal {
         discountPercentage = discountPercentage?.roundToInt() ?: 0,
         hasDiscount = hasDiscount,
         isOnShoppingList = false, // Default, updated by ViewModel if needed
-        searchTerm = searchTerm // Map search term
+        searchTerm = searchTerm, // Map search term
+        pdfSourceUrl = pdfSourceUrl
     )
 }
 

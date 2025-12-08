@@ -3,6 +3,7 @@ package com.example.omiri.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ChevronRight
@@ -13,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.omiri.ui.theme.Spacing
 import com.example.omiri.data.models.ShoppingList
 
@@ -57,19 +59,20 @@ fun ShoppingListsSection(
             // Take top 2
             shoppingLists.take(2).forEachIndexed { index, list ->
                 val itemCount = list.items.size
-                // val activeItems = list.items.count { !it.isDone } // We use total items usually
-                val dealCount = list.items.count { it.isInDeals }
                 
-                val completionText = if (itemCount > 0) {
-                    val doneCount = list.items.count { it.isDone }
-                    if (doneCount > 0) "${(doneCount * 100) / itemCount}% done" else null
-                } else "New"
+                // Calculate percentage
+                val doneCount = list.items.count { it.isDone }
+                val progress = if (itemCount > 0) (doneCount.toFloat() / itemCount) else 0f
+                val percentage = (progress * 100).toInt()
+                
+                val dealCount = list.items.count { it.isInDeals }
                 
                 ShoppingListItemRow(
                     title = list.name,
                     subtitle = "$itemCount items",
                     dealCount = dealCount,
-                    completionText = completionText,
+                    // Pass percentage instead of completion text string and count
+                    percentage = percentage,
                     onClick = { onListClick(list.id) }
                 )
                 
@@ -85,8 +88,8 @@ fun ShoppingListsSection(
 private fun ShoppingListItemRow(
     title: String,
     subtitle: String,
-    completionText: String? = null,
     dealCount: Int = 0,
+    percentage: Int = 0,
     onClick: () -> Unit = {}
 ) {
     Card(
@@ -120,22 +123,6 @@ private fun ShoppingListItemRow(
                         color = Color(0xFF6B7280)
                     )
                     
-                    if (completionText != null) {
-                        Spacer(Modifier.width(8.dp))
-                        Surface(
-                            color = Color(0xFFF3F4F6),
-                            shape = RoundedCornerShape(4.dp)
-                        ) {
-                            Text(
-                                text = completionText,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = Color(0xFF4B5563),
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
-
                     if (dealCount > 0) {
                         Spacer(Modifier.width(8.dp))
                         Surface(
@@ -153,6 +140,24 @@ private fun ShoppingListItemRow(
                     }
                 }
             }
+            
+            // Percentage Badge
+            Surface(
+                color = if (percentage == 100) Color(0xFF10B981) else Color(0xFFEA580B), // Green if done, else Orange
+                shape = RoundedCornerShape(16.dp), // Pill shape
+                contentColor = Color.White
+            ) {
+                 Text(
+                    text = "$percentage%",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    fontSize = 12.sp
+                )
+            }
+            
+            Spacer(Modifier.width(8.dp))
+            
             Icon(
                 imageVector = Icons.Outlined.ChevronRight,
                 contentDescription = null,

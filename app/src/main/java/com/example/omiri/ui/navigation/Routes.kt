@@ -17,6 +17,16 @@ object Routes {
     const val ShoppingListMatches = "shopping_list_matches"
     const val MembershipCards = "membership_cards"
 
+    const val WebViewArgUrl = "url"
+    const val WebViewArgTitle = "title"
+    const val WebView = "webview?url={$WebViewArgUrl}&title={$WebViewArgTitle}"
+    
+    fun webView(url: String, title: String = "Web View"): String {
+        val encodedUrl = java.net.URLEncoder.encode(url, "UTF-8")
+        val encodedTitle = java.net.URLEncoder.encode(title, "UTF-8")
+        return "webview?url=$encodedUrl&title=$encodedTitle"
+    }
+
     // Legacy route alias for backward compatibility
     @Deprecated("Use Settings instead", ReplaceWith("Settings"))
     const val Profile = "settings"

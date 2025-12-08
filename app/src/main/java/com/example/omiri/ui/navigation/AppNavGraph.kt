@@ -116,15 +116,39 @@ fun AppNavGraph(
                 )
             }
             composable(
-            route = Routes.ProductDetails,
-            arguments = listOf(navArgument(Routes.ProductDetailsArg) { type = NavType.StringType })
-        ) { backStackEntry ->
-            val dealId = backStackEntry.arguments?.getString(Routes.ProductDetailsArg)
-            ProductDetailsScreen(
-                dealId = dealId,
-                onBackClick = { navController.navigateUp() }
-            )
-        }
+                route = Routes.ProductDetails,
+                arguments = listOf(navArgument(Routes.ProductDetailsArg) { type = NavType.StringType })
+            ) { backStackEntry ->
+                val dealId = backStackEntry.arguments?.getString(Routes.ProductDetailsArg)
+                ProductDetailsScreen(
+                    dealId = dealId,
+                    onBackClick = { navController.navigateUp() },
+                    onAddToList = { deal -> 
+                         shoppingListViewModel.setDealListed(deal, true)
+                         // Optional: Show snackbar or feedback?
+                    },
+                    onViewFlyer = { url ->
+                        navController.navigate(Routes.webView(url, "Product Flyer"))
+                    }
+                )
+            }
+            
+            composable(
+                route = Routes.WebView,
+                arguments = listOf(
+                    navArgument(Routes.WebViewArgUrl) { type = NavType.StringType },
+                    navArgument(Routes.WebViewArgTitle) { type = NavType.StringType; defaultValue = "Web View" }
+                )
+            ) { backStackEntry ->
+                val url = backStackEntry.arguments?.getString(Routes.WebViewArgUrl) ?: ""
+                val title = backStackEntry.arguments?.getString(Routes.WebViewArgTitle) ?: "Web View"
+                WebViewScreen(
+                    url = url,
+                    title = title,
+                    onBackClick = { navController.navigateUp() }
+                )
+            }
+
             composable(Routes.Notifications) {
                 NotificationsScreen(
                     onBackClick = { navController.navigateUp() }

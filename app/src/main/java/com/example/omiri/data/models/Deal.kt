@@ -17,5 +17,6 @@ data class Deal(
     val imageUrl: String? = null,
     val discountPercentage: Int = 0,
     val hasDiscount: Boolean = false,
-    val isOnShoppingList: Boolean = false
+    val isOnShoppingList: Boolean = false,
+    val pdfSourceUrl: String? = null
 )

@@ -28,6 +28,8 @@ fun ProductDetailsScreen(
     dealId: String? = null,
     onBackClick: () -> Unit = {},
     onShareClick: () -> Unit = {},
+    onAddToList: (com.example.omiri.data.models.Deal) -> Unit = {},
+    onViewFlyer: (String) -> Unit = {},
     viewModel: com.example.omiri.viewmodels.ProductViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
     var deal by remember { mutableStateOf<com.example.omiri.data.models.Deal?>(null) }
@@ -83,8 +85,6 @@ fun ProductDetailsScreen(
                     containerColor = MaterialTheme.colorScheme.background
                 )
             )
-
-
         }
     ) { padding ->
         if (currentDeal == null) {
@@ -238,7 +238,11 @@ fun ProductDetailsScreen(
                         horizontalArrangement = Arrangement.spacedBy(Spacing.md)
                     ) {
                         Button(
-                            onClick = { },
+                            onClick = {
+                                if (currentDeal != null) {
+                                    onAddToList(currentDeal)
+                                }
+                            },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFFEA580B)
@@ -256,24 +260,30 @@ fun ProductDetailsScreen(
                                 modifier = Modifier.padding(vertical = 8.dp)
                             )
                         }
-                        OutlinedButton(
-                            onClick = { },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = Color(0xFFEA580B)
-                            ),
-                            shape = MaterialTheme.shapes.medium
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Description,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                "View Flyer",
-                                modifier = Modifier.padding(vertical = 8.dp)
-                            )
+                        
+                        // View Flyer Button
+                        if (currentDeal.pdfSourceUrl != null) {
+                            OutlinedButton(
+                                onClick = { 
+                                    onViewFlyer(currentDeal.pdfSourceUrl)
+                                },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = Color(0xFFEA580B)
+                                ),
+                                shape = MaterialTheme.shapes.medium
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Description,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    "View Flyer",
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                )
+                            }
                         }
                     }
 
