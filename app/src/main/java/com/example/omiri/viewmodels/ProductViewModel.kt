@@ -654,8 +654,8 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
             // But here we are just searching by text.
             
             // Re-ordering:
-            // 1. Calculate Plan
-            executeGenerateSmartPlan()
+            // 1. Calculate Plan (Pass local dealMap explicitly)
+            executeGenerateSmartPlan(dealMap)
             
             // 2. Update Matches State (NOW it appears in UI)
             _shoppingListMatches.value = dealMap
@@ -818,13 +818,13 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    private suspend fun executeGenerateSmartPlan() {
+    private suspend fun executeGenerateSmartPlan(matches: Map<String, List<Deal>>? = null) {
         // ... (existing call to repo) ...
         val result = repository.optimizeShoppingList(maxStores = 3)
         val finalPlan = if (result.isSuccess && result.getOrNull()?.steps?.isNotEmpty() == true) {
             result.getOrNull()
         } else {
-                calculateLocalSmartPlan()
+                calculateLocalSmartPlan(matches)
         }
         
         _smartPlan.value = finalPlan
@@ -892,8 +892,8 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
         _smartAlerts.value = alerts
     }
     
-    private fun calculateLocalSmartPlan(): com.example.omiri.data.api.models.ShoppingListOptimizeResponse? {
-        val matches = _shoppingListMatches.value
+    private fun calculateLocalSmartPlan(explicitMatches: Map<String, List<Deal>>? = null): com.example.omiri.data.api.models.ShoppingListOptimizeResponse? {
+        val matches = explicitMatches ?: _shoppingListMatches.value
         if (matches.isEmpty()) return null
         
         // Flatten all deals
