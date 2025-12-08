@@ -4,18 +4,26 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NamedNavArgument
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.compose.runtime.getValue
 import androidx.navigation.navArgument
 import com.example.omiri.ui.components.PennyBottomNav
 import com.example.omiri.ui.screens.*
 
 @Composable
-fun AppNavGraph() {
+fun AppNavGraph(
+    startDestination: String = Routes.Home,
+    settingsViewModel: com.example.omiri.viewmodels.SettingsViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+) {
     val navController = rememberNavController()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
     // Shared ViewModel
     // Shared ViewModel
     val shoppingListViewModel: com.example.omiri.viewmodels.ShoppingListViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
@@ -34,16 +42,19 @@ fun AppNavGraph() {
 
     Scaffold(
         bottomBar = {
-            PennyBottomNav(
-                navController = navController,
-                viewModel = shoppingListViewModel
-            )
+            if (currentRoute != "onboarding") {
+                PennyBottomNav(
+                    navController = navController,
+                    viewModel = shoppingListViewModel
+                )
+            }
         }
     ) { padding ->
+        val navHostPadding = if (currentRoute == "onboarding") androidx.compose.foundation.layout.PaddingValues(0.dp) else padding
         NavHost(
             navController = navController,
-            startDestination = Routes.Home,
-            modifier = Modifier.padding(padding)
+            startDestination = startDestination,
+            modifier = Modifier.padding(navHostPadding)
         ) {
             composable(Routes.Home) {
                 HomeScreen(
@@ -88,11 +99,13 @@ fun AppNavGraph() {
                 )
             }
             composable(Routes.Settings) {
-                SettingsScreen(
-                    onBackClick = { navController.navigateUp() },
-                    onMyStoresClick = { navController.navigate(Routes.MyStores) },
-                    onMembershipCardsClick = { navController.navigate(Routes.MembershipCards) }
-                )
+                com.example.omiri.ui.screens.SettingsScreen(
+                onBackClick = { navController.popBackStack() },
+                onMyStoresClick = { navController.navigate("my_stores") },
+                onMembershipCardsClick = { navController.navigate("membership_cards") },
+                onOnboardingClick = { navController.navigate("onboarding") },
+                viewModel = settingsViewModel
+            )
             }
             composable(Routes.MyStores) {
                 MyStoresScreen(
@@ -128,6 +141,21 @@ fun AppNavGraph() {
                 viewModel = membershipCardViewModel
             )
         }
+        composable("onboarding") {
+            com.example.omiri.ui.screens.OnboardingScreen(
+                onFinish = { 
+                    settingsViewModel.completeOnboarding()
+                    if (navController.previousBackStackEntry != null) {
+                        navController.popBackStack() 
+                    } else {
+                        // Was start destination
+                        navController.navigate(Routes.Home) {
+                            popUpTo("onboarding") { inclusive = true }
+                        }
+                    }
+                }
+            )
         }
     }
+}
 }

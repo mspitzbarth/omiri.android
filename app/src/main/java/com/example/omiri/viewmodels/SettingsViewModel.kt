@@ -38,6 +38,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     private val _selectedLanguage = MutableStateFlow("English")
     val selectedLanguage: StateFlow<String> = _selectedLanguage.asStateFlow()
+    
+    private val _isOnboardingCompleted = MutableStateFlow<Boolean?>(null)
+    val isOnboardingCompleted: StateFlow<Boolean?> = _isOnboardingCompleted.asStateFlow()
 
     private val context = application.applicationContext
 
@@ -56,6 +59,17 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             userPreferences.selectedStores.collect { stores ->
                 _selectedStoresCount.value = stores.size
             }
+        }
+        viewModelScope.launch {
+            userPreferences.isOnboardingCompleted.collect { completed ->
+                _isOnboardingCompleted.value = completed
+            }
+        }
+    }
+    
+    fun completeOnboarding() {
+        viewModelScope.launch {
+            userPreferences.setOnboardingCompleted(true)
         }
     }
 

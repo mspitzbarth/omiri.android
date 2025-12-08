@@ -1,13 +1,21 @@
 package com.example.omiri
 
 import android.os.Bundle
-import android.graphics.Color
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.SystemBarStyle
 import com.example.omiri.ui.navigation.AppNavGraph
 import com.example.omiri.ui.theme.OmiriTheme
+import androidx.activity.viewModels
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.background
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -17,17 +25,36 @@ class MainActivity : ComponentActivity() {
         // Force dark (black) status bar icons for light backgrounds
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(
-                scrim = Color.TRANSPARENT,
-                darkScrim = Color.TRANSPARENT
+                scrim = android.graphics.Color.TRANSPARENT,
+                darkScrim = android.graphics.Color.TRANSPARENT
             )
         )
         
         setupBackgroundWorker()
         handleNotificationIntent()
 
+        // Initialize ViewModel for settings/onboarding check
+        val settingsViewModel: com.example.omiri.viewmodels.SettingsViewModel by viewModels()
+
         setContent {
+            val isOnboardingCompleted by settingsViewModel.isOnboardingCompleted.collectAsState()
+            
             OmiriTheme {
-                AppNavGraph()
+                if (isOnboardingCompleted != null) {
+                    val startDest = if (isOnboardingCompleted == true) com.example.omiri.ui.navigation.Routes.Home else "onboarding"
+                    AppNavGraph(
+                        startDestination = startDest,
+                        settingsViewModel = settingsViewModel
+                    )
+                } else {
+                    // Splash Screen or Loading
+                    Box(
+                        modifier = Modifier.fillMaxSize().background(Color(0xFFEA580B)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                         // Simple Logo or loading
+                    }
+                }
             }
         }
     }

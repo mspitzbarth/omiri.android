@@ -90,21 +90,46 @@ fun PennyBottomNav(
             tonalElevation = 0.dp
         ) {
             items.forEach { item ->
-                val selected = currentRoute == item.route
+                // Hierarchical Selection Logic
+                val selected = when (item.route) {
+                    Routes.Settings -> currentRoute == Routes.Settings || 
+                                     currentRoute == Routes.MyStores || 
+                                     currentRoute == Routes.MembershipCards
+                    Routes.ShoppingList -> currentRoute == Routes.ShoppingList || 
+                                          currentRoute == Routes.ShoppingListMatches
+                    Routes.Home -> currentRoute == Routes.Home || 
+                                   (currentRoute?.startsWith("product_details") == true) // Assume Details belongs to Home primarily for now, or highlight none?
+                    else -> currentRoute == item.route
+                }
 
                 NavigationBarItem(
                     selected = selected,
                     onClick = {
-                        val isReselection = currentRoute == item.route
-                        navController.navigate(item.route) {
-                            // Pop up to start destination
-                            popUpTo(navController.graph.startDestinationId) {
-                                // Save state only if switching tabs, NOT if resetting (reselecting)
-                                saveState = !isReselection
+                        if (selected) {
+                            // User clicked the active tab
+                            if (currentRoute != item.route) {
+                                // We are deep in the stack (e.g. MyStores), jump to parent (Settings)
+                                navController.navigate(item.route) {
+                                    popUpTo(navController.graph.startDestinationId) {
+                                        saveState = true 
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = false // Do NOT restore stack, reset to root
+                                }
+                            } else {
+                                // We are already at root (e.g. Settings), do nothing (no refresh)
+                                // No-Op
                             }
-                            launchSingleTop = true
-                            // Restore state only if switching tabs. If reselecting, we want fresh state.
-                            restoreState = !isReselection
+                        } else {
+                            // Helper to detect if we are navigating to the graph start
+                            // Standard Tab Switch
+                            navController.navigate(item.route) {
+                                popUpTo(navController.graph.startDestinationId) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
                         }
                     },
                     icon = {

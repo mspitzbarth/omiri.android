@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.map
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.example.omiri.data.models.MembershipCard
+import androidx.datastore.preferences.core.booleanPreferencesKey
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_preferences")
 
@@ -104,6 +105,7 @@ class UserPreferences(private val context: Context) {
         private val SELECTED_STORES = stringSetPreferencesKey("selected_stores")
         private val SHOPPING_LIST_ITEMS = stringPreferencesKey("shopping_list_items")
         private val MEMBERSHIP_CARDS = stringPreferencesKey("membership_cards")
+        private val IS_ONBOARDING_COMPLETED = booleanPreferencesKey("is_onboarding_completed")
         private val STORE_LOCATIONS_PREFIX = "store_locations_"
         
         // Default country
@@ -170,6 +172,22 @@ class UserPreferences(private val context: Context) {
         val json = gson.toJson(cards)
         context.dataStore.edit { preferences ->
             preferences[MEMBERSHIP_CARDS] = json
+        }
+    }
+
+    /**
+     * Get onboarding completion status
+     */
+    val isOnboardingCompleted: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[IS_ONBOARDING_COMPLETED] ?: false
+    }
+
+    /**
+     * Set onboarding completion status
+     */
+    suspend fun setOnboardingCompleted(completed: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[IS_ONBOARDING_COMPLETED] = completed
         }
     }
 }
