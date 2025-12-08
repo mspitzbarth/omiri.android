@@ -22,6 +22,7 @@ import com.example.omiri.data.api.models.StoreListResponse
 import com.example.omiri.ui.components.StoreLocationModal
 import com.example.omiri.ui.theme.Spacing
 import com.example.omiri.viewmodels.MyStoresViewModel
+import com.example.omiri.ui.components.ScreenHeader
 
 import com.example.omiri.ui.components.simpleVerticalScrollbar
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -69,39 +70,10 @@ fun MyStoresScreen(
             .background(Color(0xFFFAFBFC))
     ) {
         // Header
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shadowElevation = 1.dp,
-            color = Color.White
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = Spacing.lg)
-                    .padding(vertical = Spacing.xxs)
-                    .height(48.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "My Stores",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = Color(0xFF111827),
-                    fontWeight = FontWeight.Bold
-                )
-
-                IconButton(
-                    onClick = onBackClick,
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color(0xFF6B7280)
-                    )
-                }
-            }
-        }
+        ScreenHeader(
+            title = "My Stores",
+            onBackClick = onBackClick
+        )
         
         val listState = rememberLazyListState()
 

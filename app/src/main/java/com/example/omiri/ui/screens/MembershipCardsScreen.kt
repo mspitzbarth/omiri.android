@@ -25,6 +25,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.omiri.data.models.MembershipCard
 import com.example.omiri.ui.theme.Spacing
 import com.example.omiri.viewmodels.MembershipCardViewModel
+import com.example.omiri.ui.components.ScreenHeader
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,22 +41,9 @@ fun MembershipCardsScreen(
     
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { 
-                    Text(
-                        "Cards & Memberships", 
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    ) 
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color.White
-                )
+            ScreenHeader(
+                title = "Cards & Memberships",
+                onBackClick = onBackClick
             )
         },
         floatingActionButton = {

@@ -26,6 +26,7 @@ import com.example.omiri.ui.components.NotificationCard
 import com.example.omiri.ui.models.NotificationUiModel
 import com.example.omiri.ui.theme.Spacing
 import com.example.omiri.viewmodels.NotificationViewModel
+import com.example.omiri.ui.components.ScreenHeader
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,30 +58,10 @@ fun NotificationsScreen(
         containerColor = Color(0xFFF9FAFB), // Very light gray background
         topBar = {
             Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
-                TopAppBar(
-                    title = {
-                        Column {
-                            Text(
-                                "Notifications",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                "12 unread",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFF6B7280)
-                            )
-                        }
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = onBackClick) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
-                            )
-                        }
-                    },
-                    actions = {
+                ScreenHeader(
+                    title = "Notifications",
+                    onBackClick = onBackClick,
+                    action = {
                         TextButton(onClick = { /* Mark all read */ }) {
                             Text(
                                 "Mark all read",
@@ -88,14 +69,10 @@ fun NotificationsScreen(
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        titleContentColor = MaterialTheme.colorScheme.onSurface,
-                        navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
-                        actionIconContentColor = Color(0xFFF97316)
-                    )
+                    }
                 )
+                
+                // Filters
                 
                 // Filters
                 LazyRow(
