@@ -10,6 +10,10 @@ import com.example.omiri.ui.theme.OmiriTheme
 import androidx.activity.viewModels
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.background
@@ -40,12 +44,54 @@ class MainActivity : ComponentActivity() {
 
         // Initialize ViewModel for settings/onboarding check
         val settingsViewModel: com.example.omiri.viewmodels.SettingsViewModel by viewModels()
+        // Initialize ProductViewModel for pre-loading data
+        val productViewModel: com.example.omiri.viewmodels.ProductViewModel by viewModels()
 
         setContent {
             val isOnboardingCompleted by settingsViewModel.isOnboardingCompleted.collectAsState()
             
+            // Observe Product Data State
+            val featuredDeals by productViewModel.featuredDeals.collectAsState()
+            val productError by productViewModel.error.collectAsState()
+            val loadingProgress by productViewModel.loadingProgress.collectAsState()
+            
+            // State to control Splash visibility manually for the delay
+            var isSplashVisible by remember { mutableStateOf(true) }
+            
+            // Trigger load once
+            LaunchedEffect(Unit) {
+                productViewModel.initialLoad()
+            }
+            
+            // Handle Transition Delay when progress hits 100%
+            LaunchedEffect(loadingProgress, isOnboardingCompleted) {
+                if (loadingProgress >= 1.0f) {
+                    kotlinx.coroutines.delay(500) // 0.5s delay
+                    isSplashVisible = false
+                }
+                
+                // If not onboarded (new user), we might not reach 1.0 product progress if we skip it?
+                // But initialLoad only runs if data is needed. 
+                // However, logical safety: If Onboarding is FALSE (i.e. 'onboarding' route), we should hide splash too.
+                // But typically onboarding null -> loading prefs.
+                // onBoarding false -> new user.
+                
+                // If isOnboardingCompleted is known AND it is FALSE (New User), hide splash immediately (or after prefs load).
+                // Actually, wait for prefs (which should be fast).
+                if (isOnboardingCompleted == false) {
+                     isSplashVisible = false
+                }
+            }
+
+            // Fallback: If error occurs, hide splash so user isn't stuck
+            LaunchedEffect(productError) {
+                if (productError != null) {
+                    isSplashVisible = false
+                }
+            }
+            
             OmiriTheme {
-                if (isOnboardingCompleted != null) {
+                if (!isSplashVisible) {
                     val startDest = if (isOnboardingCompleted == true) com.example.omiri.ui.navigation.Routes.Home else "onboarding"
                     AppNavGraph(
                         startDestination = startDest,
@@ -53,12 +99,7 @@ class MainActivity : ComponentActivity() {
                     )
                 } else {
                     // Splash Screen or Loading
-                    Box(
-                        modifier = Modifier.fillMaxSize().background(Color(0xFFEA580B)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                         // Simple Logo or loading
-                    }
+                    com.example.omiri.ui.screens.SplashScreen(progress = loadingProgress)
                 }
             }
         }

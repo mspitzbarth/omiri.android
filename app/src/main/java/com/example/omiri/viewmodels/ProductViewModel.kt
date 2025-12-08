@@ -317,6 +317,9 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
         fetchProducts()
     }
     
+    private val _loadingProgress = MutableStateFlow(0f)
+    val loadingProgress: StateFlow<Float> = _loadingProgress.asStateFlow()
+
     /**
      * Core fetching logic
      */
@@ -324,6 +327,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
         Log.d(TAG, "fetchProducts() called at ${System.currentTimeMillis()}")
         val start = System.currentTimeMillis()
         _isLoading.value = true
+        _loadingProgress.value = 0.1f // Start
         _isPaging.value = false
         _error.value = null
         
@@ -332,6 +336,8 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
             val country = userPreferences.selectedCountry.first()
             val selectedStores = userPreferences.selectedStores.first()
             val cachedRetailers = userPreferences.cachedRetailersString.first()
+            
+            _loadingProgress.value = 0.2f // Preferences loaded
             
             Log.d(TAG, "Prefs loaded in fetchProducts")
             
@@ -356,12 +362,17 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
                 }
             }
              
+            _loadingProgress.value = 0.3f // Ready to fetch
+             
             // Parallelize API calls for speed
             val deferredFeatured = viewModelScope.async { loadFeaturedDeals(country, retailers) }
             val deferredAll = viewModelScope.async { loadAllDeals(country, retailers) }
             
             deferredFeatured.await()
+            _loadingProgress.value = 0.6f // Halfway through data
+            
             deferredAll.await()
+            _loadingProgress.value = 0.9f // Almost done
             
             Log.d(TAG, "All API calls completed successfully")
         } catch (e: Exception) {
@@ -370,6 +381,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
             _error.value = errorMsg
         } finally {
             _isLoading.value = false
+            _loadingProgress.value = 1.0f // Done (or failed, but finished)
         }
     }
     

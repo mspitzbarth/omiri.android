@@ -5,11 +5,12 @@
 
     <style name="Theme.App.Starting" parent="Theme.Omiri">
         <!-- Pre-Android 12 -->
-        <item name="android:windowBackground">@drawable/splash_background</item>
-        <item name="android:statusBarColor">#EA580B</item>
-        
+        <item name="android:windowBackground">@color/white</item>
+        <item name="android:statusBarColor">@color/white</item>
+        <item name="android:windowLightStatusBar">true</item>
+
         <!-- Android 12+ Splash Screen API -->
-        <item name="android:windowSplashScreenBackground">#EA580B</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_omiri_logo_splash</item>
+        <item name="android:windowSplashScreenBackground">@color/white</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>
     </style>
 </resources>
