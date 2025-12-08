@@ -55,8 +55,8 @@ fun HomeScreen(
     onToggleShoppingList: (com.example.omiri.data.models.Deal, Boolean) -> Unit = { _, _ -> },
     onNavigateToShoppingListTab: () -> Unit = {},
     onNavigateToList: (String) -> Unit = {},
-    viewModel: ProductViewModel = viewModel(),
-    shoppingListViewModel: com.example.omiri.viewmodels.ShoppingListViewModel = viewModel()
+    viewModel: ProductViewModel,
+    shoppingListViewModel: com.example.omiri.viewmodels.ShoppingListViewModel
 ) {
     // Collect state from ViewModel
     val featuredDeals by viewModel.featuredDeals.collectAsState()

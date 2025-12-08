@@ -213,7 +213,7 @@ fun DealCard(
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFFEA580C)
                 )
-                if (!deal.originalPrice.isNullOrBlank()) {
+                if (!deal.originalPrice.isNullOrBlank() && deal.discountPercentage > 0) {
                     Text(
                         text = deal.originalPrice!!,
                         style = MaterialTheme.typography.bodyMedium,

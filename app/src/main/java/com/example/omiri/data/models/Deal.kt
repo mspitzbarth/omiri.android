@@ -12,6 +12,12 @@ data class Deal(
     val discountLabel: String? = null,
     val timeLeftLabel: String? = null,
     val category: String,
+    val brand: String? = null,
+    val description: String? = null,
+    val country: String? = null,
+    val zipcode: String? = null,
+    val availableFrom: String? = null,
+    val availableUntil: String? = null,
     val isFavorite: Boolean = false,
     val heroColor: Color? = null, // for placeholder images
     val imageUrl: String? = null,

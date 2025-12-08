@@ -155,24 +155,78 @@ class UserPreferences(private val context: Context) {
         }
     }
     
-    companion object {
-        private val SELECTED_COUNTRY = stringPreferencesKey("selected_country")
-        private val SELECTED_STORES = stringSetPreferencesKey("selected_stores")
-        private val SHOPPING_LIST_ITEMS = stringPreferencesKey("shopping_list_items")
-        private val MEMBERSHIP_CARDS = stringPreferencesKey("membership_cards")
-        private val IS_ONBOARDING_COMPLETED = booleanPreferencesKey("is_onboarding_completed")
-        private val SAVED_SHOPPING_LISTS = stringPreferencesKey("saved_shopping_lists")
-        private val IS_APP_FOREGROUND = booleanPreferencesKey("is_app_foreground")
-        private val STORE_LOCATIONS_PREFIX = "store_locations_"
-        
-        // Default country
-        const val DEFAULT_COUNTRY = "US"
-        
-        private val CACHED_RETAILERS_STRING = stringPreferencesKey("cached_retailers_string")
-        private val SMART_PLAN = stringPreferencesKey("smart_plan")
-        private val SHOPPING_LIST_MATCHES_RESPONSE = stringPreferencesKey("shopping_list_matches_response")
+    // Wrapper for generic caching with timestamp
+    data class CachedGenericWrapper<T>(
+        val timestamp: Long,
+        val data: T
+    )
+
+    /**
+     * Save cached categories (24h TTL)
+     */
+    suspend fun saveCachedCategories(categories: List<String>) {
+        val wrapper = CachedGenericWrapper(System.currentTimeMillis(), categories)
+        val json = gson.toJson(wrapper)
+        context.dataStore.edit { preferences ->
+            preferences[CACHED_CATEGORIES] = json
+        }
     }
-    
+
+    /**
+     * Get cached categories (valid for 24h)
+     */
+    val cachedCategories: Flow<List<String>> = context.dataStore.data.map { preferences ->
+        val json = preferences[CACHED_CATEGORIES] ?: return@map emptyList()
+        try {
+            val type = object : TypeToken<CachedGenericWrapper<List<String>>>() {}.type
+            val wrapper: CachedGenericWrapper<List<String>> = gson.fromJson(json, type)
+            
+            val ttl = 24 * 60 * 60 * 1000L // 24 Hours
+            if (System.currentTimeMillis() - wrapper.timestamp < ttl) {
+                wrapper.data
+            } else {
+                emptyList()
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    /**
+     * Save cached stores for a country (24h TTL)
+     */
+    suspend fun saveCachedStores(country: String, stores: List<com.example.omiri.data.api.models.StoreListResponse>) {
+        val wrapper = CachedGenericWrapper(System.currentTimeMillis(), stores)
+        val json = gson.toJson(wrapper)
+        val key = stringPreferencesKey("${CACHED_STORES_PREFIX}$country")
+        context.dataStore.edit { preferences ->
+            preferences[key] = json
+        }
+    }
+
+    /**
+     * Get cached stores for a country (valid for 24h)
+     */
+    fun getCachedStores(country: String): Flow<List<com.example.omiri.data.api.models.StoreListResponse>> {
+        val key = stringPreferencesKey("${CACHED_STORES_PREFIX}$country")
+        return context.dataStore.data.map { preferences ->
+            val json = preferences[key] ?: return@map emptyList()
+            try {
+                val type = object : TypeToken<CachedGenericWrapper<List<com.example.omiri.data.api.models.StoreListResponse>>>() {}.type
+                val wrapper: CachedGenericWrapper<List<com.example.omiri.data.api.models.StoreListResponse>> = gson.fromJson(json, type)
+                
+                val ttl = 24 * 60 * 60 * 1000L // 24 Hours
+                if (System.currentTimeMillis() - wrapper.timestamp < ttl) {
+                    wrapper.data
+                } else {
+                    emptyList()
+                }
+            } catch (e: Exception) {
+                emptyList()
+            }
+        }
+    }
+
     /**
      * Get cached retailers string
      */
@@ -285,5 +339,136 @@ class UserPreferences(private val context: Context) {
         context.dataStore.edit { preferences ->
             preferences[SHOPPING_LIST_MATCHES_RESPONSE] = json
         }
+    }
+
+    // Wrapper for cache with timestamp is already defined above? No, I see it in lines 159-162. 
+    // And `saveCachedProducts` / `getCachedProducts` were also deleted?
+    // Let me check Step 512 content.
+    // Lines 159-162: `data class CachedGenericWrapper`.
+    // Lines 164-228: `saveCachedCategories`, `cachedCategories`, `saveCachedStores`, `getCachedStores`.
+    // But `saveCachedProducts` and `getCachedProducts` are MISSING.
+    // And `CachedGenericWrapper` for products (lines 295-298 in original) might be different or I can reuse `CachedGenericWrapper`?
+    // Original used `CachedProductsWrapper` which hardcoded `List<ProductResponse>`.
+    // I should probably restore `CachedProductsWrapper` and its methods too to avoid breaking existing code.
+    
+    // Wrapper for cache with timestamp (Original)
+    data class CachedProductsWrapper(
+        val timestamp: Long,
+        val products: List<com.example.omiri.data.api.models.ProductResponse>
+    )
+
+    /**
+     * Save cached products
+     */
+    suspend fun saveCachedProducts(type: String, products: List<com.example.omiri.data.api.models.ProductResponse>) {
+        val key = when(type) {
+            "featured" -> CACHED_FEATURED_PRODUCTS
+            "all_deals" -> CACHED_ALL_PRODUCTS
+            else -> return
+        }
+        
+        // Wrap with current time and limit to 50
+        val wrapper = CachedProductsWrapper(
+            timestamp = System.currentTimeMillis(),
+            products = products.take(50)
+        )
+        val json = gson.toJson(wrapper)
+        context.dataStore.edit { preferences ->
+            preferences[key] = json
+        }
+    }
+
+    /**
+     * Get cached products
+     */
+    fun getCachedProducts(type: String): Flow<List<com.example.omiri.data.api.models.ProductResponse>> {
+        val key = when(type) {
+            "featured" -> CACHED_FEATURED_PRODUCTS
+            "all_deals" -> CACHED_ALL_PRODUCTS
+            else -> return kotlinx.coroutines.flow.flowOf(emptyList())
+        }
+        return context.dataStore.data.map { preferences ->
+            val json = preferences[key] ?: return@map emptyList()
+            try {
+                // Try to parse as Wrapper (New Format)
+                val wrapper = gson.fromJson(json, CachedProductsWrapper::class.java)
+                
+                // 1. Check TTL (2 Hours)
+                val ttl = 2 * 60 * 60 * 1000L
+                val now = System.currentTimeMillis()
+                if (now - wrapper.timestamp > ttl) {
+                    return@map emptyList()
+                }
+                
+                // 2. Filter expired products
+                val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.getDefault())
+                wrapper.products.filter { product ->
+                    val expiry = product.availableUntil
+                    if (expiry != null) {
+                       try {
+                           val date = dateFormat.parse(expiry)
+                           date != null && date.time > now
+                       } catch (e: Exception) {
+                           true 
+                       }
+                    } else {
+                        true
+                    }
+                }
+            } catch (e: Exception) {
+                // Fallback for old format (List<ProductResponse>) or general errors
+                try {
+                     val typeToken = object : TypeToken<List<com.example.omiri.data.api.models.ProductResponse>>() {}.type
+                     gson.fromJson(json, typeToken)
+                } catch (e2: Exception) {
+                    emptyList()
+                }
+            }
+        }
+    }
+
+    /**
+     * Get favorite deal IDs
+     */
+    val favoriteDealIds: Flow<Set<String>> = context.dataStore.data.map { preferences ->
+        preferences[FAVORITE_DEAL_IDS] ?: emptySet()
+    }
+
+    /**
+     * Save favorite deal IDs
+     */
+    suspend fun saveFavoriteDealIds(ids: Set<String>) {
+        context.dataStore.edit { preferences ->
+            preferences[FAVORITE_DEAL_IDS] = ids
+        }
+    }
+
+    companion object {
+        private val SELECTED_COUNTRY = stringPreferencesKey("selected_country")
+        private val SELECTED_STORES = stringSetPreferencesKey("selected_stores")
+        private val SHOPPING_LIST_ITEMS = stringPreferencesKey("shopping_list_items")
+        private val MEMBERSHIP_CARDS = stringPreferencesKey("membership_cards")
+        private val IS_ONBOARDING_COMPLETED = booleanPreferencesKey("is_onboarding_completed")
+        private val SAVED_SHOPPING_LISTS = stringPreferencesKey("saved_shopping_lists")
+        private val IS_APP_FOREGROUND = booleanPreferencesKey("is_app_foreground")
+        private val STORE_LOCATIONS_PREFIX = "store_locations_"
+        
+        // Favorites
+        private val FAVORITE_DEAL_IDS = stringSetPreferencesKey("favorite_deal_ids")
+        
+        // Default country
+        const val DEFAULT_COUNTRY = "US"
+        
+        private val CACHED_RETAILERS_STRING = stringPreferencesKey("cached_retailers_string")
+        private val SMART_PLAN = stringPreferencesKey("smart_plan")
+        private val SHOPPING_LIST_MATCHES_RESPONSE = stringPreferencesKey("shopping_list_matches_response")
+        
+        // Product Caching Keys
+        private val CACHED_FEATURED_PRODUCTS = stringPreferencesKey("cached_featured_products")
+        private val CACHED_ALL_PRODUCTS = stringPreferencesKey("cached_all_products")
+        
+        // Heavy Caching Keys
+        private val CACHED_CATEGORIES = stringPreferencesKey("cached_categories")
+        private val CACHED_STORES_PREFIX = "cached_stores_"
     }
 }

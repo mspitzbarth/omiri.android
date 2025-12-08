@@ -48,7 +48,7 @@ fun AllDealsScreen(
     onNotificationsClick: () -> Unit = {},
     onToggleShoppingList: (com.example.omiri.data.models.Deal, Boolean) -> Unit = { _, _ -> },
     onNavigateToMyStores: () -> Unit = {},
-    viewModel: ProductViewModel = viewModel(),
+    viewModel: ProductViewModel,
     settingsViewModel: SettingsViewModel = viewModel()
 ) {
     var showFilterModal by remember { mutableStateOf(false) }
@@ -112,9 +112,11 @@ fun AllDealsScreen(
     if (isRefreshing) {
         LaunchedEffect(Unit) {
             adManager.showAd {
-                viewModel.loadProducts()
-                isRefreshing = false
-                adManager.loadAd()
+                scope.launch {
+                    viewModel.refreshProducts()
+                    isRefreshing = false
+                    adManager.loadAd()
+                }
             }
         }
     }

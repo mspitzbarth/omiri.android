@@ -97,34 +97,25 @@ fun MyStoresScreen(
         topBar = {
              ScreenHeader(
                 title = "My Stores",
-                onBackClick = onBackClick 
-            )
-        },
-        bottomBar = {
-            Surface(
-                shadowElevation = 8.dp, // Optional shadow for valid elevation
-                color = Color.White
-            ) {
-                Column(Modifier.padding(Spacing.lg)) {
-                    Button(
+                onBackClick = onBackClick,
+                action = {
+                    TextButton(
                         onClick = {
                             viewModel.saveChanges(selectedStoresBuffer, storeLocationsBuffer)
                             onBackClick()
                         },
                         enabled = selectedStoresBuffer.isNotEmpty(),
-                        modifier = Modifier.fillMaxWidth().height(48.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFEA580B),
-                            disabledContainerColor = Color(0xFFFED7AA)
-                        ),
-                        shape = RoundedCornerShape(12.dp)
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = Color(0xFFEA580B),
+                            disabledContentColor = Color(0xFFFED7AA)
+                        )
                     ) {
-                        Text("Save Stores", fontWeight = FontWeight.Bold)
+                        Text("Save", fontWeight = FontWeight.Bold)
                     }
                 }
-            }
+            )
         },
-        containerColor = com.example.omiri.ui.theme.AppColors.Bg
+        containerColor = Color(0xFFF9FAFB)
     ) { padding ->
         val listState = rememberLazyListState()
 

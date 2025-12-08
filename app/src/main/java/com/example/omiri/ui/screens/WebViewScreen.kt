@@ -41,12 +41,25 @@ fun WebViewScreen(
                     webViewClient = WebViewClient()
                     settings.javaScriptEnabled = true
                     settings.domStorageEnabled = true
-                    loadUrl(url)
+                    
+                    val finalUrl = if (url.endsWith(".pdf", ignoreCase = true)) {
+                        "https://docs.google.com/gview?embedded=true&url=$url"
+                    } else {
+                        url
+                    }
+                    loadUrl(finalUrl)
                 }
             },
             update = { webView ->
-                if (webView.url != url) {
-                    webView.loadUrl(url)
+                val currentUrl = webView.url
+                val targetUrl = if (url.endsWith(".pdf", ignoreCase = true)) {
+                    "https://docs.google.com/gview?embedded=true&url=$url"
+                } else {
+                    url
+                }
+                
+                if (currentUrl != targetUrl) {
+                    webView.loadUrl(targetUrl)
                 }
             }
         )

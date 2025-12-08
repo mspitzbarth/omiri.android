@@ -26,6 +26,7 @@ fun AppNavGraph(
     val currentRoute = navBackStackEntry?.destination?.route
     // Shared ViewModel
     // Shared ViewModel
+    val productViewModel: com.example.omiri.viewmodels.ProductViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
     val shoppingListViewModel: com.example.omiri.viewmodels.ShoppingListViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
     val membershipCardViewModel: com.example.omiri.viewmodels.MembershipCardViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
     
@@ -68,7 +69,8 @@ fun AppNavGraph(
                         navController.navigate(Routes.ShoppingList)
 
                     },
-                    shoppingListViewModel = shoppingListViewModel
+                    shoppingListViewModel = shoppingListViewModel,
+                    viewModel = productViewModel
                 )
             }
             composable(Routes.AllDeals) {
@@ -77,7 +79,8 @@ fun AppNavGraph(
                     onNotificationsClick = { navController.navigate(Routes.Notifications) },
                     onToggleShoppingList = { deal, isListed -> shoppingListViewModel.setDealListed(deal, isListed) },
                     onNavigateToMyStores = { navController.navigate(Routes.MyStores) },
-                    settingsViewModel = settingsViewModel
+                    settingsViewModel = settingsViewModel,
+                    viewModel = productViewModel
                 )
             }
             composable(Routes.AiChat) {
@@ -129,7 +132,8 @@ fun AppNavGraph(
                     },
                     onViewFlyer = { url ->
                         navController.navigate(Routes.webView(url, "Product Flyer"))
-                    }
+                    },
+                    viewModel = productViewModel
                 )
             }
             

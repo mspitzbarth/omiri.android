@@ -97,39 +97,35 @@ fun PennyBottomNav(
                                      currentRoute == Routes.MembershipCards
                     Routes.ShoppingList -> currentRoute == Routes.ShoppingList || 
                                           currentRoute == Routes.ShoppingListMatches
-                    Routes.Home -> currentRoute == Routes.Home || 
-                                   (currentRoute?.startsWith("product_details") == true) // Assume Details belongs to Home primarily for now, or highlight none?
+                    Routes.Home -> currentRoute == Routes.Home
                     else -> currentRoute == item.route
                 }
 
                 NavigationBarItem(
                     selected = selected,
                     onClick = {
-                        if (selected) {
-                            // User clicked the active tab
-                            if (currentRoute != item.route) {
-                                // We are deep in the stack (e.g. MyStores), jump to parent (Settings)
-                                navController.navigate(item.route) {
-                                    popUpTo(navController.graph.startDestinationId) {
-                                        saveState = true 
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = false // Do NOT restore stack, reset to root
-                                }
-                            } else {
-                                // We are already at root (e.g. Settings), do nothing (no refresh)
-                                // No-Op
-                            }
-                        } else {
-                            // Helper to detect if we are navigating to the graph start
-                            // Standard Tab Switch
-                            navController.navigate(item.route) {
+                        // Always reset to the route's start destination (parent)
+                        if (currentRoute != item.route) {
+                             navController.navigate(item.route) {
                                 popUpTo(navController.graph.startDestinationId) {
-                                    saveState = true
+                                    saveState = true // Save state of the destination we are LEAVING? Or just pop?
+                                    // User said: "always go back to the parent"
+                                    // Usually this means: Don't restore the stack of the target.
                                 }
                                 launchSingleTop = true
-                                restoreState = true
+                                restoreState = false // Reset target stack
                             }
+                        } else {
+                            // Already on the root of this tab?
+                            // If we are deep in stack for this tab (e.g. MyStores -> Settings is current tab route but actual dest is MyStores),
+                            // currentRoute check in this file is simple string comparison.
+                            // However, `currentRoute` variable earlier is: `navController.currentBackStackEntryAsState().value?.destination?.route`
+                            // If we are deep, `currentRoute` might be "my_stores", but `item.route` is "settings".
+                            // So `currentRoute != item.route` will be true.
+                            // So we navigate to "settings" with restoreState=false.
+                            
+                            // If we are AT "settings" root. currentRoute == "settings".
+                            // Then we do nothing.
                         }
                     },
                     icon = {
