@@ -10,10 +10,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.omiri.data.models.Deal
 import com.example.omiri.ui.theme.Spacing
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 
 @Composable
 fun FeaturedDealsRow(
     deals: List<Deal>,
+    isLoading: Boolean = false,
+    emptyMessage: String = "No deals found",
     onViewAll: () -> Unit = {},
     onDealClick: (String) -> Unit = {}
 ) {
@@ -30,34 +35,36 @@ fun FeaturedDealsRow(
         
         Spacer(Modifier.height(Spacing.md))
         
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = Spacing.lg),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.md)
-        ) {
-            // Mock data if empty
-             if (deals.isEmpty()) {
-                 // Placeholders or empty state
-                 // Display dummy deals for visual check based on screenshot
-                 MockDealCard(
-                     title = "Greek Yogurt 500g",
-                     store = "Lidl",
-                     price = "€1.49",
-                     oldPrice = "€2.19",
-                     badgeText = "2 days left",
-                     badgeColor = Color(0xFF10B981) // Green
-                 )
-                 MockDealCard(
-                     title = "Premium Coffee Beans 1kg",
-                     store = "Aldi",
-                     price = "€7.99",
-                     oldPrice = "€10.99",
-                     badgeText = "Ends today",
-                     badgeColor = Color(0xFFDC2626) // Red
-                 )
-             } else {
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp), // Height of a card roughly
+                contentAlignment = androidx.compose.ui.Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color(0xFFEA580B))
+            }
+        } else if (deals.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp),
+                contentAlignment = androidx.compose.ui.Alignment.Center
+            ) {
+                Text(
+                    text = emptyMessage,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray
+                )
+            }
+        } else {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = Spacing.lg),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.md)
+            ) {
                  deals.forEach { deal ->
                       DealCard(
                         deal = deal,
@@ -65,7 +72,7 @@ fun FeaturedDealsRow(
                         modifier = Modifier.width(160.dp)
                     )
                  }
-             }
+            }
         }
     }
 }

@@ -68,7 +68,7 @@ private fun ShoppingListPreviewCard() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
     onNavigateAllDeals: () -> Unit = {},
@@ -76,11 +76,15 @@ fun HomeScreen(
     fixedHeader: Boolean = true,
     onNotificationsClick: () -> Unit = {},
     onToggleShoppingList: (com.example.omiri.data.models.Deal, Boolean) -> Unit = { _, _ -> },
-    viewModel: ProductViewModel = viewModel()
+    onNavigateToShoppingListTab: () -> Unit = {},
+    onNavigateToList: (String) -> Unit = {},
+    viewModel: ProductViewModel = viewModel(),
+    shoppingListViewModel: com.example.omiri.viewmodels.ShoppingListViewModel = viewModel()
 ) {
     // Collect state from ViewModel
     val featuredDeals by viewModel.featuredDeals.collectAsState()
     val shoppingListDeals by viewModel.shoppingListDeals.collectAsState()
+    val shoppingLists by shoppingListViewModel.shoppingLists.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
     val categories by viewModel.categories.collectAsState()
@@ -136,27 +140,54 @@ fun HomeScreen(
                     potentialSavings = "€%.2f".format(if (potentialSavings > 0) potentialSavings else 18.40) // Mock default if 0
                 )
 
-                // 2. Smart Plan Card
+                // 2 & 3. Smart Plan / Alerts Carousel
                 Spacer(Modifier.height(Spacing.md))
-                com.example.omiri.ui.components.SmartPlanCard(
-                    onStartPlan = {},
-                    onAdjustPlan = {}
-                )
-
-                // 3. Smart Alerts
-                Spacer(Modifier.height(Spacing.lg))
-                com.example.omiri.ui.components.SmartAlertsCard()
+                
+                val pagerState = androidx.compose.foundation.pager.rememberPagerState(pageCount = { 2 })
+                
+                androidx.compose.foundation.pager.HorizontalPager(
+                    state = pagerState,
+                    contentPadding = PaddingValues(horizontal = 0.dp),
+                    pageSpacing = Spacing.md
+                ) { page ->
+                    when(page) {
+                        0 -> com.example.omiri.ui.components.SmartPlanCard()
+                        1 -> com.example.omiri.ui.components.SmartAlertsCard()
+                    }
+                }
+                
+                // Indicators
+                Spacer(Modifier.height(Spacing.sm))
+                Row(
+                    Modifier
+                        .wrapContentHeight()
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    repeat(pagerState.pageCount) { iteration ->
+                         val color = if (pagerState.currentPage == iteration) Color(0xFFEA580B) else Color(0xFFD1D5DB)
+                        Box(
+                            modifier = Modifier
+                                .padding(2.dp)
+                                .size(6.dp)
+                                .background(color, androidx.compose.foundation.shape.CircleShape)
+                        )
+                    }
+                }
 
                 // 4. Shopping Lists
-                Spacer(Modifier.height(Spacing.xl))
+                Spacer(Modifier.height(Spacing.lg))
                 com.example.omiri.ui.components.ShoppingListsSection(
-                    onViewAll = onNavigateAllDeals
+                    shoppingLists = shoppingLists,
+                    onViewAll = onNavigateToShoppingListTab,
+                    onListClick = onNavigateToList
                 )
 
                 // 5. Featured Deals
                 Spacer(Modifier.height(Spacing.xl))
                 com.example.omiri.ui.components.FeaturedDealsRow(
                     deals = featuredDeals.take(5), // Dynamically use real deals
+                    isLoading = isLoading,
                     onViewAll = onNavigateAllDeals,
                     onDealClick = onDealClick
                 )

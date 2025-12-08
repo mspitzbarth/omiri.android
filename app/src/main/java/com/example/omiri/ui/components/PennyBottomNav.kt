@@ -95,16 +95,16 @@ fun PennyBottomNav(
                 NavigationBarItem(
                     selected = selected,
                     onClick = {
-                        // Navigate even if not selected to handle ProductDetails case
-                        if (currentRoute != item.route) {
-                            navController.navigate(item.route) {
-                                // Pop up to start destination to clear ProductDetails from backstack
-                                popUpTo(navController.graph.startDestinationId) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
+                        val isReselection = currentRoute == item.route
+                        navController.navigate(item.route) {
+                            // Pop up to start destination
+                            popUpTo(navController.graph.startDestinationId) {
+                                // Save state only if switching tabs, NOT if resetting (reselecting)
+                                saveState = !isReselection
                             }
+                            launchSingleTop = true
+                            // Restore state only if switching tabs. If reselecting, we want fresh state.
+                            restoreState = !isReselection
                         }
                     },
                     icon = {

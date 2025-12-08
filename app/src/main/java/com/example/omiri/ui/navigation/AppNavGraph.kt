@@ -50,7 +50,13 @@ fun AppNavGraph() {
                     onNavigateAllDeals = { navController.navigate(Routes.AllDeals) },
                     onDealClick = { dealId: String -> navController.navigate(Routes.productDetails(dealId)) },
                     onNotificationsClick = { navController.navigate(Routes.Notifications) },
-                    onToggleShoppingList = { deal, isListed -> shoppingListViewModel.setDealListed(deal, isListed) }
+                    onToggleShoppingList = { deal, isListed -> shoppingListViewModel.setDealListed(deal, isListed) },
+                    onNavigateToShoppingListTab = { navController.navigate(Routes.ShoppingList) },
+                    onNavigateToList = { listId ->
+                        shoppingListViewModel.switchList(listId)
+                        navController.navigate(Routes.ShoppingList)
+                    },
+                    shoppingListViewModel = shoppingListViewModel
                 )
             }
             composable(Routes.AllDeals) {

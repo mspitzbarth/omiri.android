@@ -30,7 +30,7 @@ fun SectionHeader(
             Text(
                 text = actionText,
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
+                color = androidx.compose.ui.graphics.Color(0xFFEA580B),
                 modifier = Modifier
                     .padding(top = Spacing.xs)
                     .clickable { onActionClick() }

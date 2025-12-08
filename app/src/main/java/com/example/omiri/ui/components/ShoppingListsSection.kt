@@ -14,10 +14,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.omiri.ui.theme.Spacing
+import com.example.omiri.data.models.ShoppingList
 
 @Composable
 fun ShoppingListsSection(
-    onViewAll: () -> Unit = {}
+    shoppingLists: List<ShoppingList> = emptyList(),
+    onViewAll: () -> Unit = {},
+    onListClick: (String) -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -31,21 +34,45 @@ fun ShoppingListsSection(
         )
         Spacer(Modifier.height(Spacing.sm))
 
-        ShoppingListItemRow(
-            title = "Weekly Groceries",
-            subtitle = "9 items",
-            pillText = "3 matched deals",
-            pillColor = Color(0xFFFFF7ED), // Orange bg
-            pillTextColor = Color(0xFFC2410C) // Dark Orange text
-        )
-        Spacer(Modifier.height(Spacing.sm))
-        ShoppingListItemRow(
-            title = "Meal Prep",
-            subtitle = "6 items",
-            pillText = "1 matched deal",
-            pillColor = Color(0xFFECFDF5), // Green bg
-            pillTextColor = Color(0xFF047857) // Dark Green text
-        )
+        if (shoppingLists.isEmpty()) {
+            // Placeholder if no lists
+            Card(
+                modifier = Modifier.fillMaxWidth().clickable(onClick = onViewAll),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB))
+            ) {
+                 Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(Spacing.md),
+                    verticalAlignment = Alignment.CenterVertically
+                 ) {
+                     Icon(Icons.Outlined.ChevronRight, contentDescription = null, tint = Color.Gray)
+                     Spacer(Modifier.width(8.dp))
+                     Text("Create your first list", style = MaterialTheme.typography.bodyMedium)
+                 }
+            }
+        } else {
+            // Take top 2
+            shoppingLists.take(2).forEachIndexed { index, list ->
+                val itemCount = list.items.size
+                val activeItems = list.items.count { !it.isDone }
+                
+                ShoppingListItemRow(
+                    title = list.name,
+                    subtitle = "$activeItems items to buy",
+                    pillText = if (itemCount > 0) "${(list.items.count { it.isDone } * 100) / itemCount}% done" else "New",
+                    pillColor = if (itemCount > 0) Color(0xFFECFDF5) else Color(0xFFFFF7ED),
+                    pillTextColor = if (itemCount > 0) Color(0xFF047857) else Color(0xFFC2410C),
+                    onClick = { onListClick(list.id) }
+                )
+                
+                if (index < 1 && shoppingLists.size > 1) { // Add spacer between items
+                    Spacer(Modifier.height(Spacing.sm))
+                }
+            }
+        }
     }
 }
 

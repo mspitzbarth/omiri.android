@@ -17,10 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.example.omiri.ui.theme.Spacing
 
 @Composable
-fun SmartPlanCard(
-    onStartPlan: () -> Unit = {},
-    onAdjustPlan: () -> Unit = {}
-) {
+fun SmartPlanCard() {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -28,7 +25,8 @@ fun SmartPlanCard(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFFE0E7FF) // Light Blue bg
-        )
+        ),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFC0DBFE))
     ) {
         Column(
             modifier = Modifier.padding(Spacing.lg)
