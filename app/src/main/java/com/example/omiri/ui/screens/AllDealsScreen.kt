@@ -251,7 +251,7 @@ fun AllDealsScreen(
                         .verticalScroll(rememberScrollState()),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator(color = Color(0xFFEA580B))
+                            com.example.omiri.ui.components.OmiriLoader()
                 }
             } else {
                 LazyColumn(
@@ -343,10 +343,7 @@ fun AllDealsScreen(
                                 .height(400.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            CircularProgressIndicator(
-                                color = Color(0xFFEA580B),
-                                modifier = Modifier.size(48.dp)
-                            )
+                            com.example.omiri.ui.components.OmiriLoader(size = 48.dp)
                         }
                     }
                 } else {
@@ -388,10 +385,7 @@ fun AllDealsScreen(
                                 .padding(vertical = Spacing.md),
                             contentAlignment = Alignment.Center
                         ) {
-                            CircularProgressIndicator(
-                                color = Color(0xFFEA580B),
-                                modifier = Modifier.size(24.dp)
-                            )
+                            com.example.omiri.ui.components.OmiriLoader(size = 24.dp)
                         }
                     }
                 } else {
@@ -420,7 +414,7 @@ fun AllDealsScreen(
                  if (isLoading && !justInsertedAd) {
                     item(key = "loading_spinner") {
                         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.xl)) {
-                            CircularProgressIndicator(color = Color(0xFFEA580B))
+                                    com.example.omiri.ui.components.OmiriLoader()
                         }
                     }
                 }

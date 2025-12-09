@@ -60,35 +60,7 @@ fun OmiriHeader(
                     }
 
                     IconButton(onClick = onNotificationClick) {
-                        if (notificationCount > 0) {
-                            BadgedBox(
-                                badge = {
-                                    Badge(
-                                        containerColor = Color(0xFFEF4444),
-                                        contentColor = Color.White
-                                    ) {
-                                        Text(
-                                            text = notificationCount.toString(),
-                                            style = MaterialTheme.typography.labelSmall
-                                        )
-                                    }
-                                }
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(40.dp)
-                                        .background(Color(0xFFF3F4F6), androidx.compose.foundation.shape.CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        Icons.Outlined.Notifications,
-                                        contentDescription = "Notifications",
-                                        tint = Color(0xFF1F2937),
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                }
-                            }
-                        } else {
+                        Box(contentAlignment = Alignment.TopEnd) {
                             Box(
                                 modifier = Modifier
                                     .size(40.dp)
@@ -101,6 +73,19 @@ fun OmiriHeader(
                                     tint = Color(0xFF1F2937),
                                     modifier = Modifier.size(24.dp)
                                 )
+                            }
+
+                            if (notificationCount > 0) {
+                                Badge(
+                                    modifier = Modifier.offset(x = 4.dp, y = (-4).dp),
+                                    containerColor = Color(0xFFEF4444),
+                                    contentColor = Color.White
+                                ) {
+                                    Text(
+                                        text = notificationCount.toString(),
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                }
                             }
                         }
                     }

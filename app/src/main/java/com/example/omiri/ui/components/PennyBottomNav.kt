@@ -29,6 +29,13 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.omiri.ui.navigation.Routes
 
+
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocalOffer
+import androidx.compose.material.icons.filled.RestaurantMenu
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.AutoAwesome
+
 data class BottomNavItem(
     val route: String,
     val label: String,
@@ -48,28 +55,28 @@ fun PennyBottomNav(
         BottomNavItem(
             route = Routes.Home,
             label = "Home",
-            icon = Icons.Outlined.Home
+            icon = Icons.Filled.Home
         ),
         BottomNavItem(
             route = Routes.AllDeals,
             label = "Deals",
-            icon = Icons.Outlined.LocalOffer
+            icon = Icons.Filled.LocalOffer
         ),
         BottomNavItem(
             route = Routes.Recipes,
             label = "Recipes",
-            icon = Icons.Outlined.RestaurantMenu
+            icon = Icons.Filled.RestaurantMenu
         ),
         BottomNavItem(
             route = Routes.ShoppingList,
             label = "List",
-            icon = Icons.Outlined.ShoppingCart,
+            icon = Icons.Filled.ShoppingCart,
             badgeCount = shoppingListCount
         ),
         BottomNavItem(
             route = Routes.AiChat,
             label = "AI",
-            icon = Icons.Outlined.AutoAwesome
+            icon = Icons.Filled.AutoAwesome
         )
     )
 
