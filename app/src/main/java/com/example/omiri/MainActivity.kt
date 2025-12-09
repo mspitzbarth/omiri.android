@@ -56,7 +56,7 @@ class MainActivity : ComponentActivity() {
             val loadingProgress by productViewModel.loadingProgress.collectAsState()
             
             // State to control Splash visibility manually for the delay
-            var isSplashVisible by remember { mutableStateOf(true) }
+            var isSplashVisible by remember { mutableStateOf(loadingProgress < 1.0f) }
             
             // Trigger load once
             LaunchedEffect(Unit) {

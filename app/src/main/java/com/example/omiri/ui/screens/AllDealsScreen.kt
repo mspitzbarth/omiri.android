@@ -80,7 +80,8 @@ fun AllDealsScreen(
     val adManager = remember { com.example.omiri.ui.components.InterstitialAdManager(context) }
     
     LaunchedEffect(Unit) {
-        viewModel.initialLoad()
+        viewModel.loadAllDealsIfNeeded()
+        // viewModel.initialLoad() // Redundant here if VM manages singletons, but harmless
         adManager.loadAd()
     }
 
