@@ -225,7 +225,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 .bigText("Debug mode is now active!\n\n✅ Enhanced logging enabled\n✅ Performance metrics visible\n✅ Developer tools unlocked\n\nRemember to disable this in production!"))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
-            .setColor(0xFFEA580B.toInt())
+            .setColor(0xFFFE8357.toInt())
 
         with(NotificationManagerCompat.from(context)) {
             try {
@@ -245,7 +245,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
-            .setColor(0xFFEA580B.toInt())
+            .setColor(0xFFFE8357.toInt())
 
         with(NotificationManagerCompat.from(context)) {
             try {

@@ -38,7 +38,7 @@ fun SmartPlanCard(
                 Box(
                     modifier = Modifier
                         .size(40.dp)
-                        .background(Color(0xFFEA580B), RoundedCornerShape(8.dp)),
+                        .background(Color(0xFFFE8357), RoundedCornerShape(8.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -77,7 +77,7 @@ fun SmartPlanCard(
             SmartPlanSummaryRow(
                 label = "Estimated Savings",
                 value = "€${String.format("%.2f", totalSavings)}",
-                valueColor = Color(0xFFEA580B),
+                valueColor = Color(0xFFFE8357),
                 isTotal = true
             )
 
@@ -86,7 +86,7 @@ fun SmartPlanCard(
             // Button
             Button(
                 onClick = { expanded = !expanded },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEA580B)),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFE8357)),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {

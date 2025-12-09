@@ -87,7 +87,7 @@ fun MembershipCardDetailsBottomSheet(
                                 Icon(
                                     imageVector = Icons.Outlined.Store,
                                     contentDescription = null,
-                                    tint = Color(0xFFEA580B),
+                                    tint = Color(0xFFFE8357),
                                     modifier = Modifier.size(64.dp)
                                 )
                             }
@@ -126,7 +126,7 @@ fun MembershipCardDetailsBottomSheet(
                                     Text(
                                         text = storeName,
                                         style = MaterialTheme.typography.titleMedium,
-                                        color = Color(0xFFEA580B),
+                                        color = Color(0xFFFE8357),
                                         fontWeight = FontWeight.Medium
                                     )
                                 }

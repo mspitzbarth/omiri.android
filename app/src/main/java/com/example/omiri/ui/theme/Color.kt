@@ -9,7 +9,7 @@ import androidx.compose.ui.graphics.Color
 object AppColors {
 
     // Brand
-    val BrandOrange = Color(0xFFEA580B)
+    val BrandOrange = Color(0xFFFE8357)
     val BrandOrangeSoft = Color(0xFFFFE5DB)
     val BrandInk = Color(0xFF0F172A)
 

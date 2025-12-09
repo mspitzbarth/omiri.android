@@ -100,9 +100,9 @@ fun FilterModal(
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedSort) },
                         modifier = Modifier.menuAnchor().fillMaxWidth(),
                          colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFFEA580B),
+                            focusedBorderColor = Color(0xFFFE8357),
                             unfocusedBorderColor = Color(0xFFE5E7EB),
-                            focusedLabelColor = Color(0xFFEA580B)
+                            focusedLabelColor = Color(0xFFFE8357)
                         )
                     )
                     ExposedDropdownMenu(
@@ -143,7 +143,7 @@ fun FilterModal(
                 Text(
                     text = "$${priceRange.start.toInt()} - $${priceRange.endInclusive.toInt()}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFFEA580B)
+                    color = Color(0xFFFE8357)
                 )
                 Spacer(Modifier.height(Spacing.xs))
                 RangeSlider(
@@ -152,8 +152,8 @@ fun FilterModal(
                     valueRange = 0f..1000f,
                     steps = 19,
                     colors = SliderDefaults.colors(
-                        thumbColor = Color(0xFFEA580B),
-                        activeTrackColor = Color(0xFFEA580B)
+                        thumbColor = Color(0xFFFE8357),
+                        activeTrackColor = Color(0xFFFE8357)
                     )
                 )
 
@@ -187,7 +187,7 @@ fun FilterModal(
                                 },
                                 label = { Text(store.name) },
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = Color(0xFFEA580B),
+                                    selectedContainerColor = Color(0xFFFE8357),
                                     selectedLabelColor = Color.White,
                                     containerColor = Color(0xFFF3F4F6),
                                     labelColor = Color.Black
@@ -227,7 +227,7 @@ fun FilterModal(
                                 },
                                 label = { Text(category) },
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = Color(0xFFEA580B),
+                                    selectedContainerColor = Color(0xFFFE8357),
                                     selectedLabelColor = Color.White,
                                     containerColor = Color(0xFFF3F4F6),
                                     labelColor = Color.Black
@@ -262,7 +262,7 @@ fun FilterModal(
                         onCheckedChange = { hasDiscount = it },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = Color.White,
-                            checkedTrackColor = Color(0xFFEA580B)
+                            checkedTrackColor = Color(0xFFFE8357)
                         )
                     )
                 }
@@ -292,7 +292,7 @@ fun FilterModal(
                         onCheckedChange = { onlineOnly = it },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = Color.White,
-                            checkedTrackColor = Color(0xFFEA580B)
+                            checkedTrackColor = Color(0xFFFE8357)
                         )
                     )
                 }
@@ -335,7 +335,7 @@ fun FilterModal(
                         },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFEA580B)
+                            containerColor = Color(0xFFFE8357)
                         )
                     ) {
                         Text("Apply Filters")

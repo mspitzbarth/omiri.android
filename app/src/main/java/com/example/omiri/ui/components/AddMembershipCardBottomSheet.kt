@@ -126,7 +126,7 @@ fun AddMembershipCardBottomSheet(
                     enabled = storeName.isNotBlank(),
                     modifier = Modifier.align(Alignment.CenterEnd),
                     colors = ButtonDefaults.textButtonColors(
-                        contentColor = Color(0xFFEA580B),
+                        contentColor = Color(0xFFFE8357),
                         disabledContentColor = Color(0xFF9CA3AF)
                     )
                 ) {
@@ -154,7 +154,7 @@ fun AddMembershipCardBottomSheet(
                         .background(
                             brush = Brush.horizontalGradient(
                                 colors = listOf(
-                                    Color(0xFFEA580B), // Orange-600
+                                    Color(0xFFFE8357), // Orange-600
                                     Color(0xFFF97316)  // Orange-500
                                 )
                             )
@@ -383,7 +383,7 @@ fun AddMembershipCardBottomSheet(
                                 onCheckedChange = { isChecked ->
                                     selectedStoreId = if (isChecked) store.id else null
                                 },
-                                colors = CheckboxDefaults.colors(checkedColor = Color(0xFFEA580B))
+                                colors = CheckboxDefaults.colors(checkedColor = Color(0xFFFE8357))
                             )
                             Text(
                                 text = store.retailer,
@@ -414,8 +414,8 @@ private fun MethodCard(
 ) {
     val borderColor = if (isSelected) Color(0xFFFFCCAA) else Color(0xFFE5E7EB) // Light orange vs Light Gray
     val containerColor = if (isSelected) Color(0xFFFFF7ED) else Color.White // Orange-50 vs White
-    val iconColor = if (isSelected) Color(0xFFEA580B) else Color(0xFF6B7280) // Orange-600 vs Gray-500
-    val textColor = if (isSelected) Color(0xFFEA580B) else Color(0xFF4B5563)
+    val iconColor = if (isSelected) Color(0xFFFE8357) else Color(0xFF6B7280) // Orange-600 vs Gray-500
+    val textColor = if (isSelected) Color(0xFFFE8357) else Color(0xFF4B5563)
 
     Card(
         modifier = modifier
@@ -473,7 +473,7 @@ private fun InputField(
                 .background(Color(0xFFF9FAFB), RoundedCornerShape(12.dp)),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFFEA580B), // Orange focus
+                focusedBorderColor = Color(0xFFFE8357), // Orange focus
                 unfocusedBorderColor = Color.Transparent, // No border when unfocused (style from mock)
                 focusedContainerColor = Color(0xFFF9FAFB),
                 unfocusedContainerColor = Color(0xFFF9FAFB)

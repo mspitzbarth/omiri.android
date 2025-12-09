@@ -98,7 +98,7 @@ fun DealCard(
                 if (!deal.timeLeftLabel.isNullOrBlank()) {
                      val badgeColor = when {
                         deal.timeLeftLabel!!.contains("hour", ignoreCase = true) -> Color(0xFFDC2626)
-                        deal.timeLeftLabel!!.contains("today", ignoreCase = true) -> Color(0xFFEA580C)
+                        deal.timeLeftLabel!!.contains("today", ignoreCase = true) -> AppColors.BrandOrange
                         deal.timeLeftLabel!!.contains("1 day", ignoreCase = true) ||
                                 deal.timeLeftLabel!!.contains("2 day", ignoreCase = true) -> Color(0xFFFB923C)
                         else -> Color(0xFF0EA5E9)
@@ -211,7 +211,7 @@ fun DealCard(
                     text = deal.price,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFFEA580C)
+                    color = AppColors.BrandOrange
                 )
                 if (!deal.originalPrice.isNullOrBlank() && deal.discountPercentage > 0) {
                     Text(

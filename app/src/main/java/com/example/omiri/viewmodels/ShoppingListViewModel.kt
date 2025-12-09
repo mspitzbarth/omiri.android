@@ -36,6 +36,81 @@ class ShoppingListViewModel(application: Application) : AndroidViewModel(applica
     private val _selectedCategory = MutableStateFlow<String?>(null)
     val selectedCategory: StateFlow<String?> = _selectedCategory.asStateFlow()
 
+    // Multi-Selection State
+    private val _selectedItemIds = MutableStateFlow<Set<String>>(emptySet())
+    val selectedItemIds: StateFlow<Set<String>> = _selectedItemIds.asStateFlow()
+
+    fun toggleSelection(itemId: String) {
+        val current = _selectedItemIds.value
+        if (current.contains(itemId)) {
+            _selectedItemIds.value = current - itemId
+        } else {
+            _selectedItemIds.value = current + itemId
+        }
+    }
+
+    fun clearSelection() {
+        _selectedItemIds.value = emptySet()
+    }
+
+    fun deleteSelectedItems() {
+        val idsToDelete = _selectedItemIds.value
+        idsToDelete.forEach { id ->
+            repository.deleteItem(id)
+        }
+        clearSelection()
+    }
+
+    fun duplicateSelectedItems() {
+        val selectedIds = _selectedItemIds.value
+        val list = currentList.value
+        if (!selectedIds.isNullOrEmpty() && list != null) {
+            val itemsToDuplicate = list.items.filter { selectedIds.contains(it.id) }
+            itemsToDuplicate.forEach { item ->
+                repository.addItem(
+                    name = item.name,
+                    categoryId = item.categoryId,
+                    isInDeals = item.isInDeals, 
+                    isRecurring = item.isRecurring
+                )
+            }
+            checkDealsForCurrentList() 
+            clearSelection()
+        }
+    }
+
+    fun moveSelectedItems(targetListId: String) {
+        val selectedIds = _selectedItemIds.value
+        val sourceList = currentList.value
+        
+        if (!selectedIds.isNullOrEmpty() && sourceList != null) {
+            val itemsToMove = sourceList.items.filter { selectedIds.contains(it.id) }
+            
+            // 1. Add to target list
+            // Ideally repository has moveItem(itemId, targetListId), but based on available methods:
+            // We'll mimic move by adding to new list and removing from old. 
+            // NOTE: This changes item IDs. If precise ID tracking needed, backend support required.
+            itemsToMove.forEach { item ->
+                repository.addItemToList(
+                    listId = targetListId,
+                    name = item.name,
+                    categoryId = item.categoryId,
+                    isInDeals = item.isInDeals,
+                    isRecurring = item.isRecurring
+                )
+                // 2. Remove from current list
+                repository.deleteItem(item.id)
+            }
+            
+            checkDealsForCurrentList()
+            clearSelection()
+        }
+    }
+
+    // Helper to check if we are in selection mode
+    val inSelectionMode: StateFlow<Boolean> = _selectedItemIds.map { it.isNotEmpty() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     data class CategoryCount(
         val id: String,
         val name: String,

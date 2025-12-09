@@ -160,7 +160,7 @@ fun HomeScreen(
                             horizontalArrangement = Arrangement.Center
                         ) {
                             repeat(pagerState.pageCount) { iteration ->
-                                 val color = if (pagerState.currentPage == iteration) Color(0xFFEA580B) else Color(0xFFD1D5DB)
+                                 val color = if (pagerState.currentPage == iteration) Color(0xFFFE8357) else Color(0xFFD1D5DB)
                                 Box(
                                     modifier = Modifier
                                         .padding(2.dp)

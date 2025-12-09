@@ -57,7 +57,7 @@ fun AddItemDialog(
                     placeholder = { Text("Enter item name...") },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFFEA580B),
+                        focusedBorderColor = Color(0xFFFE8357),
                         unfocusedBorderColor = Color(0xFFE5E7EB)
                     )
                 )
@@ -91,7 +91,7 @@ fun AddItemDialog(
                                 )
                             },
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color(0xFFEA580B),
+                                focusedBorderColor = Color(0xFFFE8357),
                                 unfocusedBorderColor = Color(0xFFE5E7EB),
                                 focusedContainerColor = Color(0xFFF9FAFB),
                                 unfocusedContainerColor = Color(0xFFF9FAFB)
@@ -132,7 +132,7 @@ fun AddItemDialog(
                                     modifier = Modifier.fillMaxWidth(),
                                     colors = MenuDefaults.itemColors(
                                         textColor = if (selectedCategory.id == category.id)
-                                            Color(0xFFEA580B) else Color(0xFF111827)
+                                            Color(0xFFFE8357) else Color(0xFF111827)
                                     )
                                 )
                             }
@@ -170,7 +170,7 @@ fun AddItemDialog(
                         modifier = Modifier.weight(1f),
                         enabled = itemName.isNotBlank(),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFEA580B),
+                            containerColor = Color(0xFFFE8357),
                             contentColor = Color.White
                         )
                     ) {

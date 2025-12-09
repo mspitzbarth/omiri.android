@@ -143,7 +143,7 @@ private fun ShoppingListItemRow(
             
             // Percentage Badge
             Surface(
-                color = if (percentage == 100) Color(0xFF10B981) else Color(0xFFEA580B), // Green if done, else Orange
+                color = if (percentage == 100) Color(0xFF10B981) else Color(0xFFFE8357), // Green if done, else Orange
                 shape = RoundedCornerShape(16.dp), // Pill shape
                 contentColor = Color.White
             ) {

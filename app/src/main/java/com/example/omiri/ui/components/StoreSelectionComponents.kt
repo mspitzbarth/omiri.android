@@ -173,7 +173,7 @@ fun StoreItem(
                 checked = isSelected,
                 onCheckedChange = { onToggle() },
                 colors = CheckboxDefaults.colors(
-                    checkedColor = Color(0xFFEA580B), // Orange (Agentic Orange)
+                    checkedColor = Color(0xFFFE8357), // Orange (Agentic Orange)
                     uncheckedColor = Color(0xFFD1D5DB),
                     checkmarkColor = Color.White
                 )
@@ -239,7 +239,7 @@ fun StoreItem(
                             Text(
                                 text = "$selectedLocationCount selected",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFFEA580B),
+                                color = Color(0xFFFE8357),
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -322,7 +322,7 @@ fun CountryPickerDialog(
                             Icon(
                                 imageVector = Icons.Outlined.Check,
                                 contentDescription = "Selected",
-                                tint = Color(0xFFEA580B)
+                                tint = Color(0xFFFE8357)
                             )
                         }
                     }

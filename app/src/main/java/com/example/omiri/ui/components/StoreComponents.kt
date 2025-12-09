@@ -40,7 +40,7 @@ fun PopularStoreItem(
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             border = androidx.compose.foundation.BorderStroke(
                 width = if (isSelected) 1.5.dp else 1.dp,
-                color = if (isSelected) Color(0xFFEA580B) else Color(0xFFE5E7EB)
+                color = if (isSelected) Color(0xFFFE8357) else Color(0xFFE5E7EB)
             )
         ) {
             Box(
@@ -52,7 +52,7 @@ fun PopularStoreItem(
                     text = store.retailer.take(1).uppercase(),
                     style = MaterialTheme.typography.labelLarge, // Reduced from titleLarge
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFFEA580B)
+                    color = Color(0xFFFE8357)
                 )
             }
         }
@@ -65,7 +65,7 @@ fun PopularStoreItem(
             style = MaterialTheme.typography.labelSmall, // Reduced from bodySmall
             fontSize = 9.sp, // Explicitly smaller text
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-            color = if (isSelected) Color(0xFFEA580B) else Color(0xFF4B5563),
+            color = if (isSelected) Color(0xFFFE8357) else Color(0xFF4B5563),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )

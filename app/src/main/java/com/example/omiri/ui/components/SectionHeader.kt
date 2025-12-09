@@ -41,14 +41,14 @@ fun SectionHeader(
                 Text(
                     text = actionText,
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFFEA580B),
+                    color = Color(0xFFFE8357),
                     fontWeight = FontWeight.SemiBold
                 )
                 Spacer(modifier = Modifier.width(2.dp))
                 Icon(
                     imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
                     contentDescription = null,
-                    tint = Color(0xFFEA580B),
+                    tint = Color(0xFFFE8357),
                     modifier = Modifier.size(16.dp)
                 )
             }

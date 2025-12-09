@@ -93,7 +93,7 @@ fun ProductDetailsScreen(
                 .verticalScroll(rememberScrollState()),
             contentAlignment = Alignment.Center
         ) {
-            CircularProgressIndicator(color = Color(0xFFEA580B))
+            CircularProgressIndicator(color = Color(0xFFFE8357))
         }
     } else if (deal == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -345,7 +345,7 @@ private fun DealInfoRow(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.SemiBold,
-            color = if (isHighlight) Color(0xFFEA580B) else Color(0xFF111827)
+            color = if (isHighlight) Color(0xFFFE8357) else Color(0xFF111827)
         )
     }
 }

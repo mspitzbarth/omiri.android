@@ -170,7 +170,7 @@ fun AllDealsScreen(
                     badge = {
                         if (activeFilterCount > 0) {
                             Badge(
-                                containerColor = Color(0xFFEA580B),
+                                containerColor = Color(0xFFFE8357),
                                 contentColor = Color.White
                             ) {
                                 Text(
@@ -188,7 +188,7 @@ fun AllDealsScreen(
                         Icon(
                             imageVector = Icons.Outlined.FilterList,
                             contentDescription = "More filters",
-                            tint = if (hasActiveFilters) Color(0xFFEA580B) else Color(0xFF1F2937)
+                            tint = if (hasActiveFilters) Color(0xFFFE8357) else Color(0xFF1F2937)
                         )
                     }
                 }
@@ -481,7 +481,7 @@ fun CategoriesSwipeFilterRow(
                     )
                 },
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = Color(0xFFEA580B),
+                    selectedContainerColor = Color(0xFFFE8357),
                     selectedLabelColor = Color.White,
                     containerColor = Color.White,
                     labelColor = Color(0xFF1F2937)
@@ -489,7 +489,7 @@ fun CategoriesSwipeFilterRow(
                 border = FilterChipDefaults.filterChipBorder(
                      enabled = true,
                      selected = isSelected,
-                     borderColor = if (isSelected) Color(0xFFEA580B) else Color(0xFFE5E7EB)
+                     borderColor = if (isSelected) Color(0xFFFE8357) else Color(0xFFE5E7EB)
                 )
             )
         }

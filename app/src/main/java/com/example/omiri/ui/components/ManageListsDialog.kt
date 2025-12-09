@@ -68,7 +68,7 @@ fun ManageListsDialog(
                         Icon(
                             imageVector = Icons.Outlined.Add,
                             contentDescription = "Create new list",
-                            tint = Color(0xFFEA580B)
+                            tint = Color(0xFFFE8357)
                         )
                     }
                 }
@@ -104,7 +104,7 @@ fun ManageListsDialog(
                     onClick = onDismiss,
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFEA580B),
+                        containerColor = Color(0xFFFE8357),
                         contentColor = Color.White
                     )
                 ) {
@@ -157,7 +157,7 @@ private fun ListItem(
                     Icon(
                         imageVector = Icons.Outlined.Check,
                         contentDescription = "Selected",
-                        tint = Color(0xFFEA580B),
+                        tint = Color(0xFFFE8357),
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -228,7 +228,7 @@ fun CreateListDialog(
                     placeholder = { Text("Enter list name...") },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFFEA580B),
+                        focusedBorderColor = Color(0xFFFE8357),
                         unfocusedBorderColor = Color(0xFFE5E7EB)
                     )
                 )
@@ -260,7 +260,7 @@ fun CreateListDialog(
                         modifier = Modifier.weight(1f),
                         enabled = listName.isNotBlank(),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFEA580B),
+                            containerColor = Color(0xFFFE8357),
                             contentColor = Color.White
                         )
                     ) {

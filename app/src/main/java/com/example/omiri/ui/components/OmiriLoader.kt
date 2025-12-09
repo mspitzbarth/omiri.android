@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 fun OmiriLoader(
     modifier: Modifier = Modifier,
     size: Dp = 48.dp,
-    color: Color = Color(0xFFEA580B),
+    color: Color = Color(0xFFFE8357),
     trackColor: Color = Color(0xFFFFE4D6), // Light orange/peach track
     strokeWidth: Dp = 6.dp
 ) {

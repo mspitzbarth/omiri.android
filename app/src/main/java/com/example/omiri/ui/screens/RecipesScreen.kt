@@ -81,7 +81,7 @@ fun RecipesScreen(
                     ) {
                         Row(verticalAlignment = Alignment.Top) {
                              Box(
-                                 modifier = Modifier.size(40.dp).background(Color(0xFFEA580B), RoundedCornerShape(8.dp)),
+                                 modifier = Modifier.size(40.dp).background(Color(0xFFFE8357), RoundedCornerShape(8.dp)),
                                  contentAlignment = Alignment.Center
                              ) {
                                  Icon(Icons.Outlined.RestaurantMenu, null, tint = Color.White)
@@ -95,7 +95,7 @@ fun RecipesScreen(
                         Spacer(Modifier.height(16.dp))
                         Button(
                             onClick = {},
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEA580B)),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFE8357)),
                             shape = RoundedCornerShape(8.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -122,13 +122,24 @@ fun RecipesScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("Best Matches", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                    Text("View All >", color = Color(0xFFEA580B), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                    Text("View All >", color = Color(0xFFFE8357), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                 }
             }
             
             item {
+                val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+                
+                @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+                val flingBehavior = androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior(
+                    lazyListState = listState,
+                    snapPosition = androidx.compose.foundation.gestures.snapping.SnapPosition.Start
+                )
+
                 LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    state = listState,
+                    flingBehavior = flingBehavior,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+                    contentPadding = PaddingValues(horizontal = Spacing.md), // Add padding for snap effect
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     items(3) {
@@ -152,7 +163,7 @@ fun RecipesScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("Deal-Friendly Recipes", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                    Text("View All >", color = Color(0xFFEA580B), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                    Text("View All >", color = Color(0xFFFE8357), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                 }
             }
             
@@ -174,7 +185,7 @@ fun RecipesScreen(
 @Composable
 fun FilterChip(selected: Boolean, label: String, onClick: () -> Unit) {
     Surface(
-        color = if(selected) Color(0xFFEA580B) else Color.White,
+        color = if(selected) Color(0xFFFE8357) else Color.White,
         border = if(!selected) androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)) else null,
         shape = RoundedCornerShape(20.dp),
         modifier = Modifier.clickable { onClick() }
@@ -238,7 +249,7 @@ fun RecipeCard(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     tags.forEach { tag ->
                         Surface(color = Color(0xFFF3F4F6), shape = RoundedCornerShape(4.dp)) {
-                            Text(tag, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), style = MaterialTheme.typography.labelSmall, color = if(tag == "Uses your list") Color(0xFFEA580B) else Color(0xFF166534))
+                            Text(tag, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), style = MaterialTheme.typography.labelSmall, color = if(tag == "Uses your list") Color(0xFFFE8357) else Color(0xFF166534))
                         }
                     }
                 }
@@ -246,7 +257,7 @@ fun RecipeCard(
                 Button(
                     onClick = {},
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEA580B)),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFE8357)),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(buttonText)
@@ -291,7 +302,7 @@ fun RecipeListItem(
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(color = Color(0xFFFFEDD5), shape = RoundedCornerShape(4.dp)) {
-                        Text("Matched Deals", modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp), style = MaterialTheme.typography.labelSmall, color = Color(0xFFEA580B), fontWeight = FontWeight.Bold)
+                        Text("Matched Deals", modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp), style = MaterialTheme.typography.labelSmall, color = Color(0xFFFE8357), fontWeight = FontWeight.Bold)
                     }
                     Spacer(Modifier.width(8.dp))
                     Text("Save $savedAmount", style = MaterialTheme.typography.labelSmall, color = Color(0xFF16A34A), fontWeight = FontWeight.Bold)

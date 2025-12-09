@@ -84,7 +84,7 @@ fun PennyBottomNav(
     
     val bg = Color.White
     val topBorder = Color(0xFFE5E7EB)
-    val active = Color(0xFFEA580B)
+    val active = Color(0xFFFE8357)
     val inactive = Color(0xFF6B7280)
 
     Column(modifier = modifier) {

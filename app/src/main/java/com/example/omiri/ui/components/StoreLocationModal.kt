@@ -120,13 +120,13 @@ fun StoreLocationModal(
                         Icon(
                             imageVector = Icons.Outlined.Mic,
                             contentDescription = "Voice search",
-                            tint = Color(0xFFEA580B)
+                            tint = Color(0xFFFE8357)
                         )
                     }
                 },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFFEA580B),
+                    focusedBorderColor = Color(0xFFFE8357),
                     unfocusedBorderColor = Color(0xFFE5E7EB),
                     focusedContainerColor = Color(0xFFFAFBFC),
                     unfocusedContainerColor = Color(0xFFFAFBFC)
@@ -148,7 +148,7 @@ fun StoreLocationModal(
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator(
-                        color = Color(0xFFEA580B)
+                        color = Color(0xFFFE8357)
                     )
                 }
             } else {
@@ -222,7 +222,7 @@ fun StoreLocationModal(
                     enabled = canSave,
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFEA580B),
+                        containerColor = Color(0xFFFE8357),
                         disabledContainerColor = Color(0xFFE5E7EB)
                     )
                 ) {
@@ -251,7 +251,7 @@ private fun LocationItem(
             containerColor = if (isSelected) Color(0xFFFFF7ED) else Color.White
         ),
         border = if (isSelected) {
-            androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFEA580B))
+            androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFFE8357))
         } else null
     ) {
         Row(
@@ -305,7 +305,7 @@ private fun LocationItem(
                 checked = isSelected,
                 onCheckedChange = { onToggle() },
                 colors = CheckboxDefaults.colors(
-                    checkedColor = Color(0xFFEA580B),
+                    checkedColor = Color(0xFFFE8357),
                     uncheckedColor = Color(0xFFD1D5DB)
                 )
             )

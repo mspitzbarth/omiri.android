@@ -91,7 +91,7 @@ fun ListSelectionBottomSheet(
                                     Text(
                                         text = list.name,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (isSelected) Color(0xFFEA580B) else Color(0xFF111827)
+                                        color = if (isSelected) Color(0xFFFE8357) else Color(0xFF111827)
                                     )
                                 },
                                 supportingContent = {
@@ -121,7 +121,7 @@ fun ListSelectionBottomSheet(
                                             Icon(
                                                 imageVector = Icons.Outlined.Check,
                                                 contentDescription = "Selected",
-                                                tint = Color(0xFFEA580B),
+                                                tint = Color(0xFFFE8357),
                                                 modifier = Modifier.padding(end = Spacing.sm)
                                             )
                                         }
@@ -157,7 +157,7 @@ fun ListSelectionBottomSheet(
                                     Icon(
                                         imageVector = Icons.Outlined.Add,
                                         contentDescription = null,
-                                        tint = Color(0xFFEA580B)
+                                        tint = Color(0xFFFE8357)
                                     )
                                 },
                                 modifier = Modifier.clickable {
@@ -166,7 +166,7 @@ fun ListSelectionBottomSheet(
                                 },
                                 colors = ListItemDefaults.colors(
                                     containerColor = Color.Transparent,
-                                    headlineColor = Color(0xFFEA580B)
+                                    headlineColor = Color(0xFFFE8357)
                                 )
                             )
                         }

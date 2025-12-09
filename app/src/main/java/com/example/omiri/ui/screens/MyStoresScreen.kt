@@ -106,7 +106,7 @@ fun MyStoresScreen(
                         },
                         enabled = selectedStoresBuffer.isNotEmpty(),
                         colors = ButtonDefaults.textButtonColors(
-                            contentColor = Color(0xFFEA580B),
+                            contentColor = Color(0xFFFE8357),
                             disabledContentColor = Color(0xFFFED7AA)
                         )
                     ) {
@@ -155,7 +155,7 @@ fun MyStoresScreen(
                         Text(
                             text = "Clear all",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFFEA580B),
+                            color = Color(0xFFFE8357),
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.clickable { 
                                 selectedStoresBuffer = emptySet()
@@ -186,7 +186,7 @@ fun MyStoresScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         CircularProgressIndicator(
-                            color = Color(0xFFEA580B)
+                            color = Color(0xFFFE8357)
                         )
                     }
                 }
@@ -319,7 +319,7 @@ fun CountrySelectionRow(
                         )
                     },
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = Color(0xFFEA580B),
+                        selectedContainerColor = Color(0xFFFE8357),
                         selectedLabelColor = Color.White,
                         containerColor = Color.White,
                         labelColor = Color(0xFF111827)
@@ -327,7 +327,7 @@ fun CountrySelectionRow(
                     border = FilterChipDefaults.filterChipBorder(
                         enabled = true,
                         selected = isSelected,
-                        borderColor = if (isSelected) Color(0xFFEA580B) else Color(0xFFE5E7EB),
+                        borderColor = if (isSelected) Color(0xFFFE8357) else Color(0xFFE5E7EB),
                         borderWidth = 1.dp
                     ),
                     shape = RoundedCornerShape(20.dp)

@@ -47,14 +47,21 @@ fun ShoppingListScreen(
     val availableCategories by viewModel.availableCategories.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
     
+    // Selection Mode State
+    val selectedItemIds by viewModel.selectedItemIds.collectAsState()
+    val inSelectionMode by viewModel.inSelectionMode.collectAsState()
+    
     // Smart Plan
     val smartPlan by (productViewModel?.smartPlan ?: kotlinx.coroutines.flow.MutableStateFlow(null)).collectAsState()
     
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
 
     var showAddItemDialog by remember { mutableStateOf(false) }
     var showCreateListDialog by remember { mutableStateOf(false) }
+    var showMoveSelectionSheet by remember { mutableStateOf(false) }
+    var showListSelectionSheet by remember { mutableStateOf(false) }
     var itemToEdit by remember { mutableStateOf<com.example.omiri.data.models.ShoppingItem?>(null) }
     
     // Header Stats (Mocked or calculated)
@@ -68,12 +75,43 @@ fun ShoppingListScreen(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Header (Notification/Profile)
-            com.example.omiri.ui.components.OmiriHeader(
-                notificationCount = 2,
-                onNotificationClick = onNotificationsClick,
-                onProfileClick = onProfileClick
-            )
+            // Header (Notification/Profile OR Contextual Selection Bar)
+            if (inSelectionMode) {
+                com.example.omiri.ui.components.ContextualSelectionTopBar(
+                    selectedCount = selectedItemIds.size,
+                    onClearSelection = { viewModel.clearSelection() },
+                    onDelete = { viewModel.deleteSelectedItems() },
+                    onDuplicate = { 
+                         // Duplicate items
+                         val count = selectedItemIds.size
+                         viewModel.duplicateSelectedItems()
+                         scope.launch {
+                             snackbarHostState.showSnackbar("Duplicated $count items")
+                         }
+                    },
+                    onMove = {
+                        showMoveSelectionSheet = true
+                    },
+                    onEdit = {
+                        // Only called if 1 item selected
+                        val id = selectedItemIds.firstOrNull()
+                        if (id != null) {
+                            val item = filteredItems.find { it.id == id }
+                            if (item != null) {
+                                itemToEdit = item
+                                showAddItemDialog = true
+                                viewModel.clearSelection()
+                            }
+                        }
+                    }
+                )
+            } else {
+                com.example.omiri.ui.components.OmiriHeader(
+                    notificationCount = 2,
+                    onNotificationClick = onNotificationsClick,
+                    onProfileClick = onProfileClick
+                )
+            }
 
             // Content List
             val listState = rememberLazyListState()
@@ -101,7 +139,7 @@ fun ShoppingListScreen(
                         )
                         
                         // Title Row
-                        var showListSelectionSheet by remember { mutableStateOf(false) }
+
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth().clickable { showListSelectionSheet = true }
@@ -131,23 +169,7 @@ fun ShoppingListScreen(
                             }
                         }
                         
-                        if (showListSelectionSheet) {
-                            com.example.omiri.ui.components.ListSelectionBottomSheet(
-                                shoppingLists = shoppingLists,
-                                currentListId = currentListId,
-                                onListSelected = { listId ->
-                                    viewModel.switchList(listId)
-                                    showListSelectionSheet = false
-                                },
-                                onCreateListClick = {
-                                    showListSelectionSheet = false
-                                    showCreateListDialog = true
-                                },
-                                onDeleteList = { viewModel.deleteList(it) },
-                                onResetList = { viewModel.resetRecurringItems() },
-                                onDismiss = { showListSelectionSheet = false }
-                            )
-                        }
+
 
                         Spacer(Modifier.height(4.dp))
                         
@@ -184,7 +206,7 @@ fun ShoppingListScreen(
                             FilterChipStub(
                                 text = "All ($totalItemsCount)", 
                                 selected = isAllSelected, 
-                                color = Color(0xFFEA580B)
+                                color = Color(0xFFFE8357)
                             )
                         }
                         
@@ -195,7 +217,7 @@ fun ShoppingListScreen(
                                 FilterChipStub(
                                     text = "${category.name} (${category.count})", 
                                     selected = isSelected,
-                                    color = Color(0xFFEA580B)
+                                    color = Color(0xFFFE8357)
                                 )
                             }
                         }
@@ -216,11 +238,18 @@ fun ShoppingListScreen(
                 items(filteredItems, key = { it.id }) { item ->
                     ShoppingListItem(
                         item = item,
+                        isSelected = selectedItemIds.contains(item.id),
+                        inSelectionMode = inSelectionMode,
                         onToggleDone = { viewModel.toggleItemDone(item.id) },
-                        onDelete = { viewModel.deleteItem(item.id) },
+                        onToggleSelection = { viewModel.toggleSelection(item.id) },
                         onEdit = { 
-                            itemToEdit = item
-                            showAddItemDialog = true 
+                            if (inSelectionMode) {
+                                // If in selection mode, long press just toggles selection again (or does nothing)
+                                viewModel.toggleSelection(item.id)
+                            } else {
+                                // Enter selection mode on long press
+                                viewModel.toggleSelection(item.id)
+                            }
                         },
                         modifier = Modifier.padding(horizontal = Spacing.lg, vertical = 4.dp)
                     )
@@ -288,7 +317,7 @@ fun ShoppingListScreen(
                 .align(Alignment.BottomEnd)
                 .padding(Spacing.lg)
                 .padding(bottom = 56.dp),
-            containerColor = Color(0xFFEA580B),
+            containerColor = Color(0xFFFE8357),
             contentColor = Color.White
         ) {
             Icon(
@@ -330,6 +359,47 @@ fun ShoppingListScreen(
                 viewModel.createList(name)
                 showCreateListDialog = false
             }
+        )
+    }
+
+    if (showListSelectionSheet) {
+        com.example.omiri.ui.components.ListSelectionBottomSheet(
+            shoppingLists = shoppingLists,
+            currentListId = currentListId,
+            onListSelected = { listId ->
+                viewModel.switchList(listId)
+                showListSelectionSheet = false
+            },
+            onCreateListClick = {
+                showListSelectionSheet = false
+                showCreateListDialog = true
+            },
+            onDeleteList = { viewModel.deleteList(it) },
+            onResetList = { viewModel.resetRecurringItems() },
+            onDismiss = { showListSelectionSheet = false }
+        )
+    }
+
+    if (showMoveSelectionSheet) {
+        // Reuse same sheet but for picking target
+        com.example.omiri.ui.components.ListSelectionBottomSheet(
+            shoppingLists = shoppingLists.filter { it.id != currentListId }, // Exclude current list
+            currentListId = null, 
+            onListSelected = { targetListId ->
+                val count = selectedItemIds.size
+                viewModel.moveSelectedItems(targetListId)
+                scope.launch {
+                    snackbarHostState.showSnackbar("Moved $count items")
+                }
+                showMoveSelectionSheet = false
+            },
+            onCreateListClick = {
+                showMoveSelectionSheet = false
+                showCreateListDialog = true 
+            },
+            onDeleteList = { /* Disable delete in move mode */ },
+            onResetList = { /* Disable reset */ },
+            onDismiss = { showMoveSelectionSheet = false }
         )
     }
 }

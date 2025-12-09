@@ -71,7 +71,7 @@ fun ShoppingListMatchesScreen(
         ) {
             if (isLoading) {
                  Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                     CircularProgressIndicator(color = Color(0xFFEA580B))
+                     CircularProgressIndicator(color = Color(0xFFFE8357))
                  }
             } else if (matches.isEmpty()) {
                  // Smart Empty State

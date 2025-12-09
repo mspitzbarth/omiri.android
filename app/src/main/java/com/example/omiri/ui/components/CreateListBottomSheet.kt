@@ -109,7 +109,7 @@ fun CreateListBottomSheet(
                             }
                         },
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFFEA580B),
+                            focusedBorderColor = Color(0xFFFE8357),
                             unfocusedBorderColor = Color(0xFFE5E7EB),
                             focusedContainerColor = Color(0xFFF9FAFB),
                             unfocusedContainerColor = Color(0xFFF9FAFB)
@@ -140,7 +140,7 @@ fun CreateListBottomSheet(
                             .fillMaxWidth()
                             .height(50.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFEA580B),
+                            containerColor = Color(0xFFFE8357),
                             contentColor = Color.White
                         ),
                         shape = RoundedCornerShape(12.dp),

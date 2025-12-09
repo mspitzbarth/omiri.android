@@ -49,7 +49,7 @@ fun MembershipCardsScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showAddCardSheet = true },
-                containerColor = Color(0xFFEA580B),
+                containerColor = Color(0xFFFE8357),
                 contentColor = Color.White
             ) {
                 Icon(Icons.Outlined.Add, contentDescription = "Add Card")

@@ -105,7 +105,7 @@ fun SettingsScreen(
                     SettingsItem(
                         icon = Icons.Outlined.Notifications,
                         iconColor = Color(0xFFFFEDDB), // Orange bg
-                        iconTint = Color(0xFFEA580B), // Orange icon
+                        iconTint = Color(0xFFFE8357), // Orange icon
                         title = "Push Notifications",
                         trailingContent = {
                             Switch(
@@ -113,7 +113,7 @@ fun SettingsScreen(
                                 onCheckedChange = { viewModel.toggleShoppingListNotifications() },
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor = Color.White,
-                                    checkedTrackColor = Color(0xFFEA580B),
+                                    checkedTrackColor = Color(0xFFFE8357),
                                     uncheckedThumbColor = Color.White,
                                     uncheckedTrackColor = Color(0xFFD1D5DB)
                                 )
@@ -134,7 +134,7 @@ fun SettingsScreen(
                                 onCheckedChange = { emailNotifications = it },
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor = Color.White,
-                                    checkedTrackColor = Color(0xFFEA580B),
+                                    checkedTrackColor = Color(0xFFFE8357),
                                     uncheckedThumbColor = Color.White,
                                     uncheckedTrackColor = Color(0xFFD1D5DB)
                                 )
@@ -246,7 +246,7 @@ fun SettingsScreen(
                                 onCheckedChange = { viewModel.toggleDebugMode() },
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor = Color.White,
-                                    checkedTrackColor = Color(0xFFEA580B),
+                                    checkedTrackColor = Color(0xFFFE8357),
                                     uncheckedThumbColor = Color.White,
                                     uncheckedTrackColor = Color(0xFFD1D5DB)
                                 )
@@ -268,7 +268,7 @@ fun SettingsScreen(
                                 onCheckedChange = { viewModel.toggleShowDummyData() },
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor = Color.White,
-                                    checkedTrackColor = Color(0xFFEA580B),
+                                    checkedTrackColor = Color(0xFFFE8357),
                                     uncheckedThumbColor = Color.White,
                                     uncheckedTrackColor = Color(0xFFD1D5DB)
                                 )

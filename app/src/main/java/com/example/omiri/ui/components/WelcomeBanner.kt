@@ -34,7 +34,7 @@ fun WelcomeBanner(
                 .background(
                     brush = Brush.horizontalGradient(
                         colors = listOf(
-                            Color(0xFFEA580B),
+                            Color(0xFFFE8357),
                             Color(0xFFF97316)
                         )
                     )

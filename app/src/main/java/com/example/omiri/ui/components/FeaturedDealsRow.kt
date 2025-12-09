@@ -14,6 +14,9 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material.icons.outlined.LocalOffer
+import androidx.compose.runtime.*
+import kotlinx.coroutines.delay
+import com.example.omiri.ui.theme.AppColors
 
 @Composable
 fun FeaturedDealsRow(
@@ -39,14 +42,41 @@ fun FeaturedDealsRow(
         
         Spacer(Modifier.height(Spacing.md))
         
+        var showSkeleton by remember { mutableStateOf(false) }
+
+        // Logic for Spinner -> Skeleton transition
+        // "make the spinner load a certain time, after that load the normal layout with skeletons"
+        LaunchedEffect(isLoading) {
+            if (isLoading) {
+                // Show spinner initially
+                showSkeleton = false
+                // Wait for a short duration (e.g., 800ms) to let spinner be seen
+                delay(800)
+                // Then switch to skeletons
+                showSkeleton = true
+            } else {
+                showSkeleton = false
+            }
+        }
+
         if (isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp), 
-                contentAlignment = androidx.compose.ui.Alignment.Center
-            ) {
-                CircularProgressIndicator(color = Color(0xFFEA580B))
+            if (!showSkeleton) {
+                // Initial Spinner State
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    contentAlignment = androidx.compose.ui.Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = AppColors.BrandOrange)
+                }
+            } else {
+                 // Skeleton State ("normal layout with skeletons")
+                 DealsCarousel(
+                    deals = emptyList(),
+                    isLoading = true,
+                    enableSnapping = true
+                )
             }
         } else if (deals.isEmpty()) {
             // Use Smart Empty State
@@ -132,7 +162,7 @@ fun MockDealCard(
                 androidx.compose.material3.Text(
                     text = price,
                     style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
-                    color = Color(0xFFEA580B),
+                    color = AppColors.BrandOrange,
                     fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                 )
                 androidx.compose.material3.Text(

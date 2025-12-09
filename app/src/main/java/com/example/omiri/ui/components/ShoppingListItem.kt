@@ -35,24 +35,35 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 @Composable
 fun ShoppingListItem(
     item: ShoppingItem,
+    isSelected: Boolean,
+    inSelectionMode: Boolean,
     onToggleDone: () -> Unit,
-    onDelete: () -> Unit,
+    onToggleSelection: () -> Unit,
     onEdit: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val backgroundColor = if (isSelected) com.example.omiri.ui.theme.AppColors.InfoSoft else Color.White
+    val borderColor = if (isSelected) com.example.omiri.ui.theme.AppColors.Info else Color(0xFFE5E7EB)
+
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = backgroundColor
         ),
         shape = RoundedCornerShape(12.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)), // Light gray border
+        border = androidx.compose.foundation.BorderStroke(1.dp, borderColor), // Light gray border
         modifier = modifier
             .fillMaxWidth()
             .combinedClickable(
-                onClick = { onToggleDone() },
-                onLongClick = { onEdit() }
+                onClick = { 
+                    if (inSelectionMode) {
+                        onToggleSelection()
+                    } else {
+                        onToggleDone() 
+                    }
+                },
+                onLongClick = { onToggleSelection() }
             ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // Flat style as per image (shadow is subtle/handled by border often in modern flat UI)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) 
     ) {
         Row(
             modifier = Modifier
@@ -61,14 +72,19 @@ fun ShoppingListItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // 1. Checkbox (Left)
+            // If in selection mode, maybe we want to hide checkbox or keep it? 
+            // Keeping it is fine, but usually selection replaces check. 
+            // For now, keeping it simple as per request to just "remove delete icon... select multiple items".
             Box(
                 modifier = Modifier.padding(end = 12.dp)
             ) {
                 androidx.compose.material3.Checkbox(
                     checked = item.isDone,
-                    onCheckedChange = { onToggleDone() },
+                    onCheckedChange = { 
+                        if (inSelectionMode) onToggleSelection() else onToggleDone() 
+                    },
                     colors = CheckboxDefaults.colors(
-                        checkedColor = Color(0xFFEA580B), // Orange Branding
+                        checkedColor = com.example.omiri.ui.theme.AppColors.BrandOrange, // Orange Branding
                         uncheckedColor = Color(0xFFD1D5DB), // Gray outline
                         checkmarkColor = Color.White
                     )
@@ -79,7 +95,6 @@ fun ShoppingListItem(
             Column(
                 modifier = Modifier.weight(1f)
             ) {
-                // Title
                 // Title
                 Text(
                     text = item.name,
@@ -176,27 +191,7 @@ fun ShoppingListItem(
                     }
                 }
             }
-            
-            // 3. Right Side (Standalone Trash)
-            IconButton(
-                onClick = onDelete,
-                modifier = Modifier
-                    .padding(start = 8.dp)
-                    .size(48.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Delete,
-                        contentDescription = "Delete",
-                        tint = Color(0xFF9CA3AF), // Gray like the text
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
+            // Removed delete button
         }
     }
 }

@@ -115,7 +115,7 @@ fun AiChatScreen(
                         Box(
                             modifier = Modifier
                                 .size(32.dp)
-                                .background(Color(0xFFEA580B), CircleShape),
+                                .background(Color(0xFFFE8357), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -243,7 +243,7 @@ fun AiChatScreen(
                                         text = "💬 AI Shopping Assistant",
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFFEA580B)
+                                        color = Color(0xFFFE8357)
                                     )
                                     Text(
                                         text = "Ask me about deals, recipes, or help with your shopping list. I can help you find the best prices and plan your meals!",
@@ -278,7 +278,7 @@ fun ChatBubble(
     message: ChatMessage,
     onNavigateToShoppingList: () -> Unit = {}
 ) {
-    val bubbleColor = if (message.isUser) Color(0xFFEA580B) else Color.White
+    val bubbleColor = if (message.isUser) Color(0xFFFE8357) else Color.White
     val textColor = if (message.isUser) Color.White else Color(0xFF1F2937)
     val borderStroke = if (message.isUser) null else androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB))
     val alignment = if (message.isUser) Alignment.End else Alignment.Start
@@ -303,7 +303,7 @@ fun ChatBubble(
             Box(
                 modifier = Modifier
                     .size(32.dp)
-                    .background(Color(0xFFEA580B), CircleShape),
+                    .background(Color(0xFFFE8357), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -450,7 +450,7 @@ fun ShoppingListUpdateCard(data: Map<String, Any>, onViewList: () -> Unit) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     onClick = onViewList,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEA580B)),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFE8357)),
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(8.dp)
                 ) {
@@ -484,14 +484,14 @@ fun DealsMatchedCard(data: Map<String, Any>) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(modifier = Modifier.size(40.dp).background(Color(0xFFFFEDD5), CircleShape), contentAlignment = Alignment.Center) {
-                    Icon(androidx.compose.material.icons.Icons.Outlined.LocalOffer, null, tint = Color(0xFFEA580B))
+                    Icon(androidx.compose.material.icons.Icons.Outlined.LocalOffer, null, tint = Color(0xFFFE8357))
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Text("Deals Matched to Your List", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
                     Text("${data["count"]} items on sale", color = Color.Gray, style = MaterialTheme.typography.bodySmall)
                 }
-                Surface(color = Color(0xFFEA580B), shape = RoundedCornerShape(16.dp)) {
+                Surface(color = Color(0xFFFE8357), shape = RoundedCornerShape(16.dp)) {
                     Text(data["badge"]?.toString() ?: "Best Saves", modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), color = Color.White, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                 }
             }
@@ -512,12 +512,12 @@ fun DealsMatchedCard(data: Map<String, Any>) {
                     Column(Modifier.weight(1f)) {
                         Text(item["name"] ?: "", fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodyMedium)
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(item["price"] ?: "", color = Color(0xFFEA580B), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                            Text(item["price"] ?: "", color = Color(0xFFFE8357), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
                             Spacer(Modifier.width(6.dp))
                             Text(item["oldPrice"] ?: "", color = Color.Gray, style = MaterialTheme.typography.bodySmall, textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)
                             Spacer(Modifier.width(8.dp))
                             Surface(color = Color(0xFFFFEDD5), shape = RoundedCornerShape(4.dp)) {
-                                Text(item["discount"] ?: "", modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp), color = Color(0xFFEA580B), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                Text(item["discount"] ?: "", modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp), color = Color(0xFFFE8357), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -527,7 +527,7 @@ fun DealsMatchedCard(data: Map<String, Any>) {
             Spacer(Modifier.height(16.dp))
             Button(
                 onClick = {},
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEA580B)),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFE8357)),
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(8.dp)
             ) {
@@ -590,7 +590,7 @@ fun StoreRouteCard(data: Map<String, Any>) {
              Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     onClick = {},
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEA580B)),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFE8357)),
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(8.dp)
                 ) {
@@ -679,7 +679,7 @@ fun RecipeIdeasCard(data: Map<String, Any>) {
             Spacer(Modifier.height(16.dp))
             Button(
                 onClick = {},
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEA580B)),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFE8357)),
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(8.dp)
             ) {
@@ -736,7 +736,7 @@ fun Dot(offsetY: Float) {
         modifier = Modifier
             .graphicsLayer { translationY = offsetY }
             .size(8.dp)
-            .background(Color(0xFFEA580B), androidx.compose.foundation.shape.CircleShape) // Orange
+            .background(Color(0xFFFE8357), androidx.compose.foundation.shape.CircleShape) // Orange
     )
 }
 
@@ -848,7 +848,7 @@ fun ChatInputBar(
                             textStyle = MaterialTheme.typography.bodyLarge.copy(
                                 color = if (isOnline) Color(0xFF111827) else Color(0xFF9CA3AF)
                             ),
-                            cursorBrush = androidx.compose.ui.graphics.SolidColor(Color(0xFFEA580B)),
+                            cursorBrush = androidx.compose.ui.graphics.SolidColor(Color(0xFFFE8357)),
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                             keyboardActions = KeyboardActions(onSend = { onSend() }),
                             decorationBox = { innerTextField ->
@@ -897,7 +897,7 @@ fun ChatInputBar(
                     onClick = onSend,
                     enabled = value.isNotBlank() && !isLoading && isOnline,
                     colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = Color(0xFFEA580B),
+                        containerColor = Color(0xFFFE8357),
                         disabledContainerColor = Color(0xFFE5E7EB),
                         contentColor = Color.White,
                         disabledContentColor = Color(0xFF9CA3AF)

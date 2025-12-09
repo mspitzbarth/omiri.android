@@ -125,7 +125,7 @@ fun AddItemBottomSheet(
                             }
                         },
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFFEA580B),
+                            focusedBorderColor = Color(0xFFFE8357),
                             unfocusedBorderColor = Color(0xFFE5E7EB),
                             focusedContainerColor = Color(0xFFF9FAFB),
                             unfocusedContainerColor = Color(0xFFF9FAFB)
@@ -166,7 +166,7 @@ fun AddItemBottomSheet(
                                 )
                             },
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color(0xFFEA580B),
+                                focusedBorderColor = Color(0xFFFE8357),
                                 unfocusedBorderColor = Color(0xFFE5E7EB),
                                 focusedContainerColor = Color(0xFFF9FAFB),
                                 unfocusedContainerColor = Color(0xFFF9FAFB)
@@ -224,7 +224,7 @@ fun AddItemBottomSheet(
                             onCheckedChange = { isRecurring = it },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = Color.White,
-                                checkedTrackColor = Color(0xFFEA580B),
+                                checkedTrackColor = Color(0xFFFE8357),
                                 uncheckedThumbColor = Color(0xFFD1D5DB),
                                 uncheckedTrackColor = Color(0xFFF3F4F6)
                             )
@@ -257,7 +257,7 @@ fun AddItemBottomSheet(
                             .fillMaxWidth()
                             .height(50.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFEA580B),
+                            containerColor = Color(0xFFFE8357),
                             contentColor = Color.White
                         ),
                         shape = RoundedCornerShape(12.dp),

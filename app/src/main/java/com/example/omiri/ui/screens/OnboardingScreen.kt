@@ -213,7 +213,7 @@ fun OnboardingProgressBar(currentStep: Int, totalSteps: Int) {
                     .height(4.dp)
                     .clip(RoundedCornerShape(2.dp))
                     .background(
-                        if (index <= currentStep) Color(0xFFEA580B) else Color(0xFFE5E7EB)
+                        if (index <= currentStep) Color(0xFFFE8357) else Color(0xFFE5E7EB)
                     )
             )
         }
@@ -234,7 +234,7 @@ fun WelcomeContent(onNext: () -> Unit) {
             modifier = Modifier
                 .size(100.dp)
                 .clip(RoundedCornerShape(24.dp))
-                .background(Color(0xFFEA580B)),
+                .background(Color(0xFFFE8357)),
             contentAlignment = Alignment.Center
         ) {
              Icon(
@@ -280,7 +280,7 @@ fun WelcomeContent(onNext: () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEA580B)),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFE8357)),
             shape = RoundedCornerShape(16.dp)
         ) {
             Text(
@@ -346,7 +346,7 @@ fun StoreSelectionContent(
         // List of stores
         if (isLoading) {
             Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Color(0xFFEA580B))
+                CircularProgressIndicator(color = Color(0xFFFE8357))
             }
         } else {
             LazyColumn(
@@ -376,7 +376,7 @@ fun StoreSelectionContent(
                 .height(56.dp),
             enabled = isValid, 
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFEA580B),
+                containerColor = Color(0xFFFE8357),
                 disabledContainerColor = Color(0xFFE5E7EB)
             ),
             shape = RoundedCornerShape(16.dp)
@@ -444,7 +444,7 @@ fun NotificationsContent(
             Icon(
                 imageVector = Icons.Outlined.NotificationsActive,
                 contentDescription = null,
-                tint = Color(0xFFEA580B),
+                tint = Color(0xFFFE8357),
                 modifier = Modifier.size(40.dp)
             )
         }
@@ -477,7 +477,7 @@ fun NotificationsContent(
             SettingsItem(
                 icon = Icons.Outlined.Notifications,
                 iconColor = Color(0xFFFFEDDB), // Orange bg
-                iconTint = Color(0xFFEA580B),
+                iconTint = Color(0xFFFE8357),
                 title = "Push Notifications",
                 subtitle = "Enable critical alerts about deals",
                 trailingContent = {
@@ -500,7 +500,7 @@ fun NotificationsContent(
                         },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = Color.White,
-                            checkedTrackColor = Color(0xFFEA580B),
+                            checkedTrackColor = Color(0xFFFE8357),
                             uncheckedThumbColor = Color.White,
                             uncheckedTrackColor = Color(0xFFD1D5DB)
                         )
@@ -530,7 +530,7 @@ fun NotificationsContent(
                                 onCheckedChange = { priceDrops = it },
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor = Color.White,
-                                    checkedTrackColor = Color(0xFFEA580B),
+                                    checkedTrackColor = Color(0xFFFE8357),
                                     uncheckedThumbColor = Color.White,
                                     uncheckedTrackColor = Color(0xFFD1D5DB)
                                 )
@@ -552,7 +552,7 @@ fun NotificationsContent(
                                 onCheckedChange = { weeklyFlyers = it },
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor = Color.White,
-                                    checkedTrackColor = Color(0xFFEA580B),
+                                    checkedTrackColor = Color(0xFFFE8357),
                                     uncheckedThumbColor = Color.White,
                                     uncheckedTrackColor = Color(0xFFD1D5DB)
                                 )
@@ -574,7 +574,7 @@ fun NotificationsContent(
                                 onCheckedChange = { expiringSoon = it },
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor = Color.White,
-                                    checkedTrackColor = Color(0xFFEA580B),
+                                    checkedTrackColor = Color(0xFFFE8357),
                                     uncheckedThumbColor = Color.White,
                                     uncheckedTrackColor = Color(0xFFD1D5DB)
                                 )
@@ -592,7 +592,7 @@ fun NotificationsContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEA580B)),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFE8357)),
             shape = RoundedCornerShape(16.dp)
         ) {
             Text(
@@ -656,7 +656,7 @@ fun NotificationToggleItem(
                 onCheckedChange = onCheckedChange,
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = Color.White,
-                    checkedTrackColor = Color(0xFFEA580B),
+                    checkedTrackColor = Color(0xFFFE8357),
                     uncheckedThumbColor = Color.White,
                     uncheckedTrackColor = Color(0xFFD1D5DB)
                 )
