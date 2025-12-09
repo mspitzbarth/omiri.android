@@ -60,21 +60,11 @@ fun FeaturedDealsRow(
                 modifier = Modifier.padding(vertical = Spacing.lg)
             )
         } else {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = Spacing.lg),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.md)
-            ) {
-                 deals.forEach { deal ->
-                      DealCard(
-                        deal = deal,
-                        onClick = { onDealClick(deal.id) },
-                        modifier = Modifier.width(160.dp)
-                    )
-                 }
-            }
+            DealsCarousel(
+                deals = deals,
+                enableSnapping = true,
+                onDealClick = { onDealClick(it.id) }
+            )
         }
     }
 }
