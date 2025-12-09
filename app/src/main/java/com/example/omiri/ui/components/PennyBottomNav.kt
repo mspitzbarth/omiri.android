@@ -2,11 +2,13 @@ package com.example.omiri.ui.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.offset
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.LocalOffer
-import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.RestaurantMenu
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -54,9 +56,9 @@ fun PennyBottomNav(
             icon = Icons.Outlined.LocalOffer
         ),
         BottomNavItem(
-            route = Routes.AiChat,
-            label = "AI",
-            icon = Icons.Outlined.AutoAwesome
+            route = Routes.Recipes,
+            label = "Recipes",
+            icon = Icons.Outlined.RestaurantMenu
         ),
         BottomNavItem(
             route = Routes.ShoppingList,
@@ -65,9 +67,9 @@ fun PennyBottomNav(
             badgeCount = shoppingListCount
         ),
         BottomNavItem(
-            route = Routes.Settings,
-            label = "Settings",
-            icon = Icons.Outlined.Settings
+            route = Routes.AiChat,
+            label = "AI",
+            icon = Icons.Outlined.AutoAwesome
         )
     )
 
@@ -85,16 +87,14 @@ fun PennyBottomNav(
         )
 
         NavigationBar(
-            modifier = Modifier.height(106.dp),
+            modifier = Modifier.height(84.dp), // Check height - User said "smaller" earlier? "make the send/input the bottom padding smaller". Here he said "icons smaller".
             containerColor = bg,
             tonalElevation = 0.dp
         ) {
             items.forEach { item ->
                 // Hierarchical Selection Logic
                 val selected = when (item.route) {
-                    Routes.Settings -> currentRoute == Routes.Settings || 
-                                     currentRoute == Routes.MyStores || 
-                                     currentRoute == Routes.MembershipCards
+                    Routes.Settings -> currentRoute == Routes.Settings // Settings removed from nav but logic might remain for safety? No, item removed.
                     Routes.ShoppingList -> currentRoute == Routes.ShoppingList || 
                                           currentRoute == Routes.ShoppingListMatches
                     Routes.Home -> currentRoute == Routes.Home
@@ -104,28 +104,14 @@ fun PennyBottomNav(
                 NavigationBarItem(
                     selected = selected,
                     onClick = {
-                        // Always reset to the route's start destination (parent)
                         if (currentRoute != item.route) {
                              navController.navigate(item.route) {
                                 popUpTo(navController.graph.startDestinationId) {
-                                    saveState = true // Save state of the destination we are LEAVING? Or just pop?
-                                    // User said: "always go back to the parent"
-                                    // Usually this means: Don't restore the stack of the target.
+                                    saveState = true
                                 }
                                 launchSingleTop = true
-                                restoreState = false // Reset target stack
+                                restoreState = true // Restore state for tabs
                             }
-                        } else {
-                            // Already on the root of this tab?
-                            // If we are deep in stack for this tab (e.g. MyStores -> Settings is current tab route but actual dest is MyStores),
-                            // currentRoute check in this file is simple string comparison.
-                            // However, `currentRoute` variable earlier is: `navController.currentBackStackEntryAsState().value?.destination?.route`
-                            // If we are deep, `currentRoute` might be "my_stores", but `item.route` is "settings".
-                            // So `currentRoute != item.route` will be true.
-                            // So we navigate to "settings" with restoreState=false.
-                            
-                            // If we are AT "settings" root. currentRoute == "settings".
-                            // Then we do nothing.
                         }
                     },
                     icon = {
@@ -135,11 +121,12 @@ fun PennyBottomNav(
                                 badge = {
                                     Badge(
                                         containerColor = active,
-                                        contentColor = Color.White
+                                        contentColor = Color.White,
+                                        modifier = Modifier.offset(x = 4.dp, y = (-4).dp)
                                     ) {
                                         Text(
                                             text = count.toString(),
-                                            fontSize = 10.sp,
+                                            fontSize = 9.sp,
                                             style = MaterialTheme.typography.labelSmall
                                         )
                                     }
@@ -147,21 +134,25 @@ fun PennyBottomNav(
                             ) {
                                 Icon(
                                     imageVector = item.icon,
-                                    contentDescription = item.label
+                                    contentDescription = item.label,
+                                    modifier = Modifier.size(22.dp)
                                 )
                             }
                         } else {
                             Icon(
                                 imageVector = item.icon,
-                                contentDescription = item.label
+                                contentDescription = item.label,
+                                modifier = Modifier.size(22.dp)
                             )
                         }
                     },
-                    alwaysShowLabel = false,
+                    alwaysShowLabel = true,
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = active,
                         unselectedIconColor = inactive,
-                        indicatorColor = Color.Transparent
+                        indicatorColor = Color.Transparent,
+                        selectedTextColor = active,
+                        unselectedTextColor = inactive
                     )
                 )
             }

@@ -1,5 +1,6 @@
 package com.example.omiri.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -47,11 +48,10 @@ fun ShoppingListItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp), // Generous padding
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // 1. Checkbox (Left)
-            // Using Box to ensure touch target but visual square
             Box(
                 modifier = Modifier.padding(end = 12.dp)
             ) {
@@ -77,27 +77,28 @@ fun ShoppingListItem(
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp
                     ),
-                    color = if (item.isDone) Color(0xFF9CA3AF) else Color(0xFF111827), // Gray if done, Dark if not
+                    color = if (item.isDone) Color(0xFF9CA3AF) else Color(0xFF111827),
                     textDecoration = if (item.isDone) TextDecoration.LineThrough else null
                 )
                 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
                 
-                // Badges Row (Category • Store)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Category
-                    Text(
-                        text = item.category.getName(), 
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF6B7280) // Gray text
-                    )
-                    
+                // Category
+                Text(
+                    text = item.category.getName(), 
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFF6B7280)
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Badges Row (Under Category)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Store Badge
                     if (item.store != null) {
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(text = "•", color = Color(0xFF9CA3AF), style = MaterialTheme.typography.bodyMedium)
-                        Spacer(modifier = Modifier.width(6.dp))
-                        
-                        // Store Badge
                         Surface(
                             color = Color(0xFFDBEAFE), // Blue 100
                             shape = RoundedCornerShape(4.dp)
@@ -106,89 +107,100 @@ fun ShoppingListItem(
                                 text = item.store,
                                 color = Color(0xFF1D4ED8), // Blue 700
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                    
+                    // Price / Deal Badge
+                    if (item.discountPrice != null || item.price != null) {
+                         if (item.discountPrice != null && (item.price != null && item.discountPrice < item.price)) {
+                             // Discounted State
+                             Surface(
+                                 color = Color(0xFFFEF2F2), // Red 50
+                                 shape = RoundedCornerShape(4.dp),
+                                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFECACA))
+                             ) {
+                                 Row(
+                                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                                     verticalAlignment = Alignment.CenterVertically,
+                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                 ) {
+                                     if (item.discountPercentage != null) {
+                                         Text(
+                                             text = "-${item.discountPercentage}%",
+                                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                             color = Color(0xFFDC2626)
+                                         )
+                                     }
+                                     Text(
+                                         text = "€${String.format("%.2f", item.discountPrice)}",
+                                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                         color = Color(0xFFDC2626)
+                                     )
+                                 }
+                             }
+                         } else {
+                             // Regular Price Badge
+                             item.price?.let {
+                                 Surface(
+                                     color = Color(0xFFF3F4F6),
+                                     shape = RoundedCornerShape(4.dp)
+                                 ) {
+                                     Text(
+                                         text = "€${String.format("%.2f", it)}",
+                                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                         color = Color(0xFF374151),
+                                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                     )
+                                 }
+                             }
+                         }
+                    } else if (item.isInDeals) {
+                        Surface(
+                            color = Color(0xFFF3E8FF), // Light Purple
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Text(
+                                text = "Matched Deal",
+                                color = Color(0xFFA12AF9), // Purple
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
                     }
 
                     if (item.isRecurring) {
-                        Spacer(modifier = Modifier.width(4.dp))
                         Icon(
                             imageVector = Icons.Outlined.Refresh,
                             contentDescription = "Recurring",
                             tint = Color(0xFF6B7280),
-                            modifier = Modifier.size(14.dp)
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }
             }
             
-            // 3. Right Side (Price/Badge/Actions)
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.Center
+            // 3. Right Side (Standalone Trash)
+            IconButton(
+                onClick = onDelete,
+                modifier = Modifier
+                    .padding(start = 8.dp)
+                    .size(48.dp)
             ) {
-                 // Price Display
-                 if (item.discountPrice != null || item.price != null) {
-                     if (item.discountPrice != null && (item.price != null && item.discountPrice < item.price)) {
-                         // Discounted State
-                         Row(verticalAlignment = Alignment.CenterVertically) {
-                             if (item.discountPercentage != null) {
-                                 Text(
-                                     text = "-${item.discountPercentage}%",
-                                     style = MaterialTheme.typography.labelSmall,
-                                     color = Color(0xFFDC2626), // Red
-                                     fontWeight = FontWeight.Bold
-                                 )
-                                 Spacer(modifier = Modifier.width(4.dp))
-                             }
-                             
-                             Text(
-                                 text = "€${String.format("%.2f", item.discountPrice)}",
-                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                                 color = Color(0xFFEA580B) // Orange for deal price
-                             )
-                         }
-                         if (item.price != null) {
-                             Text(
-                                 text = "€${String.format("%.2f", item.price)}",
-                                 style = MaterialTheme.typography.labelSmall.copy(textDecoration = TextDecoration.LineThrough),
-                                 color = Color(0xFF9CA3AF)
-                             )
-                         }
-                     } else {
-                         // Regular Price
-                         item.price?.let {
-                             Text(
-                                 text = "€${String.format("%.2f", it)}",
-                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                                 color = Color(0xFF111827)
-                             )
-                         }
-                     }
-                 } else if (item.isInDeals) {
-                     // Fallback Deal Badge if no specific price
-                     Surface(
-                         color = Color(0xFFDCFCE7), // Light Green
-                         shape = RoundedCornerShape(16.dp)
-                     ) {
-                         Text(
-                             text = "On Deal",
-                             color = Color(0xFF166534), // Dark Green
-                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
-                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                         )
-                     }
-                 }
-                 
-                 // Delete Button
-                 IconButton(onClick = onDelete, modifier = Modifier.size(24.dp).padding(top = 8.dp)) {
-                     Icon(
-                         imageVector = Icons.Outlined.Delete, 
-                         contentDescription = "Delete", 
-                         tint = Color(0xFFD1D5DB)
-                     )
-                 }
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(Color(0xFFFEE2E2), RoundedCornerShape(20.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Delete,
+                        contentDescription = "Delete",
+                        tint = Color(0xFFEF4444),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
         }
     }

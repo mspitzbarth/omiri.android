@@ -253,6 +253,28 @@ fun SettingsScreen(
                             )
                         }
                     )
+                    
+                    HorizontalDivider(color = Color(0xFFF3F4F6))
+                    
+                    SettingsItem(
+                        icon = Icons.Outlined.ChatBubbleOutline,
+                        iconColor = Color(0xFFE0F2FE), // Light Blue
+                        iconTint = Color(0xFF0284C7), // Blue
+                        title = "Show Dummy Chat",
+                        trailingContent = {
+                            val dummyData by viewModel.showDummyData.collectAsState()
+                            Switch(
+                                checked = dummyData,
+                                onCheckedChange = { viewModel.toggleShowDummyData() },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = Color(0xFFEA580B),
+                                    uncheckedThumbColor = Color.White,
+                                    uncheckedTrackColor = Color(0xFFD1D5DB)
+                                )
+                            )
+                        }
+                    )
                 }
                 
                 if (debugMode) {

@@ -30,7 +30,11 @@ data class ChatMessage(
 
 enum class AttachmentType {
     SHOPPING_LIST_SUMMARY,
-    PRODUCT_CARD
+    PRODUCT_CARD,
+    SHOPPING_LIST_UPDATE,
+    DEALS_MATCHED,
+    STORE_ROUTE,
+    RECIPE_IDEAS
 }
 
 /**
@@ -63,6 +67,122 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         checkOnlineStatus()
+        viewModelScope.launch {
+            userPreferences.showDummyChatData.collect { show ->
+                if (show) {
+                    loadDummyData()
+                } else {
+                    // If disabling dummy data, clear chat to avoid confusion or mixed state
+                    // _messages.value = emptyList() 
+                    // Commented out to prevent wiping real chat if user just toggles off. 
+                    // But usually debug toggles are disruptive.
+                }
+            }
+        }
+    }
+    
+    private fun loadDummyData() {
+        val now = System.currentTimeMillis()
+        val mockMessages = mutableListOf<ChatMessage>()
+        
+        // 1. Intro
+        mockMessages.add(ChatMessage(
+            text = "Hi! I'm your shopping assistant. I can help you find deals, organize lists, suggest recipes, and plan your shopping trips. What would you like to do today?",
+            isUser = false,
+            timestamp = now - 60000
+        ))
+        
+        // 2. User Request
+        mockMessages.add(ChatMessage(
+            text = "I need to create a shopping list for dinner tomorrow. Can you help me find deals on ingredients for pasta?",
+            isUser = true,
+            timestamp = now - 50000
+        ))
+        
+        // 3. Bot Response text
+        mockMessages.add(ChatMessage(
+            text = "Great! I've found some pasta recipes and matched them with current deals. Let me create a list for you.",
+            isUser = false,
+            timestamp = now - 45000
+        ))
+        
+        // 4. Shopping List Update Card (Bot)
+        mockMessages.add(ChatMessage(
+            text = "", // Empty text for card-only message
+            isUser = false,
+            timestamp = now - 44000,
+            attachmentType = AttachmentType.SHOPPING_LIST_UPDATE,
+            attachmentData = mapOf(
+                "addedCount" to 4,
+                "status" to "Synced",
+                "items" to listOf("Spaghetti pasta", "Ground beef", "Tomato sauce", "+1 more")
+            )
+        ))
+        
+        // 5. Deals Matched Card (Bot)
+        mockMessages.add(ChatMessage(
+            text = "",
+            isUser = false,
+            timestamp = now - 43000,
+            attachmentType = AttachmentType.DEALS_MATCHED,
+            attachmentData = mapOf(
+                "count" to 3,
+                "badge" to "Best Saves",
+                "items" to listOf(
+                    mapOf("name" to "Barilla Spaghetti", "price" to "€1.99", "oldPrice" to "€2.49", "discount" to "-20%", "icon" to "wheat"),
+                    mapOf("name" to "Ground Beef 1lb", "price" to "€4.99", "oldPrice" to "€6.99", "discount" to "-29%", "icon" to "meat"),
+                    mapOf("name" to "Hunts Tomato Sauce", "price" to "€1.49", "oldPrice" to "€1.89", "discount" to "-21%", "icon" to "bottle")
+                )
+            )
+        ))
+        
+        // 6. Bot Follow-up
+        mockMessages.add(ChatMessage(
+            text = "Perfect! I found great deals that save you €2.89. Would you like me to plan the best route to get these items?",
+            isUser = false,
+            timestamp = now - 30000
+        ))
+        
+        // 7. User Reply
+        mockMessages.add(ChatMessage(
+            text = "Yes, plan my route please!",
+            isUser = true,
+            timestamp = now - 20000
+        ))
+        
+        // 8. Store Route Card
+        mockMessages.add(ChatMessage(
+            text = "",
+            isUser = false,
+            timestamp = now - 15000,
+            attachmentType = AttachmentType.STORE_ROUTE,
+            attachmentData = mapOf(
+                "stops" to 2,
+                "savings" to "€2.89",
+                "badge" to "Fewest stores",
+                "steps" to listOf(
+                    mapOf("store" to "Target", "desc" to "Pasta, Ground beef • 1.2 mi", "price" to "€1.99", "color" to "red"),
+                    mapOf("store" to "Walmart", "desc" to "Tomato sauce, Cheese • 2.1 mi", "price" to "€0.90", "color" to "blue")
+                )
+            )
+        ))
+        
+        // 9. Recipe Ideas
+        mockMessages.add(ChatMessage(
+            text = "",
+            isUser = false,
+            timestamp = now - 10000,
+            attachmentType = AttachmentType.RECIPE_IDEAS,
+            attachmentData = mapOf(
+                "badge" to "Uses your list",
+                "recipes" to listOf(
+                    mapOf("name" to "Classic Spaghetti", "difficulty" to "Easy", "time" to "25 min", "color" to "orange"),
+                    mapOf("name" to "Meat Pasta Bake", "difficulty" to "Medium", "time" to "45 min", "color" to "yellow")
+                )
+            )
+        ))
+        
+        _messages.value = mockMessages
     }
 
     fun checkOnlineStatus() {

@@ -1,8 +1,8 @@
-package com.example.omiri.ui.components
-
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -17,6 +17,7 @@ import com.example.omiri.ui.theme.Spacing
 fun OmiriHeader(
     notificationCount: Int = 0,
     onNotificationClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {},
     customAction: (@Composable () -> Unit)? = null,
     modifier: Modifier = Modifier,
     startContent: @Composable () -> Unit = {
@@ -61,7 +62,7 @@ fun OmiriHeader(
                             BadgedBox(
                                 badge = {
                                     Badge(
-                                        containerColor = Color(0xFFEA580B),
+                                        containerColor = Color(0xFFEF4444),
                                         contentColor = Color.White
                                     ) {
                                         Text(
@@ -71,10 +72,52 @@ fun OmiriHeader(
                                     }
                                 }
                             ) {
-                                Icon(Icons.Outlined.Notifications, contentDescription = "Notifications")
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .background(Color(0xFFF3F4F6), androidx.compose.foundation.shape.CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.Outlined.Notifications,
+                                        contentDescription = "Notifications",
+                                        tint = Color(0xFF1F2937),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
                             }
                         } else {
-                            Icon(Icons.Outlined.Notifications, contentDescription = "Notifications")
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(Color(0xFFF3F4F6), androidx.compose.foundation.shape.CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Outlined.Notifications,
+                                    contentDescription = "Notifications",
+                                    tint = Color(0xFF1F2937),
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(Spacing.xs))
+
+                    IconButton(onClick = onProfileClick) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(Color(0xFFF3F4F6), androidx.compose.foundation.shape.CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Outlined.Person,
+                                contentDescription = "Profile",
+                                tint = Color(0xFF1F2937),
+                                modifier = Modifier.size(24.dp)
+                            )
                         }
                     }
                 }

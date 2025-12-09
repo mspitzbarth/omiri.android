@@ -16,6 +16,7 @@ object Routes {
     const val AiChat = "ai_chat"
     const val ShoppingListMatches = "shopping_list_matches"
     const val MembershipCards = "membership_cards"
+    const val Recipes = "recipes"
 
     const val WebViewArgUrl = "url"
     const val WebViewArgTitle = "title"

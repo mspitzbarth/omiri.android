@@ -460,6 +460,22 @@ class UserPreferences(private val context: Context) {
     }
 
 
+    /**
+     * Get show dummy chat data status
+     */
+    val showDummyChatData: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[SHOW_DUMMY_CHAT_DATA] ?: false
+    }
+
+    /**
+     * Set show dummy chat data status
+     */
+    suspend fun setShowDummyChatData(show: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[SHOW_DUMMY_CHAT_DATA] = show
+        }
+    }
+
     companion object {
         private val SELECTED_COUNTRY = stringPreferencesKey("selected_country")
         private val SELECTED_STORES = stringSetPreferencesKey("selected_stores")
@@ -470,6 +486,9 @@ class UserPreferences(private val context: Context) {
         private val SAVED_SHOPPING_LISTS = stringPreferencesKey("saved_shopping_lists")
         private val IS_APP_FOREGROUND = booleanPreferencesKey("is_app_foreground")
         private val STORE_LOCATIONS_PREFIX = "store_locations_"
+        
+        // Debug Flag
+        private val SHOW_DUMMY_CHAT_DATA = booleanPreferencesKey("show_dummy_chat_data")
         
         // Favorites
         private val FAVORITE_DEAL_IDS = stringSetPreferencesKey("favorite_deal_ids")

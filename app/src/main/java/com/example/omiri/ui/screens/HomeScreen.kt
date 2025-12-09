@@ -54,6 +54,7 @@ fun HomeScreen(
     onDealClick: (String) -> Unit = {},
     fixedHeader: Boolean = true,
     onNotificationsClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {},
     onToggleShoppingList: (com.example.omiri.data.models.Deal, Boolean) -> Unit = { _, _ -> },
     onNavigateToShoppingListTab: () -> Unit = {},
     onNavigateToList: (String) -> Unit = {},
@@ -106,7 +107,8 @@ fun HomeScreen(
             // 0. Omiri Header (Fixed at top)
             com.example.omiri.ui.components.OmiriHeader(
                 notificationCount = 2,
-                onNotificationClick = onNotificationsClick
+                onNotificationClick = onNotificationsClick,
+                onProfileClick = onProfileClick
             )
 
             // Scrollable Content

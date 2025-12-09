@@ -50,6 +50,7 @@ fun AllDealsScreen(
     title: String = "All Deals",
     onDealClick: (String) -> Unit = {},
     onNotificationsClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {},
     onToggleShoppingList: (com.example.omiri.data.models.Deal, Boolean) -> Unit = { _, _ -> },
     onNavigateToMyStores: () -> Unit = {},
     viewModel: ProductViewModel,
@@ -132,7 +133,8 @@ fun AllDealsScreen(
         // Fixed Header Section
         OmiriHeader(
             notificationCount = 2,
-            onNotificationClick = onNotificationsClick
+            onNotificationClick = onNotificationsClick,
+            onProfileClick = onProfileClick
         )
         
         // Interstitial Ad Logic: Show every 200 items

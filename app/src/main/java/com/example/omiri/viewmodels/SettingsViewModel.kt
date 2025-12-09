@@ -45,6 +45,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _selectedStoreIds = MutableStateFlow<Set<String>>(emptySet())
     val selectedStoreIds: StateFlow<Set<String>> = _selectedStoreIds.asStateFlow()
 
+    private val _showDummyData = MutableStateFlow(false)
+    val showDummyData: StateFlow<Boolean> = _showDummyData.asStateFlow()
+
     private val _allStores = MutableStateFlow<List<com.example.omiri.data.api.models.StoreListResponse>>(emptyList())
     val allStores: StateFlow<List<com.example.omiri.data.api.models.StoreListResponse>> = _allStores.asStateFlow()
 
@@ -72,6 +75,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 _isOnboardingCompleted.value = completed
             }
         }
+        viewModelScope.launch {
+            userPreferences.showDummyChatData.collect { show ->
+                 _showDummyData.value = show
+            }
+        }
         // Fetch all stores for Popular Stores section
         viewModelScope.launch {
             try {
@@ -89,6 +97,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun completeOnboarding() {
         viewModelScope.launch {
             userPreferences.setOnboardingCompleted(true)
+        }
+    }
+    
+    fun toggleShowDummyData() {
+        viewModelScope.launch {
+            userPreferences.setShowDummyChatData(!_showDummyData.value)
         }
     }
 
