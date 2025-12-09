@@ -80,11 +80,11 @@ fun ShoppingListItem(
                 modifier = Modifier.weight(1f)
             ) {
                 // Title
+                // Title
                 Text(
                     text = item.name,
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.Bold
                     ),
                     color = if (item.isDone) Color(0xFF9CA3AF) else Color(0xFF111827),
                     textDecoration = if (item.isDone) TextDecoration.LineThrough else null
@@ -94,7 +94,8 @@ fun ShoppingListItem(
                 
                 // Category
                 Text(
-                    text = item.category.getName(),                        style = MaterialTheme.typography.titleLarge,
+                    text = item.category.getName(),
+                    style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF6B7280)
                 )
                 
@@ -105,20 +106,7 @@ fun ShoppingListItem(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Store Badge
-                    if (item.store != null) {
-                        Surface(
-                            color = Color(0xFFDBEAFE), // Blue 100
-                            shape = RoundedCornerShape(4.dp)
-                        ) {
-                            Text(
-                                text = item.store,
-                                color = Color(0xFF1D4ED8), // Blue 700
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
+
                     
                     // Price / Deal Badge
                     if (item.discountPrice != null || item.price != null) {

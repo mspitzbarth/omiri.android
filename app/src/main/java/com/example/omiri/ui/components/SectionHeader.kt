@@ -27,7 +27,7 @@ fun SectionHeader(
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
@@ -40,7 +40,7 @@ fun SectionHeader(
             ) {
                 Text(
                     text = actionText,
-                    style = MaterialTheme.typography.labelLarge,
+                    style = MaterialTheme.typography.labelSmall,
                     color = Color(0xFFEA580B),
                     fontWeight = FontWeight.SemiBold
                 )

@@ -33,13 +33,40 @@ class ShoppingListViewModel(application: Application) : AndroidViewModel(applica
         lists.find { it.id == currentId }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    val filteredItems: StateFlow<List<ShoppingItem>> = combine(currentList, _searchQuery) { list, query ->
+    private val _selectedCategory = MutableStateFlow<String?>(null)
+    val selectedCategory: StateFlow<String?> = _selectedCategory.asStateFlow()
+
+    data class CategoryCount(
+        val id: String,
+        val name: String,
+        val count: Int
+    )
+
+    val availableCategories: StateFlow<List<CategoryCount>> = currentList.map { list ->
+        if (list == null) return@map emptyList()
+        
+        list.items
+            .groupBy { it.categoryId }
+            .map { (catId, items) ->
+                val catName = PredefinedCategories.getCategoryById(catId).getName("en") // Default EN for now or pass Locale
+                CategoryCount(catId, catName, items.size)
+            }
+            .sortedByDescending { it.count }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val filteredItems: StateFlow<List<ShoppingItem>> = combine(currentList, _searchQuery, _selectedCategory) { list, query, categoryId ->
         val items = list?.items ?: emptyList()
-        if (query.isNotEmpty()) {
-            items.filter { it.name.contains(query, ignoreCase = true) }
-        } else {
-            items
+        var result = items
+        
+        if (categoryId != null) {
+            result = result.filter { it.categoryId == categoryId }
         }
+        
+        if (query.isNotEmpty()) {
+            result = result.filter { it.name.contains(query, ignoreCase = true) }
+        }
+        
+        result
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val productRepository = com.example.omiri.data.repository.ProductRepository()
@@ -162,6 +189,10 @@ class ShoppingListViewModel(application: Application) : AndroidViewModel(applica
 
     fun updateSearchQuery(query: String) {
         _searchQuery.value = query
+    }
+
+    fun selectCategory(categoryId: String?) {
+        _selectedCategory.value = categoryId
     }
 
     val totalUnfinishedItemsCount: StateFlow<Int>

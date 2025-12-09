@@ -185,7 +185,7 @@ fun DealCard(
                 )
                 Text(
                     text = deal.store,
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.labelSmall,
                     color = Color(0xFF6B7280)
                 )
             }
@@ -194,7 +194,7 @@ fun DealCard(
 
             Text(
                 text = deal.title,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -209,14 +209,14 @@ fun DealCard(
             ) {
                 Text(
                     text = deal.price,
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFFEA580C)
                 )
                 if (!deal.originalPrice.isNullOrBlank() && deal.discountPercentage > 0) {
                     Text(
                         text = deal.originalPrice!!,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                         color = Color(0xFF9CA3AF),
                         textDecoration = TextDecoration.LineThrough
                     )

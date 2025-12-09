@@ -44,6 +44,8 @@ fun ShoppingListScreen(
     val currentListId by viewModel.currentListId.collectAsState()
     val currentList by viewModel.currentList.collectAsState()
     val filteredItems by viewModel.filteredItems.collectAsState()
+    val availableCategories by viewModel.availableCategories.collectAsState()
+    val selectedCategory by viewModel.selectedCategory.collectAsState()
     
     // Smart Plan
     val smartPlan by (productViewModel?.smartPlan ?: kotlinx.coroutines.flow.MutableStateFlow(null)).collectAsState()
@@ -56,7 +58,7 @@ fun ShoppingListScreen(
     var itemToEdit by remember { mutableStateOf<com.example.omiri.data.models.ShoppingItem?>(null) }
     
     // Header Stats (Mocked or calculated)
-    val totalItemsCount = filteredItems.size
+    val totalItemsCount = currentList?.items?.size ?: 0
     val matchedDealsCount = filteredItems.count { it.isInDeals || it.discountPrice != null }
     val savedAmount = 12.40 // Mocked per image, or calculate if data available
 
@@ -106,7 +108,7 @@ fun ShoppingListScreen(
                         ) {
                             Text(
                                 text = currentList?.name ?: "Weekly Groceries",
-                                style = MaterialTheme.typography.headlineMedium,
+                                style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF111827)
                             )
@@ -153,13 +155,13 @@ fun ShoppingListScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = "$totalItemsCount items • $matchedDealsCount matched deals",
-                                style = MaterialTheme.typography.bodyMedium,
+                                style = MaterialTheme.typography.bodySmall,
                                 color = Color(0xFF6B7280)
                             )
                             Spacer(Modifier.width(16.dp))
                             Text(
                                 text = "You saved €${String.format("%.2f", savedAmount)} this week",
-                                style = MaterialTheme.typography.bodyMedium,
+                                style = MaterialTheme.typography.bodySmall,
                                 color = Color(0xFF16A34A), // Green
                                 fontWeight = FontWeight.Bold
                             )
@@ -176,13 +178,27 @@ fun ShoppingListScreen(
                             .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // All Chip (Active) - Changed to Blue as requested
-                        FilterChipStub(text = "All ($totalItemsCount)", selected = true, color = Color(0xFF2563EB))
+                        // All Chip (Active if selectedCategory is null)
+                        val isAllSelected = selectedCategory == null
+                        Box(modifier = Modifier.clickable { viewModel.selectCategory(null) }) {
+                            FilterChipStub(
+                                text = "All ($totalItemsCount)", 
+                                selected = isAllSelected, 
+                                color = Color(0xFFEA580B)
+                            )
+                        }
                         
-                        // Mock Categories
-                        FilterChipStub(text = "Produce (4)", selected = false)
-                        FilterChipStub(text = "Dairy (3)", selected = false)
-                        FilterChipStub(text = "Household (2)", selected = false)
+                        // Dynamic Categories
+                        availableCategories.forEach { category ->
+                            val isSelected = selectedCategory == category.id
+                            Box(modifier = Modifier.clickable { viewModel.selectCategory(if (isSelected) null else category.id) }) {
+                                FilterChipStub(
+                                    text = "${category.name} (${category.count})", 
+                                    selected = isSelected,
+                                    color = Color(0xFFEA580B)
+                                )
+                            }
+                        }
                     }
                 }
                 
@@ -329,7 +345,7 @@ fun FilterChipStub(text: String, selected: Boolean, color: Color = Color.White) 
         Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 16.dp)) {
             Text(
                 text = text,
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Medium,
                 color = if (selected) Color.White else Color(0xFF374151)
             )

@@ -61,19 +61,12 @@ fun OmiriHeader(
 
                     IconButton(onClick = onNotificationClick) {
                         Box(contentAlignment = Alignment.TopEnd) {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .background(Color(0xFFF3F4F6), androidx.compose.foundation.shape.CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    Icons.Outlined.Notifications,
-                                    contentDescription = "Notifications",
-                                    tint = Color(0xFF1F2937),
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
+                            Icon(
+                                Icons.Outlined.Notifications,
+                                contentDescription = "Notifications",
+                                tint = Color(0xFF1F2937),
+                                modifier = Modifier.size(24.dp)
+                            )
 
                             if (notificationCount > 0) {
                                 Badge(
@@ -93,19 +86,12 @@ fun OmiriHeader(
                     Spacer(modifier = Modifier.width(Spacing.xs))
 
                     IconButton(onClick = onProfileClick) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .background(Color(0xFFF3F4F6), androidx.compose.foundation.shape.CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                Icons.Outlined.Person,
-                                contentDescription = "Profile",
-                                tint = Color(0xFF1F2937),
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
+                        Icon(
+                            Icons.Outlined.Person,
+                            contentDescription = "Profile",
+                            tint = Color(0xFF1F2937),
+                            modifier = Modifier.size(24.dp)
+                        )
                     }
                 }
             }

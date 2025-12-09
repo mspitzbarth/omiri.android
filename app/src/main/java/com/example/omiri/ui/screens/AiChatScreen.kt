@@ -1,5 +1,6 @@
 package com.example.omiri.ui.screens
 
+import kotlinx.coroutines.launch
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -38,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -63,6 +65,7 @@ fun AiChatScreen(
     val isOnline by viewModel.isOnline.collectAsState()
 
     val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
@@ -79,6 +82,14 @@ fun AiChatScreen(
                 isLoading = isLoading,
                 error = error,
                 onDismissError = { viewModel.clearError() },
+                onFocus = {
+                    scope.launch {
+                        kotlinx.coroutines.delay(300)
+                        if (messages.isNotEmpty()) {
+                            listState.animateScrollToItem(messages.size)
+                        }
+                    }
+                },
                 onSend = {
                     val trimmed = messageText.trim()
                     if (trimmed.isNotEmpty() && !isLoading) {
@@ -267,8 +278,9 @@ fun ChatBubble(
     message: ChatMessage,
     onNavigateToShoppingList: () -> Unit = {}
 ) {
-    val bubbleColor = if (message.isUser) Color(0xFFEA580B) else Color(0xFFF3F4F6) // Greyish for bot
+    val bubbleColor = if (message.isUser) Color(0xFFEA580B) else Color.White
     val textColor = if (message.isUser) Color.White else Color(0xFF1F2937)
+    val borderStroke = if (message.isUser) null else androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB))
     val alignment = if (message.isUser) Alignment.End else Alignment.Start
     val shape = if (message.isUser) {
         RoundedCornerShape(20.dp, 20.dp, 6.dp, 20.dp)
@@ -285,7 +297,7 @@ fun ChatBubble(
             .fillMaxWidth()
             .padding(horizontal = Spacing.md), // Add outer padding to Row
         horizontalArrangement = if (message.isUser) Arrangement.End else Arrangement.Start,
-        verticalAlignment = Alignment.Bottom
+        verticalAlignment = Alignment.Top
     ) {
         if (!message.isUser) {
             Box(
@@ -308,43 +320,46 @@ fun ChatBubble(
             horizontalAlignment = if (message.isUser) Alignment.End else Alignment.Start,
             modifier = Modifier.widthIn(max = maxBubbleWidth)
         ) {
-            Surface(
-                color = bubbleColor,
-                shape = shape,
-                shadowElevation = if (message.isUser) 0.dp else 1.dp
-            ) {
-                Column {
-                    if (message.isUser) {
+            if (message.text.isNotBlank()) {
+                Surface(
+                    color = bubbleColor,
+                    shape = shape,
+                    border = borderStroke,
+                    shadowElevation = 0.dp
+                ) {
+                    Column {
+                        if (message.isUser) {
+                            Text(
+                                text = message.text,
+                                modifier = Modifier.padding(start = 14.dp, end = 14.dp, top = 10.dp, bottom = 4.dp),
+                                color = textColor,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        } else {
+                            // Use Markdown for bot
+                            com.example.omiri.ui.components.MarkdownText(
+                                markdown = message.text,
+                                modifier = Modifier.padding(start = 14.dp, end = 14.dp, top = 10.dp, bottom = 4.dp),
+                                color = textColor,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                        
+                        // Timestamp
+                        val timeFormat = java.text.SimpleDateFormat("h:mm a", java.util.Locale.getDefault())
+                        val timeString = timeFormat.format(java.util.Date(message.timestamp))
+                        
                         Text(
-                            text = message.text,
-                            modifier = Modifier.padding(start = 14.dp, end = 14.dp, top = 10.dp, bottom = 4.dp),
-                            color = textColor,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    } else {
-                        // Use Markdown for bot
-                        com.example.omiri.ui.components.MarkdownText(
-                            markdown = message.text,
-                            modifier = Modifier.padding(start = 14.dp, end = 14.dp, top = 10.dp, bottom = 4.dp),
-                            color = textColor,
-                            style = MaterialTheme.typography.bodyMedium
+                            text = timeString,
+                            modifier = Modifier
+                                .align(Alignment.End)
+                                .padding(horizontal = 12.dp)
+                                .padding(bottom = 6.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (message.isUser) Color.White.copy(alpha = 0.7f) else Color(0xFF9CA3AF),
+                            fontSize = androidx.compose.ui.unit.TextUnit(10f, androidx.compose.ui.unit.TextUnitType.Sp)
                         )
                     }
-                    
-                    // Timestamp
-                    val timeFormat = java.text.SimpleDateFormat("h:mm a", java.util.Locale.getDefault())
-                    val timeString = timeFormat.format(java.util.Date(message.timestamp))
-                    
-                    Text(
-                        text = timeString,
-                        modifier = Modifier
-                            .align(Alignment.End)
-                            .padding(horizontal = 12.dp)
-                            .padding(bottom = 6.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (message.isUser) Color.White.copy(alpha = 0.7f) else Color(0xFF9CA3AF),
-                        fontSize = androidx.compose.ui.unit.TextUnit(10f, androidx.compose.ui.unit.TextUnitType.Sp)
-                    )
                 }
             }
             
@@ -400,7 +415,8 @@ fun ShoppingListUpdateCard(data: Map<String, Any>, onViewList: () -> Unit) {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
         modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.md)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -461,7 +477,8 @@ fun DealsMatchedCard(data: Map<String, Any>) {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
         modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.md)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -527,7 +544,8 @@ fun StoreRouteCard(data: Map<String, Any>) {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
         modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.md)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -599,7 +617,8 @@ fun RecipeIdeasCard(data: Map<String, Any>) {
      Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
         modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.md)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -672,31 +691,7 @@ fun RecipeIdeasCard(data: Map<String, Any>) {
 
 @Composable
 fun TypingIndicator() {
-    val dotSize = 8.dp
-    val delayUnit = 300 
-    
     val transition = rememberInfiniteTransition(label = "TypeIndicator")
-
-    @Composable
-    fun animateDot(offset: Int): androidx.compose.runtime.State<Float> {
-        return transition.animateFloat(
-            initialValue = 0f,
-            targetValue = 1f,
-            animationSpec = infiniteRepeatable(
-                animation = keyframes {
-                    durationMillis = delayUnit * 4
-                    0f at 0
-                    1f at (offset * delayUnit) using LinearEasing // Jump up
-                    0f at (offset * delayUnit + delayUnit) // Jump down
-                }
-            ),
-            label = "Dot$offset"
-        )
-    }
-
-    val dot1Alpha by animateDot(0)
-    val dot2Alpha by animateDot(1)
-    val dot3Alpha by animateDot(2)
 
     Row(
         modifier = Modifier
@@ -706,9 +701,6 @@ fun TypingIndicator() {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        // We use simple alpha or offset animation. 
-        // Let's use Offset Y for "Bounce"
-        
         @Composable
         fun bounceAnimation(delay: Int): State<Float> {
             return transition.animateFloat(
@@ -716,11 +708,11 @@ fun TypingIndicator() {
                 targetValue = -10f,
                 animationSpec = infiniteRepeatable(
                     animation = keyframes {
-                        durationMillis = 1200
+                        durationMillis = 600 // Faster duration
                         0f at 0
                         0f at delay
-                        -6f at delay + 300 with FastOutSlowInEasing
-                        0f at delay + 600
+                        -8f at delay + 150 with FastOutSlowInEasing // Peak
+                        0f at delay + 300 // Return
                     },
                     repeatMode = RepeatMode.Restart
                 ),
@@ -729,8 +721,8 @@ fun TypingIndicator() {
         }
 
         val offset1 by bounceAnimation(0)
-        val offset2 by bounceAnimation(200)
-        val offset3 by bounceAnimation(400)
+        val offset2 by bounceAnimation(100)
+        val offset3 by bounceAnimation(200)
 
         Dot(offset1)
         Dot(offset2)
@@ -744,7 +736,7 @@ fun Dot(offsetY: Float) {
         modifier = Modifier
             .graphicsLayer { translationY = offsetY }
             .size(8.dp)
-            .background(Color(0xFF9CA3AF), androidx.compose.foundation.shape.CircleShape)
+            .background(Color(0xFFEA580B), androidx.compose.foundation.shape.CircleShape) // Orange
     )
 }
 
@@ -757,6 +749,7 @@ fun ChatInputBar(
     isOnline: Boolean = true,
     error: String?,
     onDismissError: () -> Unit,
+    onFocus: () -> Unit = {},
     onSend: () -> Unit
 ) {
     // Voice Search Launcher
@@ -847,7 +840,9 @@ fun ChatInputBar(
                         androidx.compose.foundation.text.BasicTextField(
                             value = value,
                             onValueChange = onValueChange,
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier
+                                .weight(1f)
+                                .onFocusChanged { if (it.isFocused) onFocus() },
                             singleLine = true,
                             enabled = !isLoading && isOnline,
                             textStyle = MaterialTheme.typography.bodyLarge.copy(

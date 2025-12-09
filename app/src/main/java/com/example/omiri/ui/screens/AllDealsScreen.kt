@@ -214,29 +214,7 @@ fun AllDealsScreen(
             Spacer(Modifier.height(Spacing.lg))
         }
 
-        // Active Popular Stores Section (Acting as Filter)
-        if (myStoresList.isNotEmpty()) {
-             Column(modifier = Modifier.padding(bottom = Spacing.lg)) {
-                 LazyRow(
-                    contentPadding = PaddingValues(horizontal = Spacing.lg),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.md)
-                ) {
-                    items(myStoresList) { store -> 
-                        val isSelected = currentFilters.selectedStores.contains(store.id)
-                        PopularStoreItem(
-                            store = store,
-                            isSelected = isSelected,
-                            onClick = {
-                                val updated = currentFilters.selectedStores.toMutableSet().apply {
-                                    if (contains(store.id)) remove(store.id) else add(store.id)
-                                }
-                                currentFilters = currentFilters.copy(selectedStores = updated)
-                            }
-                        )
-                    }
-                }
-            }
-        }
+
 
         PullToRefreshBox(
             isRefreshing = isRefreshing,
@@ -268,7 +246,7 @@ fun AllDealsScreen(
                 item(key = "header_$category") {
                     Text(
                         text = category.replaceFirstChar { if (it.isLowerCase()) it.titlecase(java.util.Locale.getDefault()) else it.toString() },
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF111827),
                         modifier = Modifier

@@ -88,7 +88,7 @@ fun RecipesScreen(
                              }
                              Spacer(Modifier.width(12.dp))
                              Column {
-                                 Text("Cook from your list", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                                 Text("Cook from your list", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
                                  Text("You already have 6 ingredients for these recipes.", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                              }
                         }
@@ -121,7 +121,7 @@ fun RecipesScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Best Matches", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                    Text("Best Matches", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
                     Text("View All >", color = Color(0xFFEA580B), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                 }
             }
@@ -151,7 +151,7 @@ fun RecipesScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Deal-Friendly Recipes", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                    Text("Deal-Friendly Recipes", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
                     Text("View All >", color = Color(0xFFEA580B), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                 }
             }
@@ -225,7 +225,7 @@ fun RecipeCard(
                  }
             }
             Column(modifier = Modifier.padding(12.dp)) {
-                Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, maxLines = 2)
+                Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium, maxLines = 2)
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.Schedule, null, modifier = Modifier.size(14.dp), tint = Color.Gray)
@@ -279,7 +279,7 @@ fun RecipeListItem(
             )
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.Schedule, null, modifier = Modifier.size(14.dp), tint = Color.Gray)
