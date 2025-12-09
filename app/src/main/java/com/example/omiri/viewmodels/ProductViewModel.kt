@@ -904,7 +904,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
         // Calculate savings per deal: original - price
         // Map: Store -> Total Savings, List of Items
         
-        val storeAnalysis = allDeals.groupBy { it.store }.map { (store, deals) ->
+        val storeAnalysis = allDeals.groupBy { it.store.takeIf { s -> !s.isNullOrBlank() } ?: "Various Stores" }.map { (store, deals) ->
             val savings = deals.sumOf { deal ->
                 val p = deal.price.replace(Regex("[^0-9.]"), "").toDoubleOrNull() ?: 0.0
                 val o = deal.originalPrice?.replace(Regex("[^0-9.]"), "")?.toDoubleOrNull() ?: 0.0
@@ -923,10 +923,6 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
                  totalCost = cost
              )
         }
-        
-        // Allow stores with 0 savings if they have matches (e.g. cheapest option)
-        // .filter { it.stepSavings > 0 } -> Removed to show Plan even if just matches without discount
-
         
         if (storeAnalysis.isEmpty()) return null
         
