@@ -94,7 +94,7 @@ fun PennyBottomNav(
         )
 
         NavigationBar(
-            modifier = Modifier.height(84.dp), // Check height - User said "smaller" earlier? "make the send/input the bottom padding smaller". Here he said "icons smaller".
+            modifier = Modifier.height(96.dp), // Increased height for more padding
             containerColor = bg,
             tonalElevation = 0.dp
         ) {

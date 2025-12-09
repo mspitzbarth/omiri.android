@@ -3,8 +3,8 @@ package com.example.omiri.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -62,10 +62,10 @@ fun OmiriHeader(
                     IconButton(onClick = onNotificationClick) {
                         Box(contentAlignment = Alignment.TopEnd) {
                             Icon(
-                                Icons.Outlined.Notifications,
+                                imageVector = Icons.Default.Notifications,
                                 contentDescription = "Notifications",
                                 tint = Color(0xFF1F2937),
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(20.dp) // Smaller
                             )
 
                             if (notificationCount > 0) {
@@ -87,10 +87,10 @@ fun OmiriHeader(
 
                     IconButton(onClick = onProfileClick) {
                         Icon(
-                            Icons.Outlined.Person,
+                            imageVector = Icons.Default.Person,
                             contentDescription = "Profile",
                             tint = Color(0xFF1F2937),
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(20.dp) // Smaller
                         )
                     }
                 }

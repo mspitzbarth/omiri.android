@@ -14,6 +14,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.automirrored.outlined.List
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Error
@@ -161,9 +162,10 @@ fun AiChatScreen(
                 customAction = {
                     IconButton(onClick = { viewModel.resetConversation() }) {
                         Icon(
-                            imageVector = androidx.compose.material.icons.Icons.Outlined.DeleteOutline,
+                            imageVector = androidx.compose.material.icons.Icons.Default.Delete,
                             contentDescription = "Clear Chat",
-                            tint = Color(0xFF6B7280)
+                            tint = Color(0xFF1F2937),
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }

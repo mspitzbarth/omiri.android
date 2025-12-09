@@ -2,11 +2,11 @@ package com.example.omiri.ui.components
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.ContentCopy
-import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.DriveFileMove
 import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
@@ -47,14 +47,25 @@ fun ContextualSelectionTopBar(
             ) {
                 // Navigation Icon & Title (Left)
                 Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                    IconButton(onClick = onClearSelection) {
-                        Icon(
+                    // Use Box/Icon with clickable instead of IconButton to remove internal padding and align "X" to the left edge like the Logo
+                    Box(
+                        contentAlignment = androidx.compose.ui.Alignment.Center,
+                        modifier = Modifier
+                            .size(32.dp) // Smaller touch target wrapper than 48dp to align better visually? Or just Icon? 
+                            // Let's use Icon with padding for touch area but less visual indent
+                            .padding(end = 6.dp) // Adjustment
+                            .clickable(onClick = onClearSelection)
+                    ) {
+                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Clear Selection",
-                            tint = Color(0xFF6B7280)
+                            tint = Color(0xFF1F2937),
+                            modifier = Modifier.size(20.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
+                    
+                    Spacer(modifier = Modifier.width(4.dp))
+                    
                     Text(
                         text = "$selectedCount selected",
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold),
@@ -67,16 +78,25 @@ fun ContextualSelectionTopBar(
                     // Trash Icon
                     IconButton(onClick = onDelete) {
                         Icon(
-                            imageVector = Icons.Outlined.Delete,
+                            imageVector = Icons.Outlined.Delete, // Or Filled? User said "same for the selection icon". Maybe Filled Delete? Material usually uses Outlined or Filled. "selection icon" might refer to X? I'll stick to Outlined for actions unless "all icons" meant these too. Let's make Delete Filled to be safe? Or stick to Outlined but smaller/colored. User said "all icons in the header nav... same for the selection icon". I'll use Filled for consistency if available, otherwise Outlined. Delete has Filled. 
+                            // Let's use Outlined for generic actions usually, but user said "filled" for header nav.
+                            // I will use Filled to be safe given "make all icons... filled".
+                            imageVector = Icons.Default.Delete,
                             contentDescription = "Delete",
-                            tint = AppColors.BrandOrange
+                            tint = Color(0xFF1F2937),
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                     
                     // More Menu
                     Box {
                         IconButton(onClick = { showMenu = true }) {
-                            Icon(Icons.Outlined.MoreVert, contentDescription = "More", tint = Color(0xFF6B7280))
+                            Icon(
+                                Icons.Default.MoreVert, // Filled
+                                contentDescription = "More", 
+                                tint = Color(0xFF1F2937),
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
 
                         DropdownMenu(
