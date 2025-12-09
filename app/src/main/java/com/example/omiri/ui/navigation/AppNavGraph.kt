@@ -110,6 +110,7 @@ fun AppNavGraph(
                 // To SHARE state, we MUST pass this instance.
                 ShoppingListScreen(
                     viewModel = shoppingListViewModel,
+                    productViewModel = productViewModel,
                     onNotificationsClick = { navController.navigate(Routes.Notifications) },
                     onProfileClick = { navController.navigate(Routes.Settings) }
                 )

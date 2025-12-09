@@ -1,11 +1,20 @@
 package com.example.omiri.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Spa
+import androidx.compose.material.icons.outlined.Kitchen
+import androidx.compose.material.icons.outlined.BreakfastDining
+import androidx.compose.material.icons.outlined.LocalDining
+import androidx.compose.material.icons.outlined.CleaningServices
+import androidx.compose.material.icons.automirrored.outlined.Help
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -85,8 +94,7 @@ fun ShoppingListItem(
                 
                 // Category
                 Text(
-                    text = item.category.getName(), 
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = item.category.getName(),                        style = MaterialTheme.typography.titleLarge,
                     color = Color(0xFF6B7280)
                 )
                 
@@ -190,15 +198,14 @@ fun ShoppingListItem(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
-                        .background(Color(0xFFFEE2E2), RoundedCornerShape(20.dp)),
+                        .size(40.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Delete,
                         contentDescription = "Delete",
-                        tint = Color(0xFFEF4444),
-                        modifier = Modifier.size(20.dp)
+                        tint = Color(0xFF9CA3AF), // Gray like the text
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }
