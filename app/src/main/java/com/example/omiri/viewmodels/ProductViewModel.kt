@@ -57,6 +57,9 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
     
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+
+    private val _networkErrorType = MutableStateFlow<com.example.omiri.utils.NetworkErrorType?>(null)
+    val networkErrorType: StateFlow<com.example.omiri.utils.NetworkErrorType?> = _networkErrorType.asStateFlow()
     
     private val _shoppingListMatches = MutableStateFlow<Map<String, List<Deal>>>(emptyMap())
     val shoppingListMatches: StateFlow<Map<String, List<Deal>>> = _shoppingListMatches.asStateFlow()
@@ -375,17 +378,21 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
             deferredAll.await()
             _loadingProgress.value = 0.9f // Almost done
             
-            Log.d(TAG, "All API calls completed successfully")
+            Log.d(TAG, "All API calls completed")
             
             // Trigger Smart Plan matches in background (non-blocking for splash)
-            viewModelScope.launch {
-                executeCheckShoppingListMatches() 
+            // Only proceed if no critical error occurred during product fetching
+            if (_error.value == null) {
+                viewModelScope.launch {
+                    executeCheckShoppingListMatches() 
+                }
             }
             
         } catch (e: Exception) {
             val errorMsg = "Failed to load products: ${e.message}"
             Log.e(TAG, errorMsg, e)
             _error.value = errorMsg
+            _networkErrorType.value = com.example.omiri.utils.NetworkErrorParser.parseError(e)
         } finally {
             _isLoading.value = false
             _loadingProgress.value = 1.0f // Done (or failed, but finished)
@@ -415,6 +422,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
         }.onFailure { error: Throwable ->
             Log.e(TAG, "Failed to load featured deals", error)
             _error.value = "Failed to load featured deals: ${error.message}"
+            _networkErrorType.value = com.example.omiri.utils.NetworkErrorParser.parseError(error)
         }
     }
     
@@ -433,6 +441,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
             _shoppingListDeals.value = response.products.toDeals()
         }.onFailure { error: Throwable ->
             _error.value = "Failed to load shopping list deals: ${error.message}"
+            _networkErrorType.value = com.example.omiri.utils.NetworkErrorParser.parseError(error)
         }
     }
     
@@ -448,6 +457,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
             _leavingSoonDeals.value = response.products.toDeals()
         }.onFailure { error: Throwable ->
             _error.value = "Failed to load leaving soon deals: ${error.message}"
+            _networkErrorType.value = com.example.omiri.utils.NetworkErrorParser.parseError(error)
         }
     }
     
@@ -514,6 +524,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
                     _allDeals.value = allProducts.toDeals()
                 }.onFailure { error: Throwable ->
                     _error.value = "Search failed: ${error.message}"
+                    _networkErrorType.value = com.example.omiri.utils.NetworkErrorParser.parseError(error)
                 }
             } catch (e: Exception) {
                 _error.value = "Search failed: ${e.message}"
@@ -668,9 +679,10 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
             _featuredDeals.value = syncDealsState(_featuredDeals.value)
             _allDeals.value = syncDealsState(_allDeals.value)
             
-        } catch (e: Exception) {
+          } catch (e: Exception) {
             Log.e(TAG, "Error checking matches", e)
             _error.value = "Error checking matches: ${e.message}"
+            _networkErrorType.value = com.example.omiri.utils.NetworkErrorParser.parseError(e)
         } finally {
             _isLoading.value = false
         }
@@ -1053,6 +1065,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
             _totalCount.value = response.totalCount
         }.onFailure { error: Throwable ->
             _error.value = "Failed to load all deals: ${error.message}"
+            _networkErrorType.value = com.example.omiri.utils.NetworkErrorParser.parseError(error)
             if (page > 1) _currentPage.value -= 1
         }
     }

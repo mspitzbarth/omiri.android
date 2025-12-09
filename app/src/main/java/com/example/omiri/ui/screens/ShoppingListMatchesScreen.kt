@@ -7,6 +7,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.*
+import androidx.compose.material.icons.outlined.WifiOff
+import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.SentimentDissatisfied
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,25 +70,23 @@ fun ShoppingListMatchesScreen(
                 .padding(padding)
         ) {
             if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center),
-                    color = Color(0xFFEA580B)
-                )
+                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                     CircularProgressIndicator(color = Color(0xFFEA580B))
+                 }
             } else if (matches.isEmpty()) {
-                Column(
-                    modifier = Modifier.align(Alignment.Center),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        "No deals found yet matching your list.",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = Color(0xFF6B7280)
-                    )
-                    Spacer(Modifier.height(Spacing.sm))
-                    Button(onClick = { viewModel.checkShoppingListMatches() }) {
-                        Text("Refresh")
-                    }
-                }
+                 // Smart Empty State
+                 val error by viewModel.error.collectAsState()
+                 val networkErrorType by viewModel.networkErrorType.collectAsState()
+                 
+                 com.example.omiri.ui.components.OmiriSmartEmptyState(
+                     networkErrorType = networkErrorType,
+                     error = error,
+                     onRetry = { viewModel.checkShoppingListMatches() },
+                     defaultIcon = androidx.compose.material.icons.Icons.Outlined.SentimentDissatisfied, // Or LocalOffer? SentimentDissatisfied was used before.
+                     defaultTitle = "No matches found",
+                     defaultMessage = "None of your shopping list items are currently on sale.",
+                     modifier = Modifier.padding(Spacing.xxl)
+                 )
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),

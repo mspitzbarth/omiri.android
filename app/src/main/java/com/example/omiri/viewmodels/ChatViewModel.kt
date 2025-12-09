@@ -52,6 +52,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    private val _networkErrorType = MutableStateFlow<com.example.omiri.utils.NetworkErrorType?>(null)
+    val networkErrorType: StateFlow<com.example.omiri.utils.NetworkErrorType?> = _networkErrorType.asStateFlow()
+
     private val _conversationId = MutableStateFlow<String?>(null)
     val conversationId: StateFlow<String?> = _conversationId.asStateFlow()
 
@@ -66,6 +69,12 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val result = repository.checkHealth()
             _isOnline.value = result.getOrDefault(false)
+            
+            result.onFailure {
+                 _networkErrorType.value = com.example.omiri.utils.NetworkErrorParser.parseError(it)
+            }.onSuccess {
+                 _networkErrorType.value = null // Clear error if success
+            }
         }
     }
 
@@ -99,6 +108,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 val errorMsg = "Failed to send message: ${e.message}"
                 Log.e(TAG, errorMsg, e)
                 _error.value = errorMsg
+                _networkErrorType.value = com.example.omiri.utils.NetworkErrorParser.parseError(e)
 
                 _messages.value = _messages.value + ChatMessage(
                     text = "Sorry, I'm having trouble connecting right now. Please try again.",

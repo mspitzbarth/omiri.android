@@ -32,7 +32,7 @@ fun OmiriHeader(
         modifier = modifier.fillMaxWidth(),
         shadowElevation = 0.dp,
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
-        color = MaterialTheme.colorScheme.background
+        color = Color.White
     ) {
         Column(
             modifier = Modifier.padding(horizontal = Spacing.lg)

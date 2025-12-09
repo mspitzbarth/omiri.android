@@ -41,6 +41,8 @@ import com.example.omiri.viewmodels.ProductViewModel
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.outlined.LocalOffer
+import androidx.compose.material.icons.outlined.WifiOff
+import androidx.compose.material.icons.outlined.CloudOff
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -140,6 +142,100 @@ fun AllDealsScreen(
              }
         }
 
+        // Search and Filters (Fixed)
+        Column(modifier = Modifier.padding(horizontal = Spacing.lg)) {
+            Spacer(Modifier.height(Spacing.sm))
+            OmiriSearchBar()
+            Spacer(Modifier.height(Spacing.md))
+            
+            // Filters & Sort Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Filter button (on the left) with badge
+                val activeFilterCount = listOf(
+                    currentFilters.priceRange != 0f..1000f,
+                    currentFilters.selectedStores.isNotEmpty(),
+                    currentFilters.selectedCategories.isNotEmpty(),
+                    currentFilters.onlineOnly
+                ).count { it }
+
+                val hasActiveFilters = activeFilterCount > 0
+
+                BadgedBox(
+                    badge = {
+                        if (activeFilterCount > 0) {
+                            Badge(
+                                containerColor = Color(0xFFEA580B),
+                                contentColor = Color.White
+                            ) {
+                                Text(
+                                    text = activeFilterCount.toString(),
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
+                        }
+                    }
+                ) {
+                    IconButton(
+                        onClick = { showFilterModal = true },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.FilterList,
+                            contentDescription = "More filters",
+                            tint = if (hasActiveFilters) Color(0xFFEA580B) else Color(0xFF1F2937)
+                        )
+                    }
+                }
+
+                MixedFilterChipsRow(
+                    modifier = Modifier.weight(1f),
+                    options = listOf(
+                        MixedFilterOption("My Deals", Icons.Outlined.BookmarkBorder, isToggleable = true),
+                        MixedFilterOption("This Week", Icons.Outlined.Today, isToggleable = false),
+                        MixedFilterOption("Next Week", Icons.Outlined.Event, isToggleable = false)
+                    ),
+                    initialSelected = selectedFilterChip,
+                    initialToggled = toggledFilterChips,
+                    onSelectedChange = { selectedFilterChip = it },
+                    onToggledChange = { toggledFilterChips = it },
+                    selectedBackgroundColor = Color(0xFFFE6B36),
+                    selectedTextColor = Color.White,
+                    unselectedBackgroundColor = Color(0xFFF3F4F6),
+                    unselectedTextColor = Color.Black
+                )
+            }
+            
+            Spacer(Modifier.height(Spacing.lg))
+        }
+
+        // Active Popular Stores Section (Acting as Filter)
+        if (myStoresList.isNotEmpty()) {
+             Column(modifier = Modifier.padding(bottom = Spacing.lg)) {
+                 LazyRow(
+                    contentPadding = PaddingValues(horizontal = Spacing.lg),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.md)
+                ) {
+                    items(myStoresList) { store -> 
+                        val isSelected = currentFilters.selectedStores.contains(store.id)
+                        PopularStoreItem(
+                            store = store,
+                            isSelected = isSelected,
+                            onClick = {
+                                val updated = currentFilters.selectedStores.toMutableSet().apply {
+                                    if (contains(store.id)) remove(store.id) else add(store.id)
+                                }
+                                currentFilters = currentFilters.copy(selectedStores = updated)
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
         PullToRefreshBox(
             isRefreshing = isRefreshing,
             state = pullRefreshState,
@@ -159,108 +255,9 @@ fun AllDealsScreen(
                 LazyColumn(
                     modifier = Modifier.fillMaxSize()
                 ) {
-            // Search and Filters (non-sticky header content)
-            item {
-                Column(modifier = Modifier.padding(horizontal = Spacing.lg)) {
-                    Spacer(Modifier.height(Spacing.sm))
-                    OmiriSearchBar()
-                    Spacer(Modifier.height(Spacing.md))
+                    // Search/Filters moved out
                     
-                    // Filters & Sort Row
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Filter button (on the left) with badge
-                        val activeFilterCount = listOf(
-                            currentFilters.priceRange != 0f..1000f,
-                            currentFilters.selectedStores.isNotEmpty(),
-                            currentFilters.selectedCategories.isNotEmpty(),
-                            currentFilters.onlineOnly
-                        ).count { it }
-
-                        val hasActiveFilters = activeFilterCount > 0
-
-                        BadgedBox(
-                            badge = {
-                                if (activeFilterCount > 0) {
-                                    Badge(
-                                        containerColor = Color(0xFFEA580B),
-                                        contentColor = Color.White
-                                    ) {
-                                        Text(
-                                            text = activeFilterCount.toString(),
-                                            style = MaterialTheme.typography.labelSmall
-                                        )
-                                    }
-                                }
-                            }
-                        ) {
-                            IconButton(
-                                onClick = { showFilterModal = true },
-                                modifier = Modifier.size(40.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.FilterList,
-                                    contentDescription = "More filters",
-                                    tint = if (hasActiveFilters) Color(0xFFEA580B) else Color(0xFF1F2937)
-                                )
-                            }
-                        }
-
-                        MixedFilterChipsRow(
-                            modifier = Modifier.weight(1f),
-                            options = listOf(
-                                MixedFilterOption("My Deals", Icons.Outlined.BookmarkBorder, isToggleable = true),
-                                MixedFilterOption("This Week", Icons.Outlined.Today, isToggleable = false),
-                                MixedFilterOption("Next Week", Icons.Outlined.Event, isToggleable = false)
-                            ),
-                            initialSelected = selectedFilterChip,
-                            initialToggled = toggledFilterChips,
-                            onSelectedChange = { selectedFilterChip = it },
-                            onToggledChange = { toggledFilterChips = it },
-                            selectedBackgroundColor = Color(0xFFFE6B36),
-                            selectedTextColor = Color.White,
-                            unselectedBackgroundColor = Color(0xFFF3F4F6),
-                            unselectedTextColor = Color.Black
-                        )
-                    }
-                    
-                    Spacer(Modifier.height(Spacing.lg))
-                }
-            }
-
-            // "Active" Popular Stores Section (Acting as Filter)
-            if (myStoresList.isNotEmpty()) {
-                item {
-                     Column(modifier = Modifier.padding(horizontal = Spacing.lg)) {
-                         // Removed Title
-                     }
-                     
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = Spacing.lg),
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.md)
-                    ) {
-                        items(myStoresList) { store -> 
-                            val isSelected = currentFilters.selectedStores.contains(store.id)
-                            PopularStoreItem(
-                                store = store,
-                                isSelected = isSelected,
-                                onClick = {
-                                    val updated = currentFilters.selectedStores.toMutableSet().apply {
-                                        if (contains(store.id)) remove(store.id) else add(store.id)
-                                    }
-                                    currentFilters = currentFilters.copy(selectedStores = updated)
-                                }
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(Spacing.xl))
-                }
-            }
-            
-            // Track cumulative items for ad insertion
+                    // Track cumulative items for ad insertion
             var cumulativeItemCount = 0
             var justInsertedAd = false
             
@@ -352,11 +349,21 @@ fun AllDealsScreen(
                     }
                 } else {
                      item {
-                        com.example.omiri.ui.components.OmiriEmptyState(
-                            icon = Icons.Outlined.LocalOffer, // Or Search/SentimentDissatisfied
-                            title = "No deals found",
-                            message = "Try adjusting your filters or search query",
-                            modifier = Modifier.padding(vertical = Spacing.xxl)
+                        // Smart Empty State
+                        val error by viewModel.error.collectAsState()
+                        val networkErrorType by viewModel.networkErrorType.collectAsState()
+                        val emptyMessage = "Try adjusting your filters or search query"
+                        
+                        com.example.omiri.ui.components.OmiriSmartEmptyState(
+                            networkErrorType = networkErrorType,
+                            error = error,
+                            onRetry = { viewModel.loadProducts() },
+                            defaultIcon = androidx.compose.material.icons.Icons.Outlined.LocalOffer,
+                            defaultTitle = "No deals found",
+                            defaultMessage = emptyMessage,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = Spacing.xxl)
                         )
                      }
                 }

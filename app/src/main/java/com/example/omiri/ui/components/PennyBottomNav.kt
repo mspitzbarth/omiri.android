@@ -72,8 +72,8 @@ fun PennyBottomNav(
     )
 
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
-
-    val bg = Color(0xFFFAFBFC)
+    
+    val bg = Color.White
     val topBorder = Color(0xFFE5E7EB)
     val active = Color(0xFFEA580B)
     val inactive = Color(0xFF6B7280)

@@ -11,9 +11,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Send
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Error
+import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.WifiOff
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Error
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
@@ -72,7 +75,8 @@ fun AiChatScreen(
                         viewModel.sendMessage(trimmed)
                         messageText = ""
                     }
-                }
+                },
+                isOnline = isOnline
             )
         }
     ) { padding ->
@@ -81,7 +85,7 @@ fun AiChatScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(bottom = padding.calculateBottomPadding())
-                .background(Color.White)
+                .background(com.example.omiri.ui.theme.AppColors.Bg)
         ) {
             com.example.omiri.ui.components.OmiriHeader(
                 startContent = {
@@ -105,7 +109,7 @@ fun AiChatScreen(
 
                         Column {
                             Text(
-                                text = "AI Assistant",
+                                text = "H.A.N.S",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF111827)
@@ -143,80 +147,100 @@ fun AiChatScreen(
                 }
             )
 
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .simpleVerticalScrollbar(listState),
-                contentPadding = PaddingValues(bottom = Spacing.md), 
-                verticalArrangement = Arrangement.spacedBy(16.dp) // Explicit larger gap
-            ) {
-                // Spacer for top padding
-                item { Spacer(Modifier.height(Spacing.md)) }
+            val networkErrorType by viewModel.networkErrorType.collectAsState()
+            
+            if (!isOnline) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val networkErrorType by viewModel.networkErrorType.collectAsState()
+                    // If offline, force error display
+                    com.example.omiri.ui.components.OmiriSmartEmptyState(
+                        networkErrorType = networkErrorType ?: com.example.omiri.utils.NetworkErrorType.OFFLINE,
+                        error = "Connection unavailable", // Force error mode
+                        onRetry = { viewModel.checkOnlineStatus() },
+                        defaultIcon = androidx.compose.material.icons.Icons.Outlined.WifiOff, // Unused in error mode
+                        defaultTitle = "",
+                        defaultMessage = ""
+                    )
+                }
+            } else {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .simpleVerticalScrollbar(listState),
+                    contentPadding = PaddingValues(bottom = Spacing.md), 
+                    verticalArrangement = Arrangement.spacedBy(16.dp) // Explicit larger gap
+                ) {
+                    // Spacer for top padding
+                    item { Spacer(Modifier.height(Spacing.md)) }
 
-                // Date Header
-                if (messages.isNotEmpty()) {
-                    item {
-                        Box(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = Color(0xFFE5E7EB),
-                                modifier = Modifier.padding(vertical = 4.dp)
+                    // Date Header
+                    if (messages.isNotEmpty()) {
+                        item {
+                            Box(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    text = "Today",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = Color(0xFF4B5563),
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                                    fontWeight = FontWeight.Medium
-                                )
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = Color(0xFFE5E7EB),
+                                    modifier = Modifier.padding(vertical = 4.dp)
+                                ) {
+                                    Text(
+                                        text = "Today",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color(0xFF4B5563),
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
                             }
                         }
                     }
-                }
 
-                if (messages.isEmpty()) {
-                    item {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = Spacing.md),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color(0xFFFFF7ED)
-                            ),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFED7AA))
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(Spacing.lg),
-                                verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+                    if (messages.isEmpty()) {
+                        item {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = Spacing.md),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFFFFF7ED)
+                                ),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFED7AA))
                             ) {
-                                Text(
-                                    text = "💬 AI Shopping Assistant",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFEA580B)
-                                )
-                                Text(
-                                    text = "Ask me about deals, recipes, or help with your shopping list. I can help you find the best prices and plan your meals!",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = Color(0xFF92400E)
-                                )
+                                Column(
+                                    modifier = Modifier.padding(Spacing.lg),
+                                    verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+                                ) {
+                                    Text(
+                                        text = "💬 AI Shopping Assistant",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFEA580B)
+                                    )
+                                    Text(
+                                        text = "Ask me about deals, recipes, or help with your shopping list. I can help you find the best prices and plan your meals!",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color(0xFF92400E)
+                                    )
+                                }
                             }
                         }
                     }
-                }
 
-                // Safe items block
-                items(messages) { message ->
-                    ChatBubble(message, onNavigateToShoppingList)
-                }
+                    // Safe items block
+                    items(messages) { message ->
+                        ChatBubble(message, onNavigateToShoppingList)
+                    }
 
-                if (isLoading && messages.lastOrNull()?.isUser == true) {
-                    item { TypingIndicator() }
+                    if (isLoading && messages.lastOrNull()?.isUser == true) {
+                        item { TypingIndicator() }
+                    }
                 }
             }
         }
@@ -392,6 +416,7 @@ fun ChatInputBar(
     value: String,
     onValueChange: (String) -> Unit,
     isLoading: Boolean,
+    isOnline: Boolean = true,
     error: String?,
     onDismissError: () -> Unit,
     onSend: () -> Unit
@@ -419,7 +444,7 @@ fun ChatInputBar(
                 .fillMaxWidth()
                 .navigationBarsPadding()
                 .imePadding()
-                .padding(start = Spacing.md, end = Spacing.md, top = 8.dp, bottom = 0.dp), // Zero bottom padding to keep it low
+                .padding(start = Spacing.md, end = Spacing.md, top = 8.dp, bottom = 8.dp),
             verticalArrangement = Arrangement.spacedBy(Spacing.sm)
         ) {
 
@@ -486,9 +511,9 @@ fun ChatInputBar(
                             onValueChange = onValueChange,
                             modifier = Modifier.weight(1f),
                             singleLine = true,
-                            enabled = !isLoading,
+                            enabled = !isLoading && isOnline,
                             textStyle = MaterialTheme.typography.bodyLarge.copy(
-                                color = Color(0xFF111827)
+                                color = if (isOnline) Color(0xFF111827) else Color(0xFF9CA3AF)
                             ),
                             cursorBrush = androidx.compose.ui.graphics.SolidColor(Color(0xFFEA580B)),
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
@@ -496,7 +521,7 @@ fun ChatInputBar(
                             decorationBox = { innerTextField ->
                                 if (value.isEmpty()) {
                                     Text(
-                                        text = "Ask about deals…",
+                                        text = if (isOnline) "Ask about deals…" else "Offline",
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = Color(0xFF9CA3AF)
                                     )
@@ -537,7 +562,7 @@ fun ChatInputBar(
                 // Send Button
                 FilledIconButton(
                     onClick = onSend,
-                    enabled = value.isNotBlank() && !isLoading,
+                    enabled = value.isNotBlank() && !isLoading && isOnline,
                     colors = IconButtonDefaults.filledIconButtonColors(
                         containerColor = Color(0xFFEA580B),
                         disabledContainerColor = Color(0xFFE5E7EB),
@@ -554,7 +579,7 @@ fun ChatInputBar(
                         )
                     } else {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.Send,
+                            imageVector = Icons.AutoMirrored.Filled.Send,
                             contentDescription = "Send",
                             modifier = Modifier.size(22.dp)
                         )

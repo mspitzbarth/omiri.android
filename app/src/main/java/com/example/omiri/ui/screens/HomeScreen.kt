@@ -14,6 +14,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.WifiOff
+import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -114,6 +116,11 @@ fun HomeScreen(
                     .background(com.example.omiri.ui.theme.AppColors.Bg) // Overall background
                     .verticalScroll(rememberScrollState())
             ) {
+
+
+                // Removed global error block as per user request
+                // We will handle errors inside sections (e.g. FeaturedDealsRow)
+                
                 Spacer(modifier = Modifier.height(Spacing.lg))
 
                 // 2 & 3. Smart Plan / Alerts Carousel
@@ -163,7 +170,7 @@ fun HomeScreen(
                     }
                 }
                 
-
+                
 
                 // 4. Shopping Lists
                 Spacer(Modifier.height(Spacing.lg))
@@ -175,9 +182,15 @@ fun HomeScreen(
 
                 // 5. Featured Deals
                 Spacer(Modifier.height(Spacing.xl))
+                // Pass error context
+                val networkErrorType by viewModel.networkErrorType.collectAsState()
+                
                 com.example.omiri.ui.components.FeaturedDealsRow(
-                    deals = featuredDeals.take(5), // Dynamically use real deals
+                    deals = featuredDeals.take(5), 
                     isLoading = isLoading,
+                    error = error,
+                    networkErrorType = networkErrorType,
+                    onRetry = { viewModel.loadProducts() }, // or specific loadFeaturedDeals
                     onViewAll = onNavigateAllDeals,
                     onDealClick = onDealClick
                 )

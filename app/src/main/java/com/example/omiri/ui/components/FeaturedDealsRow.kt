@@ -19,6 +19,9 @@ import androidx.compose.material.icons.outlined.LocalOffer
 fun FeaturedDealsRow(
     deals: List<Deal>,
     isLoading: Boolean = false,
+    error: String? = null,
+    networkErrorType: com.example.omiri.utils.NetworkErrorType? = null,
+    onRetry: () -> Unit = {},
     emptyMessage: String = "No deals found",
     onViewAll: () -> Unit = {},
     onDealClick: (String) -> Unit = {}
@@ -40,17 +43,21 @@ fun FeaturedDealsRow(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp), // Height of a card roughly
+                    .height(200.dp), 
                 contentAlignment = androidx.compose.ui.Alignment.Center
             ) {
                 CircularProgressIndicator(color = Color(0xFFEA580B))
             }
         } else if (deals.isEmpty()) {
-            OmiriEmptyState(
-                icon = androidx.compose.material.icons.Icons.Outlined.LocalOffer,
-                title = "No deals found",
-                message = "Try adjusting your filters or search query",
-                modifier = Modifier.padding(vertical = Spacing.xxl)
+            // Use Smart Empty State
+            OmiriSmartEmptyState(
+                networkErrorType = networkErrorType,
+                error = error,
+                onRetry = onRetry,
+                defaultIcon = androidx.compose.material.icons.Icons.Outlined.LocalOffer,
+                defaultTitle = "No deals found",
+                defaultMessage = emptyMessage,
+                modifier = Modifier.padding(vertical = Spacing.lg)
             )
         } else {
             Row(

@@ -3,9 +3,15 @@ package com.example.omiri.ui.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import com.example.omiri.ui.theme.Spacing
 
 @Composable
@@ -22,20 +28,30 @@ fun SectionHeader(
         Text(
             text = title,
             style = MaterialTheme.typography.titleLarge,
-            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+            fontWeight = FontWeight.Bold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
 
-        if (onActionClick != null) {
-            Text(
-                text = actionText,
-                style = MaterialTheme.typography.labelLarge,
-                color = androidx.compose.ui.graphics.Color(0xFFEA580B),
-                modifier = Modifier
-                    .padding(top = Spacing.xs)
-                    .clickable { onActionClick() }
-            )
+        if (actionText.isNotBlank() && onActionClick != null) {
+            Row(
+                modifier = Modifier.clickable(onClick = onActionClick),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = actionText,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = Color(0xFFEA580B),
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.width(2.dp))
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = Color(0xFFEA580B),
+                    modifier = Modifier.size(16.dp)
+                )
+            }
         }
     }
 }
