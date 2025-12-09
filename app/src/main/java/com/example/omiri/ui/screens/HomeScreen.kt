@@ -137,7 +137,6 @@ fun HomeScreen(
                 }
                 
                 if (pages.isNotEmpty()) {
-                    Spacer(Modifier.height(Spacing.md))
                     val pagerState = androidx.compose.foundation.pager.rememberPagerState(pageCount = { pages.size })
                     
                     androidx.compose.foundation.pager.HorizontalPager(
@@ -168,12 +167,12 @@ fun HomeScreen(
                             }
                         }
                     }
+                    
+                    // Spacing after smart section before next section
+                    Spacer(Modifier.height(Spacing.lg))
                 }
                 
-                
-
                 // 4. Shopping Lists
-                Spacer(Modifier.height(Spacing.lg))
                 com.example.omiri.ui.components.ShoppingListsSection(
                     shoppingLists = shoppingLists,
                     onViewAll = onNavigateToShoppingListTab,
