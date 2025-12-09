@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material.icons.outlined.Map
+import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,89 +23,119 @@ fun SmartPlanCard(
 ) {
     if (plan == null) return
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = Spacing.lg),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFE0E7FF) // Light Blue bg
-        ),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFC0DBFE))
-    ) {
-        Column(
-            modifier = Modifier.padding(Spacing.lg)
+    Column {
+        SmartPlanningHeader(modifier = Modifier.padding(bottom = Spacing.md))
+        
+        OmiriSummaryCard(
+            title = "Weekly Summary",
+            headerEndContent = {
+                Text(
+                    text = "Jan 15 - 21", // Dynamic date or generic
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF6B7280)
+                )
+            },
+            modifier = Modifier.padding(horizontal = Spacing.lg),
+            expandedContent = {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    plan.steps.forEach { step ->
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                // Store Header + Savings
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Storefront, // Requires import? Or use Map/ShoppingBag
+                                            contentDescription = null,
+                                            tint = Color(0xFF1E40AF),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = step.storeName,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF111827)
+                                        )
+                                    }
+                                    
+                                    Surface(
+                                        color = Color(0xFFDCFCE7),
+                                        shape = RoundedCornerShape(4.dp)
+                                    ) {
+                                        Text(
+                                            text = "Save €${String.format("%.2f", step.stepSavings)}",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = Color(0xFF15803D), // Green
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                                
+                                Spacer(modifier = Modifier.height(12.dp))
+                                HorizontalDivider(color = Color(0xFFF3F4F6))
+                                Spacer(modifier = Modifier.height(12.dp))
+                                
+                                // Items List
+                                step.items.forEach { itemName ->
+                                    Row(
+                                        verticalAlignment = Alignment.Top,
+                                        modifier = Modifier.padding(vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            text = "•",
+                                            color = Color(0xFF9CA3AF),
+                                            modifier = Modifier.padding(end = 8.dp)
+                                        )
+                                        Text(
+                                            text = itemName,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = Color(0xFF4B5563)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         ) {
-            // Header: Icon + Title
-            Row(verticalAlignment = Alignment.Top) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(Color(0xFF3B82F6), RoundedCornerShape(12.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Lightbulb,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-                Spacer(Modifier.width(Spacing.md))
-                Column {
-                    Text(
-                        text = "Your Smart Plan",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF111827)
-                    )
-                    Text(
-                        text = "Optimized for fewer trips and maximum savings",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF4B5563)
-                    )
-                }
-            }
+        // Summary Stats (fake for now based on steps, or aggregate)
+        val distinctStores = plan.steps.map { it.storeName }.distinct().count()
+        val totalSavings = plan.steps.sumOf { it.stepSavings }
+        val totalItems = plan.steps.sumOf { it.itemsCount }
 
-            Spacer(Modifier.height(Spacing.lg))
-
-            // Steps
-            plan.steps.take(3).forEachIndexed { index, step ->
-                val color = when(index) {
-                    0 -> Color(0xFF3B82F6) // Blue
-                    1 -> Color(0xFF8B5CF6) // Violet
-                    else -> Color(0xFF10B981) // Green
-                }
-                
-                // Format: "StoreName for X items (save €Y)"
-                // Or: "Go to StoreName for X items (save €Y)"
-                // Or combined logic based on index
-                val instruction = if (index == 0) "Go to ${step.storeName}" else "Then ${step.storeName}"
-                val text = "$instruction for ${step.itemsCount} items (save €${String.format("%.2f", step.stepSavings)})"
-                
-                PlanStep(color = color, text = text)
-                
-                if (index < plan.steps.size - 1 && index < 2) {
-                    Spacer(Modifier.height(Spacing.sm))
-                }
-            }
-        }
+        SummaryRow("Items to buy", totalItems.toString())
+        SummaryRow("Stores to visit", distinctStores.toString())
+        
+        Spacer(modifier = Modifier.height(12.dp))
+        HorizontalDivider(color = Color(0xFFF3F4F6))
+        Spacer(modifier = Modifier.height(12.dp))
+        
+        SummaryRow(
+            label = "Estimated Savings", 
+            value = "€${String.format("%.2f", totalSavings)}",
+            valueColor = Color(0xFF16A34A), // Green
+            isTotal = true
+        )
+        
+        // Optional: List steps below or just keep it high level summary as per design?
+        // Reference showed "Weekly Summary" -> Items, Money, Stores. Matches what I just did.
+        // I will stick to this summary view. If detailed steps are needed, maybe an expand?
+        // User asked "maybe make smartplan and smartalert like this", sharing the summary card.
+        // So implementing the summary card logic is the correct interpretation.
+    }
     }
 }
 
-@Composable
-private fun PlanStep(color: Color, text: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(
-            modifier = Modifier
-                .size(10.dp)
-                .background(color, CircleShape)
-        )
-        Spacer(Modifier.width(Spacing.sm))
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color(0xFF1F2937)
-        )
-    }
-}
+// End of file

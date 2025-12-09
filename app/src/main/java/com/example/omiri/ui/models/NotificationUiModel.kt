@@ -10,6 +10,7 @@ sealed class NotificationUiModel {
     abstract val isRead: Boolean
     abstract val icon: ImageVector
     abstract val iconColor: Color // The main color for icon and side bar
+    abstract val description: String
 
     data class FlashSale(
         override val id: String,
@@ -18,7 +19,7 @@ sealed class NotificationUiModel {
         override val isRead: Boolean,
         override val icon: ImageVector,
         override val iconColor: Color,
-        val description: String,
+        override val description: String,
         val timeLeft: String,
         val savings: String,
         val actionLabel: String = "View Deal"
@@ -31,7 +32,7 @@ sealed class NotificationUiModel {
         override val isRead: Boolean,
         override val icon: ImageVector,
         override val iconColor: Color,
-        val description: String,
+        override val description: String,
         val currentPrice: String,
         val originalPrice: String,
         val discountPercentage: String
@@ -44,7 +45,7 @@ sealed class NotificationUiModel {
         override val isRead: Boolean,
         override val icon: ImageVector,
         override val iconColor: Color,
-        val description: String,
+        override val description: String,
         val locationTag: String
     ) : NotificationUiModel()
 
@@ -55,7 +56,7 @@ sealed class NotificationUiModel {
         override val isRead: Boolean,
         override val icon: ImageVector,
         override val iconColor: Color,
-        val description: String,
+        override val description: String,
         val pointsTag: String
     ) : NotificationUiModel()
 
@@ -66,7 +67,7 @@ sealed class NotificationUiModel {
         override val isRead: Boolean,
         override val icon: ImageVector,
         override val iconColor: Color,
-        val description: String,
+        override val description: String,
         val tag: String? = null,
         val actionLabel: String? = null
     ) : NotificationUiModel()

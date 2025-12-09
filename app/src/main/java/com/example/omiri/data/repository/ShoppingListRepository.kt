@@ -97,6 +97,28 @@ object ShoppingListRepository {
         }
     }
 
+    fun updateItem(itemId: String, name: String, categoryId: String, isRecurring: Boolean) {
+        val listId = _currentListId.value ?: return
+
+        _shoppingLists.update { lists ->
+            lists.map { list ->
+                if (list.id == listId) {
+                    list.copy(
+                        items = list.items.map { item ->
+                            if (item.id == itemId) {
+                                item.copy(name = name, categoryId = categoryId, isRecurring = isRecurring)
+                            } else {
+                                item
+                            }
+                        }
+                    )
+                } else {
+                    list
+                }
+            }
+        }
+    }
+
     fun toggleItemDone(itemId: String) {
         val listId = _currentListId.value ?: return
 

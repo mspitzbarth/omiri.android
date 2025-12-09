@@ -1,11 +1,13 @@
 package com.example.omiri.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -66,46 +68,71 @@ fun NotificationCard(
             Column(
                 modifier = Modifier.weight(1f)
             ) {
-                // Header (Title + Time + Unread Dot)
+                // Header and Dismiss
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.Top
                 ) {
-                    Text(
-                        text = notification.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1F2937)
-                    )
-                    
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = notification.time,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF6B7280)
+                    Column(modifier = Modifier.weight(1f)) {
+                         Text(
+                            text = notification.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1F2937)
                         )
-                        if (!notification.isRead) {
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .background(Color(0xFFF97316), CircleShape) // Orange dot
-                            )
-                        }
+                        Spacer(modifier = Modifier.height(2.dp))
+                        // Description implies content, but maybe we merge it here if short?
+                        // Let's keep logic below for description to be safe.
                     }
+                    
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Dismiss",
+                        tint = Color(0xFF9CA3AF),
+                        modifier = Modifier
+                            .size(20.dp)
+                            .clickable { /* Dismiss logic */ } // TODO: Pass dismiss callback
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))
+                
+                // Content (Description)
+                Text(
+                     text = notification.description,
+                     style = MaterialTheme.typography.bodyMedium,
+                     color = Color(0xFF4B5563)
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
 
-                // Description and Content
+                // Footer (Action / Time)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Action Button (if applicable)
+                    if (notification is NotificationUiModel.FlashSale) { // Example specific logic
+                        Button(
+                            onClick = onActionClick,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF97316)),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                            modifier = Modifier.height(32.dp)
+                        ) {
+                             Text(notification.actionLabel, style = MaterialTheme.typography.labelSmall)
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    
+                    Text(
+                        text = notification.time,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF9CA3AF)
+                    )
+                }
                 when (notification) {
                     is NotificationUiModel.FlashSale -> {
-                        Text(
-                            text = notification.description,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFF4B5563)
-                        )
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             NotificationTag(
@@ -150,11 +177,6 @@ fun NotificationCard(
                         }
                     }
                     is NotificationUiModel.PriceDrop -> {
-                        Text(
-                            text = notification.description,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFF4B5563)
-                        )
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
@@ -178,11 +200,6 @@ fun NotificationCard(
                         }
                     }
                     is NotificationUiModel.ListUpdate -> {
-                        Text(
-                            text = notification.description,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFF4B5563)
-                        )
                         Spacer(modifier = Modifier.height(8.dp))
                         NotificationTag(
                             text = notification.locationTag,
@@ -191,11 +208,6 @@ fun NotificationCard(
                         )
                     }
                     is NotificationUiModel.Reward -> {
-                        Text(
-                            text = notification.description,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFF4B5563)
-                        )
                         Spacer(modifier = Modifier.height(8.dp))
                         NotificationTag(
                             text = notification.pointsTag,
@@ -204,11 +216,6 @@ fun NotificationCard(
                         )
                     }
                     is NotificationUiModel.General -> {
-                        Text(
-                            text = notification.description,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFF4B5563)
-                        )
                         if (notification.tag != null) {
                             Spacer(modifier = Modifier.height(8.dp))
                             NotificationTag(

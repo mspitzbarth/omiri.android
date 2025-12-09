@@ -17,27 +17,13 @@ import com.example.omiri.ui.theme.Spacing
 fun HomeHeader(
     potentialSavings: String = "€18.40"
 ) {
-    val greeting = remember {
-        val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
-        when (hour) {
-            in 5..11 -> "Good morning"
-            in 12..17 -> "Good day"
-            else -> "Good evening"
-        }
-    }
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(Color(0xFFFFF7ED)) // Light peach/beige background
             .padding(horizontal = Spacing.lg, vertical = Spacing.lg)
     ) {
-        Text(
-            text = greeting,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF1F2937)
-        )
+        // Reduced Header Content (No Greeting)
         Spacer(modifier = Modifier.height(Spacing.xs))
         Text(
             text = "You could save $potentialSavings this week based on your list.",

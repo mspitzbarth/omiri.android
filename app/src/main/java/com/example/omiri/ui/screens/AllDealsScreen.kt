@@ -351,9 +351,12 @@ fun AllDealsScreen(
                     }
                 } else {
                      item {
-                         Box(modifier = Modifier.fillMaxWidth().height(400.dp), contentAlignment = Alignment.Center) {
-                            Text("No deals found", style = MaterialTheme.typography.titleMedium)
-                         }
+                        com.example.omiri.ui.components.OmiriEmptyState(
+                            icon = Icons.Outlined.FilterList, // Or Search/SentimentDissatisfied
+                            title = "No deals found",
+                            message = "Try adjusting your filters or search query",
+                            modifier = Modifier.padding(vertical = Spacing.xxl)
+                        )
                      }
                 }
             }

@@ -8,7 +8,11 @@ data class ShoppingItem(
     val categoryId: String = PredefinedCategories.OTHER.id,
     val isRecurring: Boolean = false,
     val dealId: String? = null, // Reference to the deal if item is on sale
-    val addedAt: Long = System.currentTimeMillis()
+    val addedAt: Long = System.currentTimeMillis(),
+    val store: String? = null,
+    val price: Double? = null,
+    val discountPrice: Double? = null,
+    val discountPercentage: Int? = null
 ) {
     val category: ShoppingCategory
         get() = PredefinedCategories.getCategoryById(categoryId)

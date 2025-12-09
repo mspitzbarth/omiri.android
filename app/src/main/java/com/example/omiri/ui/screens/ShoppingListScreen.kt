@@ -8,6 +8,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -37,6 +39,8 @@ fun ShoppingListScreen(
 
     var showAddItemDialog by remember { mutableStateOf(false) }
     var showCreateListDialog by remember { mutableStateOf(false) }
+
+    var itemToEdit by remember { mutableStateOf<com.example.omiri.data.models.ShoppingItem?>(null) }
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -71,7 +75,7 @@ fun ShoppingListScreen(
                     ) {
                         Text(
                             text = currentList?.name ?: "My List",
-                            style = MaterialTheme.typography.headlineMedium,
+                            style = MaterialTheme.typography.titleLarge,
                             color = Color(0xFF111827),
                             fontWeight = FontWeight.Bold
                         )
@@ -140,28 +144,25 @@ fun ShoppingListScreen(
                         onDelete = {
                             viewModel.deleteItem(item.id)
                         },
+                        onEdit = {
+                            // Open Edit Dialog
+                            itemToEdit = item
+                            showAddItemDialog = true
+                        },
                         modifier = Modifier.padding(bottom = Spacing.xs)
                     )
                 }
 
                 if (filteredItems.isEmpty()) {
                     item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = Spacing.xxl),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = if (searchQuery.isEmpty()) {
-                                    "No items yet. Tap + to add!"
-                                } else {
-                                    "No items found"
-                                },
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = Color(0xFF9CA3AF)
-                            )
-                        }
+                        com.example.omiri.ui.components.OmiriEmptyState(
+                            icon = if (searchQuery.isEmpty()) Icons.Outlined.ShoppingCart else Icons.Outlined.Search,
+                            title = if (searchQuery.isEmpty()) "Your list is empty" else "No items found",
+                            message = if (searchQuery.isEmpty()) "Add some items to get started" else "Try adjusting your search",
+                            buttonText = if (searchQuery.isEmpty()) "Start Shopping" else null,
+                            onButtonClick = if (searchQuery.isEmpty()) { { showAddItemDialog = true } } else null,
+                            modifier = Modifier.padding(vertical = Spacing.xxl)
+                        )
                     }
                 }
             }
@@ -187,11 +188,21 @@ fun ShoppingListScreen(
     // Dialogs
     if (showAddItemDialog) {
         com.example.omiri.ui.components.AddItemBottomSheet(
-            onDismiss = { showAddItemDialog = false },
+            onDismiss = { 
+                showAddItemDialog = false 
+                itemToEdit = null // Reset
+            },
             onAdd = { itemName, categoryId, isRecurring ->
-                viewModel.addItem(itemName, categoryId, isInDeals = false, isRecurring = isRecurring)
+                val currentItem = itemToEdit
+                if (currentItem != null) {
+                    viewModel.updateItem(currentItem.id, itemName, categoryId, isRecurring)
+                } else {
+                    viewModel.addItem(itemName, categoryId, isInDeals = false, isRecurring = isRecurring)
+                }
                 showAddItemDialog = false
-            }
+                itemToEdit = null
+            },
+            initialItem = itemToEdit
         )
     }
 

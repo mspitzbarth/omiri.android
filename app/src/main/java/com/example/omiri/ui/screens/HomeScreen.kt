@@ -114,13 +114,7 @@ fun HomeScreen(
                     .background(com.example.omiri.ui.theme.AppColors.Bg) // Overall background
                     .verticalScroll(rememberScrollState())
             ) {
-                // 1. Header with Name and Savings Summary
-                // If smart plan exists, usage totalSavings from it, else fallback to potentialSavings or 0
-                val displaySavings = smartPlan?.totalSavings ?: potentialSavings
-                
-                com.example.omiri.ui.components.HomeHeader(
-                    potentialSavings = "€%.2f".format(if (displaySavings > 0) displaySavings else 0.00) // Don't mock 18.40 anymore if requested
-                )
+                Spacer(modifier = Modifier.height(Spacing.lg))
 
                 // 2 & 3. Smart Plan / Alerts Carousel
                 

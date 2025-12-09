@@ -26,33 +26,22 @@ fun SmartAlertsCard(
     alerts: List<com.example.omiri.data.api.models.SmartAlert> = emptyList()
 ) {
     if (alerts.isEmpty()) return
-
-    Card(
+    
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = Spacing.lg),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB))
+            .padding(horizontal = Spacing.lg)
     ) {
-        Column(
-            modifier = Modifier.padding(Spacing.lg)
-        ) {
-            Text(
-                text = "Smart Alerts",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF111827)
+        alerts.take(3).forEachIndexed { index, alert ->
+            OmiriTipCard(
+                title = "Smart Alert", // Or generic title, or alert.type if we have mapping
+                body = alert.title,
+                icon = getIconForName(alert.iconName),
+                onClick = { /* Handle click */ }
             )
-            Spacer(Modifier.height(Spacing.md))
             
-            alerts.take(3).forEach { alert ->
-                AlertItem(
-                    icon = getIconForName(alert.iconName),
-                    iconColor = getColorForType(alert.type),
-                    text = alert.title
-                )
+            if (index < alerts.take(3).size - 1) {
+                Spacer(modifier = Modifier.height(Spacing.md))
             }
         }
     }
@@ -63,52 +52,7 @@ private fun getIconForName(name: String): ImageVector {
         "PERCENT" -> Icons.Default.Percent
         "HOME" -> Icons.Default.Store
         "CHECK_CIRCLE" -> Icons.Filled.CheckCircle
-        "CLOCK" -> Icons.Default.AccessTime // Need AccessTime or use CheckCircle fallback
+        "CLOCK" -> Icons.Default.AccessTime 
         else -> Icons.Default.Info
-    }
-}
-
-private fun getColorForType(type: String): Color {
-    return when(type) {
-        "PRICE_DROP" -> Color(0xFF10B981) // Green
-        "CHEAPEST" -> Color(0xFF3B82F6) // Blue
-        "EXPIRING" -> Color(0xFFEA580C) // Orange
-        else -> Color(0xFFF97316) // Orange default
-    }
-}
-
-@Composable
-private fun AlertItem(
-    icon: ImageVector,
-    iconColor: Color,
-    text: String,
-    onClick: () -> Unit = {}
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = iconColor,
-            modifier = Modifier.size(20.dp)
-        )
-        Spacer(Modifier.width(Spacing.md))
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color(0xFF374151),
-            modifier = Modifier.weight(1f)
-        )
-        Icon(
-            imageVector = Icons.Outlined.ChevronRight,
-            contentDescription = null,
-            tint = Color(0xFF9CA3AF),
-            modifier = Modifier.size(20.dp)
-        )
     }
 }

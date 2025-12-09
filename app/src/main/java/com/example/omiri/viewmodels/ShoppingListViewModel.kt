@@ -147,6 +147,11 @@ class ShoppingListViewModel(application: Application) : AndroidViewModel(applica
         checkDealsForCurrentList()
     }
 
+    fun updateItem(itemId: String, name: String, categoryId: String, isRecurring: Boolean) {
+        repository.updateItem(itemId, name, categoryId, isRecurring)
+        checkDealsForCurrentList()
+    }
+
     fun toggleItemDone(itemId: String) = repository.toggleItemDone(itemId)
     fun deleteItem(itemId: String) = repository.deleteItem(itemId)
     fun resetRecurringItems() = repository.resetRecurringItems()

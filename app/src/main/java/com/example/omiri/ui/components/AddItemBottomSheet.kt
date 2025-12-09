@@ -31,11 +31,14 @@ import com.example.omiri.ui.theme.Spacing
 fun AddItemBottomSheet(
     onDismiss: () -> Unit,
     onAdd: (String, String, Boolean) -> Unit,
+    initialItem: com.example.omiri.data.models.ShoppingItem? = null,
     modifier: Modifier = Modifier
 ) {
-    var itemName by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf(PredefinedCategories.OTHER) }
-    var isRecurring by remember { mutableStateOf(false) }
+    var itemName by remember { mutableStateOf(initialItem?.name ?: "") }
+    var selectedCategory by remember { 
+        mutableStateOf(initialItem?.category ?: PredefinedCategories.OTHER) 
+    }
+    var isRecurring by remember { mutableStateOf(initialItem?.isRecurring ?: false) }
     var expanded by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
 
@@ -51,7 +54,8 @@ fun AddItemBottomSheet(
         }
     }
 
-    // Auto-focus the text field when the sheet opens
+    // Auto-focus the text field when the sheet opens (only if adding, or just always nice)
+    // If editing, maybe don't pop keyboard immediately? Let's keep it for convenience.
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
     }
@@ -82,7 +86,7 @@ fun AddItemBottomSheet(
                         .fillMaxWidth()
                 ) {
                     Text(
-                        text = "Add Item",
+                        text = if (initialItem != null) "Edit Item" else "Add Item",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF111827)
@@ -135,8 +139,7 @@ fun AddItemBottomSheet(
                             onDone = {
                                 if (itemName.isNotBlank()) {
                                     onAdd(itemName, selectedCategory.id, isRecurring)
-                                    itemName = "" // Clear input? Dialog dismisses anyway
-                                    // onDismiss() // parent handles dismiss usually, but let's keep standard behavior
+                                    // Don't clear if editing, logic handles dismiss
                                 }
                             }
                         )
@@ -243,7 +246,7 @@ fun AddItemBottomSheet(
 
                     Spacer(modifier = Modifier.height(Spacing.lg))
 
-                    // Add Button
+                    // Add/Save Button
                     Button(
                         onClick = {
                             if (itemName.isNotBlank()) {
@@ -261,7 +264,7 @@ fun AddItemBottomSheet(
                         enabled = itemName.isNotBlank()
                     ) {
                         Text(
-                            text = "Add to List",
+                            text = if (initialItem != null) "Save Changes" else "Add to List",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold
                         )
