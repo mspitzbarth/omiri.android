@@ -12,6 +12,7 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Group
+import androidx.compose.material.icons.outlined.RestaurantMenu
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -52,7 +53,7 @@ fun RecipesScreen(
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = Color.White,
-                    shadowElevation = 2.dp,
+                    shadowElevation = 1.dp,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -201,7 +202,7 @@ fun RecipeCard(
         modifier = Modifier.width(width),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column {
             Box(
@@ -266,7 +267,7 @@ fun RecipeListItem(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(modifier = Modifier.padding(12.dp)) {
             Box(

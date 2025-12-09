@@ -51,6 +51,7 @@ import com.example.omiri.ui.components.simpleVerticalScrollbar
 @Composable
 fun AiChatScreen(
     onNotificationsClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {},
     onNavigateToShoppingList: () -> Unit = {},
     viewModel: ChatViewModel = viewModel()
 ) {
@@ -145,6 +146,7 @@ fun AiChatScreen(
                 },
                 notificationCount = 2, // Ideally from ViewModel check, but hardcoded in prev example too
                 onNotificationClick = onNotificationsClick,
+                onProfileClick = onProfileClick,
                 customAction = {
                     IconButton(onClick = { viewModel.resetConversation() }) {
                         Icon(
@@ -772,7 +774,7 @@ fun ChatInputBar(
 
     Surface(
         tonalElevation = 0.dp,
-        shadowElevation = 6.dp,
+            shadowElevation = 4.dp,
         color = Color.White
     ) {
         Column(

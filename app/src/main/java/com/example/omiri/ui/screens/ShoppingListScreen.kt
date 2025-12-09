@@ -29,7 +29,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 @Composable
 fun ShoppingListScreen(
     viewModel: ShoppingListViewModel = viewModel(),
-    onNotificationsClick: () -> Unit = {}
+    onNotificationsClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {}
 ) {
     val shoppingLists by viewModel.shoppingLists.collectAsState()
     val currentListId by viewModel.currentListId.collectAsState()
@@ -51,7 +52,8 @@ fun ShoppingListScreen(
             // Header
             com.example.omiri.ui.components.OmiriHeader(
                 notificationCount = 2,
-                onNotificationClick = onNotificationsClick
+                onNotificationClick = onNotificationsClick,
+                onProfileClick = onProfileClick
             )
 
             Surface(

@@ -62,6 +62,7 @@ fun AppNavGraph(
                     onNavigateAllDeals = { navController.navigate(Routes.AllDeals) },
                     onDealClick = { dealId: String -> navController.navigate(Routes.productDetails(dealId)) },
                     onNotificationsClick = { navController.navigate(Routes.Notifications) },
+                    onProfileClick = { navController.navigate(Routes.Settings) },
                     onToggleShoppingList = { deal, isListed -> shoppingListViewModel.setDealListed(deal, isListed) },
                     onNavigateToShoppingListTab = { navController.navigate(Routes.ShoppingList) },
                     onNavigateToList = { listId ->
@@ -77,22 +78,30 @@ fun AppNavGraph(
                 AllDealsScreen(
                     onDealClick = { dealId: String -> navController.navigate(Routes.productDetails(dealId)) },
                     onNotificationsClick = { navController.navigate(Routes.Notifications) },
+                    onProfileClick = { navController.navigate(Routes.Settings) },
                     onToggleShoppingList = { deal, isListed -> shoppingListViewModel.setDealListed(deal, isListed) },
                     onNavigateToMyStores = { navController.navigate(Routes.MyStores) },
                     settingsViewModel = settingsViewModel,
                     viewModel = productViewModel
                 )
             }
+            composable(Routes.Recipes) {
+                RecipesScreen(
+                    onNotificationsClick = { navController.navigate(Routes.Notifications) },
+                    onProfileClick = { navController.navigate(Routes.Settings) }
+                )
+            }
             composable(Routes.AiChat) {
-            AiChatScreen(
-                onNotificationsClick = { navController.navigate(Routes.Notifications) },
-                onNavigateToShoppingList = { 
-                    navController.navigate(Routes.ShoppingList) {
-                        launchSingleTop = true
+                AiChatScreen(
+                    onNotificationsClick = { navController.navigate(Routes.Notifications) },
+                    onProfileClick = { navController.navigate(Routes.Settings) },
+                    onNavigateToShoppingList = { 
+                        navController.navigate(Routes.ShoppingList) {
+                            launchSingleTop = true
+                        }
                     }
-                }
-            )
-        }
+                )
+            }
             composable(Routes.ShoppingList) {
                 // Assuming ShoppingListScreen can accept the viewModel or uses internal mechanism.
                 // For better architecture, let's look at ShoppingListScreen signature or just pass it if we can edit it.
@@ -101,7 +110,8 @@ fun AppNavGraph(
                 // To SHARE state, we MUST pass this instance.
                 ShoppingListScreen(
                     viewModel = shoppingListViewModel,
-                    onNotificationsClick = { navController.navigate(Routes.Notifications) }
+                    onNotificationsClick = { navController.navigate(Routes.Notifications) },
+                    onProfileClick = { navController.navigate(Routes.Settings) }
                 )
             }
             composable(Routes.Settings) {
