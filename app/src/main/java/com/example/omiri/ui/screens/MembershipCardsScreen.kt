@@ -58,27 +58,14 @@ fun MembershipCardsScreen(
         containerColor = Color(0xFFF9FAFB)
     ) { padding ->
         if (cards.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "No cards yet",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color(0xFF6B7280)
-                    )
-                    Spacer(Modifier.height(Spacing.sm))
-                    Button(
-                        onClick = { showAddCardSheet = true },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEA580B))
-                    ) {
-                        Text("Add your first card")
-                    }
-                }
-            }
+            com.example.omiri.ui.components.OmiriEmptyState(
+                icon = Icons.Outlined.CreditCard,
+                title = "No cards yet",
+                message = "Add your loyalty and membership cards to access them quickly",
+                buttonText = "Add your first card",
+                onButtonClick = { showAddCardSheet = true },
+                modifier = Modifier.fillMaxSize().padding(padding)
+            )
         } else {
             LazyColumn(
                 modifier = Modifier
