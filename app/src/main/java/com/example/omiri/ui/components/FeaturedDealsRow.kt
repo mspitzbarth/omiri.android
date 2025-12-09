@@ -13,6 +13,7 @@ import com.example.omiri.ui.theme.Spacing
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material.icons.outlined.LocalOffer
 
 @Composable
 fun FeaturedDealsRow(
@@ -45,18 +46,12 @@ fun FeaturedDealsRow(
                 CircularProgressIndicator(color = Color(0xFFEA580B))
             }
         } else if (deals.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp),
-                contentAlignment = androidx.compose.ui.Alignment.Center
-            ) {
-                Text(
-                    text = emptyMessage,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray
-                )
-            }
+            OmiriEmptyState(
+                icon = androidx.compose.material.icons.Icons.Outlined.LocalOffer,
+                title = "No deals found",
+                message = "Try adjusting your filters or search query",
+                modifier = Modifier.padding(vertical = Spacing.xxl)
+            )
         } else {
             Row(
                 modifier = Modifier

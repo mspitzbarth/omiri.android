@@ -40,6 +40,7 @@ import com.example.omiri.viewmodels.SettingsViewModel
 import com.example.omiri.viewmodels.ProductViewModel
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.outlined.LocalOffer
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -352,7 +353,7 @@ fun AllDealsScreen(
                 } else {
                      item {
                         com.example.omiri.ui.components.OmiriEmptyState(
-                            icon = Icons.Outlined.FilterList, // Or Search/SentimentDissatisfied
+                            icon = Icons.Outlined.LocalOffer, // Or Search/SentimentDissatisfied
                             title = "No deals found",
                             message = "Try adjusting your filters or search query",
                             modifier = Modifier.padding(vertical = Spacing.xxl)
