@@ -134,9 +134,10 @@ fun HomeScreen(
                     pages.add { com.example.omiri.ui.components.SmartPlanCard(plan = smartPlan) }
                 }
                 
-                if (smartAlerts.isNotEmpty()) {
-                     pages.add { com.example.omiri.ui.components.SmartAlertsCard(alerts = smartAlerts) }
-                }
+                // Smart Alerts removed as per request to merge/remove.
+                // if (smartAlerts.isNotEmpty()) {
+                //      pages.add { com.example.omiri.ui.components.SmartAlertsCard(alerts = smartAlerts) }
+                // }
                 
                 if (pages.isNotEmpty()) {
                     val pagerState = androidx.compose.foundation.pager.rememberPagerState(pageCount = { pages.size })
