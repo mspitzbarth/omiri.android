@@ -63,11 +63,6 @@ fun PennyBottomNav(
             icon = Icons.Filled.LocalOffer
         ),
         BottomNavItem(
-            route = Routes.Recipes,
-            label = "Recipes",
-            icon = Icons.Filled.RestaurantMenu
-        ),
-        BottomNavItem(
             route = Routes.ShoppingList,
             label = "List",
             icon = Icons.Filled.ShoppingCart,
@@ -77,6 +72,11 @@ fun PennyBottomNav(
             route = Routes.AiChat,
             label = "AI",
             icon = Icons.Filled.AutoAwesome
+        ),
+        BottomNavItem(
+            route = Routes.Recipes,
+            label = "Recipes",
+            icon = Icons.Filled.RestaurantMenu
         )
     )
 

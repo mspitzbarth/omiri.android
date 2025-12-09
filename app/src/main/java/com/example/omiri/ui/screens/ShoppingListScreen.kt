@@ -121,7 +121,7 @@ fun ShoppingListScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .simpleVerticalScrollbar(listState),
-                contentPadding = PaddingValues(bottom = Spacing.xxxl)
+                contentPadding = PaddingValues(bottom = 180.dp)
             ) {
                 // Screen Header Section
                 item {
@@ -251,7 +251,7 @@ fun ShoppingListScreen(
                                 viewModel.toggleSelection(item.id)
                             }
                         },
-                        modifier = Modifier.padding(horizontal = Spacing.lg, vertical = 4.dp)
+                        modifier = Modifier.padding(horizontal = Spacing.lg, vertical = 2.dp)
                     )
                 }
 
@@ -316,7 +316,7 @@ fun ShoppingListScreen(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(Spacing.lg)
-                .padding(bottom = 56.dp),
+                .padding(bottom = 110.dp), // Above Bottom Nav (96dp) + Margin
             containerColor = Color(0xFFFE8357),
             contentColor = Color.White
         ) {

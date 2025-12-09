@@ -8,6 +8,7 @@ import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.DriveFileMove
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -78,9 +79,6 @@ fun ContextualSelectionTopBar(
                     // Trash Icon
                     IconButton(onClick = onDelete) {
                         Icon(
-                            imageVector = Icons.Outlined.Delete, // Or Filled? User said "same for the selection icon". Maybe Filled Delete? Material usually uses Outlined or Filled. "selection icon" might refer to X? I'll stick to Outlined for actions unless "all icons" meant these too. Let's make Delete Filled to be safe? Or stick to Outlined but smaller/colored. User said "all icons in the header nav... same for the selection icon". I'll use Filled for consistency if available, otherwise Outlined. Delete has Filled. 
-                            // Let's use Outlined for generic actions usually, but user said "filled" for header nav.
-                            // I will use Filled to be safe given "make all icons... filled".
                             imageVector = Icons.Default.Delete,
                             contentDescription = "Delete",
                             tint = Color(0xFF1F2937),
