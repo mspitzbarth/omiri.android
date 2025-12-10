@@ -56,7 +56,16 @@ class MainActivity : ComponentActivity() {
             val loadingProgress by productViewModel.loadingProgress.collectAsState()
             
             // State to control Splash visibility manually for the delay
-            var isSplashVisible by remember { mutableStateOf(loadingProgress < 1.0f) }
+            // OPTIMIZATION: Show Skeleton immediately if we have ANY indication of progress, 
+            // or just always start with UI (Splash will overlay if needed, but we want it GONE fast).
+            // Actually, let's dismiss Splash immediately if we are loading (so skeletons show).
+            // Current logic: loadingProgress < 1.0f -> Splash Visible.
+            // New logic: loadingProgress < 0.1f -> Splash Visible (Only for very first split second).
+            // Or better: `isLoading` is true? Show Skeletons. Splash is only for "App Init".
+            // Let's set initial state to `false` (Hidden) and let the UI show skeletons?
+            // But we need to handle "App Init" (Theme, etc).
+            // Let's revert to: Splash stays until `loadingProgress > 0.2f` (Prefs loaded).
+            var isSplashVisible by remember { mutableStateOf(loadingProgress < 0.2f) }
             
             // Trigger load once
             LaunchedEffect(Unit) {

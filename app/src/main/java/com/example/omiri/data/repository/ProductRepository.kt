@@ -240,4 +240,30 @@ class ProductRepository {
             Result.failure(e)
         }
     }
+    suspend fun getProductsBulk(ids: List<String>): Result<List<ProductResponse>> {
+        return try {
+            val request = com.example.omiri.data.api.models.BulkProductRequest(ids)
+            val response = apiService.getProductsBulk(request)
+            if (response.isSuccessful) {
+                Result.success(response.body() ?: emptyList())
+            } else {
+                Result.failure(Exception("Bulk fetch failed: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getAppSync(country: String? = null, zipcode: String? = null): Result<com.example.omiri.data.api.models.AppSyncResponse> {
+         return try {
+            val response = apiService.getAppSync(country, zipcode)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Sync failed: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

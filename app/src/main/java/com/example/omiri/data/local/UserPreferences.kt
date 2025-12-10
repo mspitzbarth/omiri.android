@@ -364,6 +364,7 @@ class UserPreferences(private val context: Context) {
         val key = when(type) {
             "featured" -> CACHED_FEATURED_PRODUCTS
             "all_deals" -> CACHED_ALL_PRODUCTS
+            "shopping_list_deals" -> CACHED_SHOPPING_LIST_DEALS
             else -> return
         }
         
@@ -385,6 +386,7 @@ class UserPreferences(private val context: Context) {
         val key = when(type) {
             "featured" -> CACHED_FEATURED_PRODUCTS
             "all_deals" -> CACHED_ALL_PRODUCTS
+            "shopping_list_deals" -> CACHED_SHOPPING_LIST_DEALS
             else -> return kotlinx.coroutines.flow.flowOf(emptyList())
         }
         return context.dataStore.data.map { preferences ->
@@ -503,6 +505,7 @@ class UserPreferences(private val context: Context) {
         // Product Caching Keys
         private val CACHED_FEATURED_PRODUCTS = stringPreferencesKey("cached_featured_products")
         private val CACHED_ALL_PRODUCTS = stringPreferencesKey("cached_all_products")
+        private val CACHED_SHOPPING_LIST_DEALS = stringPreferencesKey("cached_shopping_list_deals")
         
         // Heavy Caching Keys
         private val CACHED_CATEGORIES = stringPreferencesKey("cached_categories")

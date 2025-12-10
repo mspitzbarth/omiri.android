@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="Omiri">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-12-09T22:58:46.295707Z">
+        <DropdownSelection timestamp="2025-12-09T23:54:34.726553Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=RFCTA1NR62D" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=/Users/markusspitzbarth/.android/avd/Pixel_3a_API_34_extension_level_7_arm64-v8a.avd" />
             </handle>
           </Target>
         </DropdownSelection>

@@ -185,58 +185,63 @@ class ShoppingListViewModel(application: Application) : AndroidViewModel(applica
 
     private fun checkDealsForCurrentList() {
         viewModelScope.launch {
-            try {
-                val list = currentList.value ?: return@launch
-                val items = list.items.filter { !it.isDone }.map { it.name }.joinToString(",")
-                
-                if (items.isBlank()) return@launch
-                
-                val storesSet: Set<String> = userPreferences.selectedStores.firstOrNull() ?: emptySet()
-                val stores: String? = if (storesSet.isNotEmpty()) storesSet.joinToString(",") else null
-                
-                val country = userPreferences.selectedCountry.firstOrNull() ?: "DE"
-                
-                // We can also pass other filters if we have them accessable
-                val result = productRepository.searchShoppingList(
-                    items = items,
-                    stores = stores,
-                    country = country,
-                    limit = 3
-                )
-                
-                result.onSuccess { response ->
-                    // Defensive check for categories map
-                    val categories = response.categories ?: emptyMap()
+            // Optimization: Move heavy checking to background thread to avoid UI stutter
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                try {
+                    val list = currentList.value ?: return@withContext
+                    val items = list.items.filter { !it.isDone }.map { it.name }.joinToString(",")
                     
-                    // Flatten all found products to easily search by search_term
-                    // Filter out any potential null values from map (though defined as non-null)
-                    val allFoundProducts = categories.values.filterNotNull().flatMap { it.products }
+                    if (items.isBlank()) return@withContext
                     
-                    // Also track which items were successfully found according to API (mapped by category)
-                    // But relying on products list is safer for "isInDeals" check.
+                    val storesSet: Set<String> = userPreferences.selectedStores.firstOrNull() ?: emptySet()
+                    val stores: String? = if (storesSet.isNotEmpty()) storesSet.joinToString(",") else null
                     
-                    list.items.forEach { item ->
-                        // Check if any product's search_term matches this item
-                        val hasDeals = allFoundProducts.any { product ->
-                            val term = product.searchTerm
-                            // Fallback: fuzzy match on title if search_term missing? 
-                            // The API provided search_term explicitly.
-                            // We compare item.name with product.searchTerm
-                            
-                            // Strict check:
-                            term.equals(item.name, ignoreCase = true) == true
-                            
-                            // Or looser check if item name is "Organic Milk" and term is "organic milk" -> match
-                            // If item name "Milk" and product found for "Milk" -> match.
-                        }
+                    val country = userPreferences.selectedCountry.firstOrNull() ?: "DE"
+                    
+                    // IO Call
+                    val result = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        productRepository.searchShoppingList(
+                            items = items,
+                            stores = stores,
+                            country = country,
+                            limit = 3
+                        )
+                    }
+                    
+                    result.onSuccess { response ->
+                        // Defensive check for categories map
+                        val categories = response.categories ?: emptyMap()
                         
-                        if (item.isInDeals != hasDeals) {
-                            repository.setItemInDeals(item.id, hasDeals)
+                        // Flatten all found products to easily search by search_term
+                        // Filter out any potential null values from map (though defined as non-null)
+                        val allFoundProducts = categories.values.filterNotNull().flatMap { it.products }
+                        
+                        // Also track which items were successfully found according to API (mapped by category)
+                        // But relying on products list is safer for "isInDeals" check.
+                        
+                        list.items.forEach { item ->
+                            // Check if any product's search_term matches this item
+                            val hasDeals = allFoundProducts.any { product ->
+                                val term = product.searchTerm
+                                // Fallback: fuzzy match on title if search_term missing? 
+                                // The API provided search_term explicitly.
+                                // We compare item.name with product.searchTerm
+                                
+                                // Strict check:
+                                term.equals(item.name, ignoreCase = true) == true
+                                
+                                // Or looser check if item name is "Organic Milk" and term is "organic milk" -> match
+                                // If item name "Milk" and product found for "Milk" -> match.
+                            }
+                            
+                            if (item.isInDeals != hasDeals) {
+                                repository.setItemInDeals(item.id, hasDeals)
+                            }
                         }
                     }
+                } catch (e: Exception) {
+                    android.util.Log.e("ShoppingListViewModel", "Error checking deals: ${e.message}", e)
                 }
-            } catch (e: Exception) {
-                android.util.Log.e("ShoppingListViewModel", "Error checking deals: ${e.message}", e)
             }
         }
     }

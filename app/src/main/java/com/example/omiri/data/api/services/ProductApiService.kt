@@ -145,4 +145,23 @@ interface ProductApiService {
     suspend fun optimizeShoppingList(
         @Body request: com.example.omiri.data.api.models.ShoppingListOptimizeRequest
     ): retrofit2.Response<com.example.omiri.data.api.models.ShoppingListOptimizeResponse>
+    
+    /**
+     * Bulk fetch products by ID
+     * POST /api/v1/products/bulk
+     */
+    @POST("api/v1/products/bulk")
+    suspend fun getProductsBulk(
+        @Body request: com.example.omiri.data.api.models.BulkProductRequest
+    ): retrofit2.Response<List<ProductResponse>>
+
+    /**
+     * Sync app data (startup)
+     * GET /api/v1/app/sync
+     */
+    @GET("api/v1/app/sync")
+    suspend fun getAppSync(
+        @Query("country") country: String? = null,
+        @Query("zipcode") zipcode: String? = null
+    ): retrofit2.Response<com.example.omiri.data.api.models.AppSyncResponse>
 }

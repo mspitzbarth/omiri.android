@@ -175,6 +175,21 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
              if (!cachedAll.isNullOrEmpty()) {
                  _allDeals.value = cachedAll.toDeals()
              }
+
+             // NEW: Load cached Shopping List Deals (Generic/Manual Matches)
+             // This ensures "Deals for your List" appears instantly
+             val cachedShoppingListDeals = userPreferences.getCachedProducts("shopping_list_deals").firstOrNull()
+             if (!cachedShoppingListDeals.isNullOrEmpty()) {
+                 val deals = cachedShoppingListDeals.toDeals().map { it.copy(isOnShoppingList = true) }
+                 _shoppingListDeals.value = deals
+                 
+                 // Also populate map for "Manually Added" to ensure consistency if needed
+                 // But strictly speaking, _shoppingListMatches is the source of truth for the map.
+                 // We can try to reconstruct it or just wait for the network refresh.
+                 // For now, just setting _shoppingListDeals is enough to show content.
+                 
+                 _matchedDealIds.addAll(deals.map { it.id })
+             }
              
              // Initial loads
              // ...
@@ -333,7 +348,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
      */
     private suspend fun fetchProducts() {
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { // Optimize: IO Context for whole block
-            Log.d(TAG, "fetchProducts() called at ${System.currentTimeMillis()}")
+            Log.d(TAG, "fetchProducts() called (Sync Mode) at ${System.currentTimeMillis()}")
             val start = System.currentTimeMillis()
             _isLoading.value = true
             _loadingProgress.value = 0.1f // Start
@@ -341,56 +356,62 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
             _error.value = null
             
             try {
-                // Get user's selected country and stores
+                // Get user's selected country
                 val country = userPreferences.selectedCountry.first()
                 val selectedStores = userPreferences.selectedStores.first()
-                val cachedRetailers = userPreferences.cachedRetailersString.first()
                 
                 _loadingProgress.value = 0.2f // Preferences loaded
                 
-                Log.d(TAG, "Prefs loaded in fetchProducts")
+                // Use new Sync Endpoint
+                val result = repository.getAppSync(country = country)
                 
-                var retailers: String? = cachedRetailers
-                
-                // If cache is missing but we have selected stores, we must fetch store details to map IDs to Names
-                if (retailers == null && selectedStores.isNotEmpty()) {
-                    Log.d(TAG, "Cache miss for retailers. Fetching stores...")
-                    // Filter stores to only include those from the selected country
-                    val storesForCountry = selectedStores.filter { storeId ->
-                        storeId.endsWith("_$country", ignoreCase = true)
-                    }
-                    
-                    if (storesForCountry.isNotEmpty()) {
-                            val allStores = getAllStores(country)
-                            retailers = storesForCountry.mapNotNull { id ->
-                            allStores.find { it.id == id }?.retailer
-                            }.distinct().joinToString(",")
-                            
-                            // Update cache for next time
-                            userPreferences.saveCachedRetailersString(retailers)
-                    }
-                }
-                 
-                _loadingProgress.value = 0.3f // Ready to fetch
-                 
-                // Parallelize API calls for speed
-                val deferredFeatured = async { loadFeaturedDeals(country, retailers) }
-                // Defer loading "All Deals" until the user actually navigates to that tab
-                // val deferredAll = async { loadAllDeals(country, retailers) }
-                
-                deferredFeatured.await()
-                _loadingProgress.value = 0.8f // Most data loaded
-                
-                // deferredAll.await()
-                _loadingProgress.value = 0.9f // Almost done
-                
-                Log.d(TAG, "All API calls completed")
-                
-                // Trigger Smart Plan matches in background
-                if (_error.value == null) {
+                result.onSuccess { response -> 
+                     _loadingProgress.value = 0.8f
+                     
+                     // 1. Featured Deals
+                     val featured = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { 
+                         response.featuredDeals.toDeals() 
+                     }
+                     _featuredDeals.value = featured
+                     userPreferences.saveCachedProducts("featured", response.featuredDeals)
+                     
+                     // 2. Categories
+                     if (!response.categories.isNullOrEmpty()) {
+                         _categories.value = response.categories
+                         userPreferences.saveCachedCategories(response.categories)
+                     }
+                     
+                     // 3. Stores
+                     if (!response.stores.isNullOrEmpty()) {
+                         cachedStores = response.stores
+                         cachedStoresCountry = country
+                         userPreferences.saveCachedStores(country, response.stores)
+                         
+                         // Update available stores filter options
+                         updateAvailableStores(selectedStores)
+                         
+                         // Determine retailers string for cache if needed
+                         val storesForCountry = selectedStores.filter { it.endsWith("_$country", ignoreCase = true) }
+                         if (storesForCountry.isNotEmpty()) {
+                             val retailers = storesForCountry.mapNotNull { id -> 
+                                 response.stores.find { it.id.toString() == id }?.retailer 
+                             }.distinct().joinToString(",")
+                             userPreferences.saveCachedRetailersString(retailers)
+                         }
+                     }
+                     
+                     Log.d(TAG, "App Sync completed in ${System.currentTimeMillis() - start}ms")
+                     
+                     // Trigger Smart Plan matches in background
                     launch {
                         executeCheckShoppingListMatches() 
                     }
+                    
+                }.onFailure { error ->
+                    val errorMsg = "Sync failed: ${error.message}"
+                    Log.e(TAG, errorMsg, error)
+                    _error.value = errorMsg
+                    _networkErrorType.value = com.example.omiri.utils.NetworkErrorParser.parseError(error)
                 }
                 
             } catch (e: Exception) {
@@ -400,7 +421,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
                 _networkErrorType.value = com.example.omiri.utils.NetworkErrorParser.parseError(e)
             } finally {
                 _isLoading.value = false
-                _loadingProgress.value = 1.0f // Done (or failed, but finished)
+                _loadingProgress.value = 1.0f // Done
             }
         }
     }
@@ -643,31 +664,28 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
                     }
                 }
                 
-                // 4. ID Search (Parallel Fetch/Cache Check)
+                // 4. ID Search (Bulk Fetch Optimization)
                 val loadedDeals = _allDeals.value + _featuredDeals.value + _shoppingListDeals.value
                 
-                // Optimize: prevent "Start-Up Storm" by chunking requests
-                // Instead of launching 50 async requests at once, we do them in batches.
-                val idDeals = mutableListOf<Deal>()
-                val chunks = savedIds.chunked(5) // Process 5 at a time
+                // Identify which IDs we already have locally
+                val cachedMatches = loadedDeals
+                    .filter { savedIds.contains(it.id) }
+                    .map { it.copy(isOnShoppingList = true) }
+                    .distinctBy { it.id }
                 
-                for (chunk in chunks) {
-                    val chunkDeferred = chunk.map { id ->
-                        async {
-                            val cached = loadedDeals.find { it.id == id }
-                            if (cached != null) {
-                                cached.copy(isOnShoppingList = true)
-                            } else {
-                                // Repo call needs IO? getProductById likely IO
-                                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                                    repository.getProductById(id).getOrNull()?.toDeal()?.copy(isOnShoppingList = true)
-                                }
-                            }
-                        }
-                    }
-                    val chunkResults = chunkDeferred.awaitAll()
-                    idDeals.addAll(chunkResults.filterNotNull())
+                val cachedMatchIds = cachedMatches.map { it.id }.toSet()
+                val missingIds = savedIds.filter { !cachedMatchIds.contains(it) }
+                
+                val bulkFetchedDeals = if (missingIds.isNotEmpty()) {
+                     kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                         val result = repository.getProductsBulk(missingIds)
+                         result.getOrNull()?.toDeals()?.map { it.copy(isOnShoppingList = true) } ?: emptyList()
+                     }
+                } else {
+                    emptyList()
                 }
+                
+                val idDeals = cachedMatches + bulkFetchedDeals
                 if (idDeals.isNotEmpty()) {
                     val existing = dealMap["Manually Added"] ?: emptyList()
                     dealMap["Manually Added"] = (existing + idDeals).distinctBy { it.id }
@@ -686,6 +704,18 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
                 
                 _matchedDealIds.clear()
                 _matchedDealIds.addAll(allMatches.map { it.id } as List<String>)
+
+                // Cache the results to prevent "Start-Up Storm" next time
+                if (allMatches.isNotEmpty()) {
+                    launch(kotlinx.coroutines.Dispatchers.IO) {
+                        try {
+                            val products = allMatches.map { dealToProductResponse(it) }
+                            userPreferences.saveCachedProducts("shopping_list_deals", products)
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Failed to cache shopping list deals", e)
+                        }
+                    }
+                }
                 
                 // 3. Sync View State for badges
                 _featuredDeals.value = syncDealsState(_featuredDeals.value)
@@ -1176,6 +1206,40 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
 
 
     
+    private fun dealToProductResponse(deal: Deal): com.example.omiri.data.api.models.ProductResponse {
+        // Parse price
+        val priceVal = deal.price.replace("$", "").replace("€", "").trim().toDoubleOrNull()
+        val originalVal = deal.originalPrice?.replace("$", "")?.replace("€", "")?.trim()?.toDoubleOrNull()
+        
+        return com.example.omiri.data.api.models.ProductResponse(
+            id = deal.id,
+            pdfId = 0, // Unknown
+            title = deal.title,
+            description = deal.description,
+            brand = deal.brand,
+            priceAmount = priceVal,
+            priceCurrency = if (deal.price.contains("€")) "EUR" else "USD",
+            originalPrice = originalVal,
+            discountPercentage = deal.discountPercentage.toDouble(),
+            hasDiscount = deal.hasDiscount,
+            categories = listOf(deal.category),
+            badges = emptyList(), 
+            pageNumber = 1,
+            confidence = 1.0,
+            retailer = deal.store,
+            country = deal.country,
+            zipcode = deal.zipcode,
+            onlineOnly = false,
+            featured = false,
+            availableFrom = deal.availableFrom,
+            availableUntil = deal.availableUntil,
+            availabilityText = deal.timeLeftLabel,
+            pdfSourceUrl = deal.pdfSourceUrl,
+            productImageUrl = deal.imageUrl,
+            searchTerm = deal.searchTerm
+        )
+    }
+
     companion object {
         private const val TAG = "ProductViewModel"
     }

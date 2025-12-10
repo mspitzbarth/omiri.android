@@ -77,3 +77,22 @@ data class SmartAlert(
     val type: String, // "PRICE_DROP", "CHEAPEST", "EXPIRING", "INFO"
     val iconName: String = "INFO" // For UI mapping
 )
+
+/**
+ * Request for bulk product fetch
+ * POST /api/v1/products/bulk
+ */
+data class BulkProductRequest(
+    @SerializedName("ids") val ids: List<String>
+)
+
+/**
+ * Response for App Sync
+ * GET /api/v1/app/sync
+ */
+data class AppSyncResponse(
+    @SerializedName("featured_deals") val featuredDeals: List<ProductResponse>,
+    @SerializedName("stores") val stores: List<StoreListResponse>?, 
+    @SerializedName("categories") val categories: List<String>?,
+    @SerializedName("config") val config: Map<String, Any>?
+)
