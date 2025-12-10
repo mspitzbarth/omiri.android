@@ -139,9 +139,9 @@ interface ProductApiService {
 
     /**
      * Optimize shopping list
-     * POST /shopping-list/optimize
+     * POST /api/v1/shopping-list/optimize
      */
-    @POST("shopping-list/optimize")
+    @POST("api/v1/shopping-list/optimize")
     suspend fun optimizeShoppingList(
         @Body request: com.example.omiri.data.api.models.ShoppingListOptimizeRequest
     ): retrofit2.Response<com.example.omiri.data.api.models.ShoppingListOptimizeResponse>
