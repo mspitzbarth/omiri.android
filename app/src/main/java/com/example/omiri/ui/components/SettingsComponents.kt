@@ -26,7 +26,7 @@ fun SettingsGroup(
         Text(
             text = title,
             style = MaterialTheme.typography.labelMedium,
-            color = Color(0xFF6B7280),
+            color = Color(0xFF111827),
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = Spacing.sm, start = Spacing.xs)
         )

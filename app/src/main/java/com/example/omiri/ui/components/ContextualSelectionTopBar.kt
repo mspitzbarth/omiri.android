@@ -14,6 +14,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.draw.clip
+import androidx.compose.material.icons.outlined.Delete
 import com.example.omiri.ui.theme.AppColors
 
 @Composable
@@ -76,25 +78,47 @@ fun ContextualSelectionTopBar(
 
                 // Actions (Right)
                 Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                    // Trash Icon
-                    IconButton(onClick = onDelete) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete",
-                            tint = Color(0xFF1F2937),
-                            modifier = Modifier.size(20.dp)
-                        )
+                    // Trash Icon (Circular)
+                    Surface(
+                        shape = androidx.compose.foundation.shape.CircleShape,
+                        color = Color.White,
+                        shadowElevation = 2.dp,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(androidx.compose.foundation.shape.CircleShape)
+                            .clickable(onClick = onDelete)
+                    ) {
+                        Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
+                            Icon(
+                                imageVector = androidx.compose.material.icons.Icons.Outlined.Delete,
+                                contentDescription = "Delete",
+                                tint = Color(0xFF1F2937),
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
                     }
                     
-                    // More Menu
+                    Spacer(modifier = Modifier.width(12.dp))
+                    
+                    // More Menu (Circular)
                     Box {
-                        IconButton(onClick = { showMenu = true }) {
-                            Icon(
-                                Icons.Default.MoreVert, // Filled
-                                contentDescription = "More", 
-                                tint = Color(0xFF1F2937),
-                                modifier = Modifier.size(20.dp)
-                            )
+                        Surface(
+                            shape = androidx.compose.foundation.shape.CircleShape,
+                            color = Color.White,
+                            shadowElevation = 2.dp,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(androidx.compose.foundation.shape.CircleShape)
+                                .clickable(onClick = { showMenu = true })
+                        ) {
+                            Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
+                                Icon(
+                                    imageVector = androidx.compose.material.icons.Icons.Default.MoreVert, // No Outlined for MoreVert usually
+                                    contentDescription = "More", 
+                                    tint = Color(0xFF1F2937),
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
                         }
 
                         DropdownMenu(

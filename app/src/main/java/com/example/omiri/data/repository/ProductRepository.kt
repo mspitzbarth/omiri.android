@@ -254,9 +254,14 @@ class ProductRepository {
         }
     }
 
-    suspend fun getAppSync(country: String? = null, zipcode: String? = null): Result<com.example.omiri.data.api.models.AppSyncResponse> {
+    suspend fun getAppSync(
+        country: String? = null, 
+        zipcode: String? = null,
+        stores: String? = null,
+        activeOnly: Boolean? = true
+    ): Result<com.example.omiri.data.api.models.AppSyncResponse> {
          return try {
-            val response = apiService.getAppSync(country, zipcode)
+            val response = apiService.getAppSync(country, zipcode, stores, activeOnly)
             if (response.isSuccessful && response.body() != null) {
                 Result.success(response.body()!!)
             } else {

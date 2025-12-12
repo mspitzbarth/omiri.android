@@ -162,6 +162,8 @@ interface ProductApiService {
     @GET("api/v1/app/sync")
     suspend fun getAppSync(
         @Query("country") country: String? = null,
-        @Query("zipcode") zipcode: String? = null
+        @Query("zipcode") zipcode: String? = null,
+        @Query("stores") stores: String? = null,
+        @Query("active_only") activeOnly: Boolean? = true
     ): retrofit2.Response<com.example.omiri.data.api.models.AppSyncResponse>
 }

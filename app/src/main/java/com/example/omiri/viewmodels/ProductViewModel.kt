@@ -395,8 +395,23 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
                      val mockResponse = getMockAppSyncResponse()
                      handleAppSyncResponse(mockResponse, country, selectedStores)
                 } else {
+                     // Get Stores String for Sync
+                     var storesParam: String? = null
+                     if (!country.isEmpty() && selectedStores.isNotEmpty()) {
+                         try {
+                              val allStores = getAllStores(country)
+                              // selectedStores contains IDs. We find matching StoreListResponse.
+                              val selectedObj = allStores.filter { selectedStores.contains(it.id) }
+                              if (selectedObj.isNotEmpty()) {
+                                  storesParam = selectedObj.joinToString(",") { "${it.retailer}:${it.id}" }
+                              }
+                         } catch (e: Exception) {
+                             Log.e(TAG, "Failed to build stores param", e)
+                         }
+                     }
+                     
                      // Use new Sync Endpoint
-                     val result = repository.getAppSync(country = country)
+                     val result = repository.getAppSync(country = country, stores = storesParam, activeOnly = true)
                      
                      result.onSuccess { response -> 
                          handleAppSyncResponse(response, country, selectedStores)

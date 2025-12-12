@@ -3,7 +3,8 @@ package com.example.omiri.data.api
 object ApiConfig {
     // Base URL - Use 10.0.2.2 for Android Emulator to access localhost
     // For physical device, replace with your computer's local IP (e.g., 192.168.1.x)
-    const val BASE_URL = "http://192.168.1.220:8000/"
+    // Use 10.0.2.2 for Android Emulator to access host machine's localhost
+    const val BASE_URL = "http://10.0.2.2:8000/"
     
     // API Version
     const val API_VERSION = "v1"

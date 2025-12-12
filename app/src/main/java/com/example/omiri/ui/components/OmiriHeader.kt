@@ -1,11 +1,15 @@
 package com.example.omiri.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.*
+import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,39 +63,68 @@ fun OmiriHeader(
                         Spacer(modifier = Modifier.width(Spacing.sm))
                     }
 
-                    IconButton(onClick = onNotificationClick) {
-                        Box(contentAlignment = Alignment.TopEnd) {
-                            Icon(
-                                imageVector = Icons.Default.Notifications,
-                                contentDescription = "Notifications",
-                                tint = Color(0xFF1F2937),
-                                modifier = Modifier.size(20.dp) // Smaller
-                            )
+                    // Notification Button
+                    Box(contentAlignment = Alignment.TopEnd) {
+                        Surface(
+                            shape = androidx.compose.foundation.shape.CircleShape,
+                            color = Color.White,
+                            shadowElevation = 2.dp, // Subtle shadow
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(androidx.compose.foundation.shape.CircleShape)
+                                .clickable(onClick = onNotificationClick)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Notifications,
+                                    contentDescription = "Notifications",
+                                    tint = Color(0xFF1F2937),
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
 
-                            if (notificationCount > 0) {
-                                Badge(
-                                    modifier = Modifier.offset(x = 4.dp, y = (-4).dp),
-                                    containerColor = com.example.omiri.ui.theme.AppColors.Danger,
-                                    contentColor = Color.White
-                                ) {
-                                    Text(
-                                        text = notificationCount.toString(),
-                                        style = MaterialTheme.typography.labelSmall
-                                    )
-                                }
+                        if (notificationCount > 0) {
+                            Box(
+                                modifier = Modifier
+                                    .offset(x = 4.dp, y = (-2).dp)
+                                    .size(18.dp)
+                                    .background(Color(0xFFFE8357), androidx.compose.foundation.shape.CircleShape)
+                                    .border(1.5.dp, Color.White, androidx.compose.foundation.shape.CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = notificationCount.toString(),
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 10.sp, 
+                                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                                    ),
+                                    color = Color.White
+                                )
                             }
                         }
                     }
 
-                    Spacer(modifier = Modifier.width(Spacing.xs))
+                    Spacer(modifier = Modifier.width(12.dp))
 
-                    IconButton(onClick = onProfileClick) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "Profile",
-                            tint = Color(0xFF1F2937),
-                            modifier = Modifier.size(20.dp) // Smaller
-                        )
+                    // Profile Button
+                    Surface(
+                        shape = androidx.compose.foundation.shape.CircleShape,
+                        color = Color.White,
+                        shadowElevation = 2.dp,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(androidx.compose.foundation.shape.CircleShape)
+                            .clickable(onClick = onProfileClick)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Outlined.Person,
+                                contentDescription = "Profile",
+                                tint = Color(0xFF1F2937),
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
                     }
                 }
             }
