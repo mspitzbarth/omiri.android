@@ -44,14 +44,15 @@ fun OmiriSearchBar(
     }
 
     val height = 56.dp
-    val shape = RoundedCornerShape(30)
+    val shape = RoundedCornerShape(12.dp)
 
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .height(height),
         shape = shape,
-        color = com.example.omiri.ui.theme.AppColors.PastelGrey,
+        color = Color.White,
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {

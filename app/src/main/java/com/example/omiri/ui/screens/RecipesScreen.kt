@@ -50,26 +50,10 @@ fun RecipesScreen(
 
             // Search Bar (Scrollable)
             item {
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = Color.White,
-                    shadowElevation = 0.dp,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = Spacing.md)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Outlined.Search, null, tint = Color.Gray)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Search recipes, ingredients...", color = Color.Gray, modifier = Modifier.weight(1f))
-                        Icon(Icons.Outlined.Mic, null, tint = Color.Gray)
-                    }
-                }
+                com.example.omiri.ui.components.OmiriSearchBar(
+                    modifier = Modifier.padding(horizontal = Spacing.md),
+                    placeholder = "Search recipes, ingredients..."
+                )
             }
             
             // Cook from your list Card

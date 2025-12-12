@@ -111,10 +111,16 @@ fun MixedFilterChipsRow(
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = selectedBackgroundColor,
                     selectedLabelColor = selectedTextColor,
-                    containerColor = unselectedBackgroundColor,
-                    labelColor = unselectedTextColor,
+                    containerColor = Color.White,
+                    labelColor = Color(0xFF374151),
                     selectedLeadingIconColor = selectedTextColor,
-                    iconColor = unselectedTextColor
+                    iconColor = Color(0xFF374151)
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = isSelected,
+                    borderColor = if (isSelected) Color.Transparent else Color(0xFFE5E7EB),
+                    borderWidth = 1.dp
                 ),
                 modifier = Modifier.height(36.dp),
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp)

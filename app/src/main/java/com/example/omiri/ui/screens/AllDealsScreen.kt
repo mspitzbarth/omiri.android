@@ -152,25 +152,27 @@ fun AllDealsScreen(
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .nestedScroll(nestedScrollConnection)
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        state = pullRefreshState,
+        onRefresh = { isRefreshing = true },
+        modifier = Modifier.fillMaxSize()
     ) {
-        // Interstitial Ad Logic: Show every 200 items
-        LaunchedEffect(allDeals.size) {
-             if (allDeals.size > 0 && allDeals.size % 200 == 0) {
-                 adManager.showAd {}
-             }
-        }
-
-        // List Content
-        PullToRefreshBox(
-            isRefreshing = isRefreshing,
-            state = pullRefreshState,
-            onRefresh = { isRefreshing = true },
-            modifier = Modifier.fillMaxSize()
+        val density = androidx.compose.ui.platform.LocalDensity.current
+        
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .nestedScroll(nestedScrollConnection)
         ) {
+            // Interstitial Ad Logic: Show every 200 items
+            LaunchedEffect(allDeals.size) {
+                 if (allDeals.size > 0 && allDeals.size % 200 == 0) {
+                     adManager.showAd {}
+                 }
+            }
+
+            // List Content
             val topBarHeightDp = with(density) { topBarHeightPx.toDp() }
             val filterBarHeightDp = with(density) { filterBarHeightPx.toDp() }
             val totalHeaderHeightDp = topBarHeightDp + filterBarHeightDp
@@ -371,23 +373,6 @@ fun AllDealsScreen(
         }
     }
 
-    // 1. Fixed Main Header (Logo) - Highest Z-Index
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .onGloballyPositioned { coordinates ->
-                topBarHeightPx = coordinates.size.height.toFloat()
-            }
-            .background(Color.White) // Changed to White to ensure opacity
-            .zIndex(2f)
-    ) {
-        OmiriHeader(
-            notificationCount = 2,
-            onNotificationClick = onNotificationsClick,
-            onProfileClick = onProfileClick
-        )
-    }
-
     // 2. Collapsible Search/Filters Header - Z-Index 1
     Box(
         modifier = Modifier
@@ -396,8 +381,8 @@ fun AllDealsScreen(
                 filterBarHeightPx = coordinates.size.height.toFloat()
             }
             .offset { IntOffset(x = 0, y = (topBarHeightPx + filterBarOffsetPx).roundToInt()) }
-            .background(Color.White)  // Changed to White for consistency and opacity
-            .zIndex(1f)
+            .background(Color.White)
+            .align(Alignment.TopCenter)
     ) {
         // Search and Filters Content
         Column(modifier = Modifier.padding(horizontal = Spacing.lg)) {
@@ -468,6 +453,23 @@ fun AllDealsScreen(
             
             Spacer(Modifier.height(Spacing.lg))
         }
+    }
+
+    // 1. Fixed Main Header (Logo) - Highest Z-Index
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .onGloballyPositioned { coordinates ->
+                topBarHeightPx = coordinates.size.height.toFloat()
+            }
+            .background(Color.White)
+            .align(Alignment.TopCenter)
+    ) {
+        OmiriHeader(
+            notificationCount = 2,
+            onNotificationClick = onNotificationsClick,
+            onProfileClick = onProfileClick
+        )
     }
     }
     
@@ -548,13 +550,14 @@ fun CategoriesSwipeFilterRow(
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = com.example.omiri.ui.theme.AppColors.BrandOrange,
                     selectedLabelColor = com.example.omiri.ui.theme.AppColors.Surface,
-                    containerColor = com.example.omiri.ui.theme.AppColors.Surface,
-                    labelColor = com.example.omiri.ui.theme.AppColors.BrandInk
+                    containerColor = Color.White,
+                    labelColor = Color(0xFF374151)
                 ),
                 border = FilterChipDefaults.filterChipBorder(
                      enabled = true,
                      selected = isSelected,
-                     borderColor = if (isSelected) com.example.omiri.ui.theme.AppColors.BrandOrange else com.example.omiri.ui.theme.AppColors.PastelGrey
+                     borderColor = if (isSelected) Color.Transparent else Color(0xFFE5E7EB),
+                     borderWidth = 1.dp
                 )
             )
         }

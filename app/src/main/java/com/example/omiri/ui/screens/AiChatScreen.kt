@@ -173,24 +173,7 @@ fun AiChatScreen(
 
             val networkErrorType by viewModel.networkErrorType.collectAsState()
             
-            if (!isOnline) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    val networkErrorType by viewModel.networkErrorType.collectAsState()
-                    // If offline, force error display
-                    com.example.omiri.ui.components.OmiriSmartEmptyState(
-                        networkErrorType = networkErrorType ?: com.example.omiri.utils.NetworkErrorType.OFFLINE,
-                        error = "Connection unavailable", // Force error mode
-                        onRetry = { viewModel.checkOnlineStatus() },
-                        defaultIcon = androidx.compose.material.icons.Icons.Outlined.WifiOff, // Unused in error mode
-                        defaultTitle = "",
-                        defaultMessage = ""
-                    )
-                }
-            } else {
-                LazyColumn(
+            LazyColumn(
                     state = listState,
                     modifier = Modifier
                         .fillMaxSize()
@@ -266,7 +249,7 @@ fun AiChatScreen(
                         item { TypingIndicator() }
                     }
                 }
-            }
+
         }
     }
 }
@@ -887,7 +870,8 @@ fun ChatInputBar(
                         .weight(1f)
                         .height(48.dp),
                     shape = RoundedCornerShape(26.dp), // Fully rounded pill
-                    color = Color(0xFFF3F4F6), // Light grey like SearchBar
+                    color = Color.White,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
                     tonalElevation = 0.dp
                 ) {
                     Row(
@@ -935,7 +919,8 @@ fun ChatInputBar(
                                         // Ignore
                                     }
                                 },
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(24.dp),
+                                enabled = isOnline
                             ) {
                                 Icon(
                                     imageVector = androidx.compose.material.icons.Icons.Outlined.Mic,

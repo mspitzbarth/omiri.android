@@ -136,14 +136,6 @@ fun ShoppingListScreen(
                                 .padding(horizontal = Spacing.lg)
                                 .padding(top = Spacing.md, bottom = Spacing.md)
                         ) {
-                            // Caption
-                            Text(
-                                text = "Active List",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = Color(0xFF6B7280) // Gray 500
-                            )
-                            
-                            // Title Row
 
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -161,17 +153,6 @@ fun ShoppingListScreen(
                                     contentDescription = "Switch List",
                                     tint = Color(0xFF6B7280)
                                 )
-                                Spacer(Modifier.weight(1f))
-                                
-                                // Edit Icon
-                                IconButton(onClick = { /* Edit List Name? */ }) {
-                                    Box(
-                                        modifier = Modifier.size(40.dp).background(Color(0xFFF3F4F6), CircleShape),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(Icons.Outlined.Edit, "Edit", tint = Color(0xFF4B5563), modifier = Modifier.size(20.dp))
-                                    }
-                                }
                             }
                             
                             Spacer(Modifier.height(4.dp))

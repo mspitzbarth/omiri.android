@@ -66,7 +66,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     private val _conversationId = MutableStateFlow<String?>(null)
     val conversationId: StateFlow<String?> = _conversationId.asStateFlow()
 
-    private val _isOnline = MutableStateFlow(false)
+    private val _isOnline = MutableStateFlow(true)
     val isOnline: StateFlow<Boolean> = _isOnline.asStateFlow()
 
     init {

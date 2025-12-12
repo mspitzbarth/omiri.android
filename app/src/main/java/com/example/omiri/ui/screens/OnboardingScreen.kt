@@ -13,6 +13,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -42,20 +44,25 @@ import kotlinx.coroutines.launch
 
 enum class OnboardingStep {
     WELCOME,
+    PERSONALIZATION,
     STORES,
-    NOTIFICATIONS
+    CREATE_LIST,
+    NOTIFICATIONS,
+    COMPLETED
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OnboardingScreen(
     onFinish: () -> Unit,
-    storesViewModel: MyStoresViewModel = viewModel()
+    storesViewModel: MyStoresViewModel = viewModel(),
+    shoppingListViewModel: com.example.omiri.viewmodels.ShoppingListViewModel = viewModel()
 ) {
     var currentStep by remember { mutableStateOf(OnboardingStep.WELCOME) }
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+    val userPreferences = remember { com.example.omiri.data.local.UserPreferences(context) }
 
     // Store State
     val selectedCountry by storesViewModel.selectedCountry.collectAsState()
@@ -63,6 +70,9 @@ fun OnboardingScreen(
     val selectedStores by storesViewModel.selectedStores.collectAsState()
     val storeLocations by storesViewModel.storeLocations.collectAsState()
     val isLoading by storesViewModel.isLoading.collectAsState()
+    
+    // Shopping List State
+    val currentListId by shoppingListViewModel.currentListId.collectAsState()
     
     // Location modal state
     val locationModalStore by storesViewModel.locationModalStore.collectAsState()
@@ -91,14 +101,16 @@ fun OnboardingScreen(
                 .padding(Spacing.lg),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Header with Back Button (except Welcome)
-            if (currentStep != OnboardingStep.WELCOME) {
+            // Header with Back Button (except Welcome and Completed)
+            if (currentStep != OnboardingStep.WELCOME && currentStep != OnboardingStep.COMPLETED) {
                 Box(modifier = Modifier.fillMaxWidth()) {
                     IconButton(
                         onClick = {
                             currentStep = when (currentStep) {
-                                OnboardingStep.STORES -> OnboardingStep.WELCOME
-                                OnboardingStep.NOTIFICATIONS -> OnboardingStep.STORES
+                                OnboardingStep.PERSONALIZATION -> OnboardingStep.WELCOME
+                                OnboardingStep.STORES -> OnboardingStep.PERSONALIZATION
+                                OnboardingStep.CREATE_LIST -> OnboardingStep.STORES
+                                OnboardingStep.NOTIFICATIONS -> OnboardingStep.CREATE_LIST
                                 else -> OnboardingStep.WELCOME
                             }
                         },
@@ -111,7 +123,7 @@ fun OnboardingScreen(
                     Box(modifier = Modifier.align(Alignment.Center).fillMaxWidth(0.6f)) {
                          OnboardingProgressBar(
                             currentStep = currentStep.ordinal,
-                            totalSteps = 3
+                            totalSteps = 5
                         )
                     }
                 }
@@ -126,9 +138,17 @@ fun OnboardingScreen(
                     OnboardingStep.WELCOME -> {
                         WelcomeContent(
                             onNext = { 
-                                storesViewModel.loadStores() // Ensure loaded
-                                currentStep = OnboardingStep.STORES 
+                                currentStep = OnboardingStep.PERSONALIZATION 
                             }
+                        )
+                    }
+                    OnboardingStep.PERSONALIZATION -> {
+                        PersonalizationContent(
+                            onNext = {
+                                storesViewModel.loadStores() // Ensure loaded
+                                currentStep = OnboardingStep.STORES
+                            },
+                            userPreferences = userPreferences
                         )
                     }
                     OnboardingStep.STORES -> {
@@ -146,13 +166,33 @@ fun OnboardingScreen(
                                     storesViewModel.toggleStore(store.id, false)
                                 }
                             },
-                            onNext = { currentStep = OnboardingStep.NOTIFICATIONS }
+                            onNext = { currentStep = OnboardingStep.CREATE_LIST }
+                        )
+                    }
+                    OnboardingStep.CREATE_LIST -> {
+                        CreateListContent(
+                            onNext = { name ->
+                                // Rename default list or create new
+                                val listId = currentListId
+                                if (listId != null && name.isNotBlank()) {
+                                    // Direct repo call since VM doesn't expose rename yet
+                                    com.example.omiri.data.repository.ShoppingListRepository.renameList(listId, name)
+                                }
+                                currentStep = OnboardingStep.NOTIFICATIONS
+                            }
                         )
                     }
                     OnboardingStep.NOTIFICATIONS -> {
                         NotificationsContent(
-                            onFinish = onFinish,
+                            onFinish = {
+                                currentStep = OnboardingStep.COMPLETED
+                            },
                             snackbarHostState = snackbarHostState
+                        )
+                    }
+                    OnboardingStep.COMPLETED -> {
+                        CompletedContent(
+                            onFinish = onFinish
                         )
                     }
                 }
@@ -606,6 +646,8 @@ fun NotificationsContent(
     }
 }
 
+
+
 @Composable
 fun NotificationToggleItem(
     icon: ImageVector,
@@ -662,5 +704,389 @@ fun NotificationToggleItem(
                 )
             )
         }
+    }
+}
+
+@Composable
+fun PersonalizationContent(
+    onNext: () -> Unit,
+    userPreferences: com.example.omiri.data.local.UserPreferences
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    
+    // Data Loading
+    var categories by remember { mutableStateOf<List<PersonalizationCategory>>(emptyList()) }
+    
+    LaunchedEffect(Unit) {
+        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val jsonString = context.assets.open("personalization_options.json").bufferedReader().use { it.readText() }
+                val jsonArray = org.json.JSONArray(jsonString)
+                val loadedCategories = mutableListOf<PersonalizationCategory>()
+                for (i in 0 until jsonArray.length()) {
+                    val obj = jsonArray.getJSONObject(i)
+                    val category = obj.getString("category")
+                    val key = obj.getString("key")
+                    val optionsArray = obj.getJSONArray("options")
+                    val options = mutableListOf<String>()
+                    for (j in 0 until optionsArray.length()) {
+                        options.add(optionsArray.getString(j))
+                    }
+                    loadedCategories.add(PersonalizationCategory(category, key, options))
+                }
+                categories = loadedCategories
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+    
+    // State for selections
+    // We map "key" -> Set of selected options
+    var selectedOptions by remember { mutableStateOf(mapOf<String, Set<String>>()) }
+    
+    // Demographics State
+    var selectedGender by remember { mutableStateOf("") }
+    var selectedAgeRange by remember { mutableStateOf("") }
+    
+    val genderOptions = listOf("Male", "Female", "Non-binary", "Prefer not to say")
+    val ageOptions = listOf("18-24", "25-34", "35-44", "45-54", "55-64", "65+")
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+    ) {
+        Text(
+            text = "Tell us about you",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF111827)
+        )
+        Spacer(Modifier.height(Spacing.xs))
+        Text(
+            text = "Help us personalize your deals and recommendations. All fields are optional.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color(0xFF6B7280)
+        )
+        
+        Spacer(Modifier.height(Spacing.lg))
+        
+        // Dynamic Categories
+        if (categories.isEmpty()) {
+             Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = Color(0xFFFE8357))
+            }
+        } else {
+            categories.forEach { category ->
+                Text(
+                    text = category.category,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF111827)
+                )
+                Spacer(Modifier.height(Spacing.sm))
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+                ) {
+                    category.options.forEach { option ->
+                        val currentSelections = selectedOptions[category.key] ?: emptySet()
+                        val isSelected = currentSelections.contains(option)
+                        
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { 
+                                val newSet = if (isSelected) {
+                                    currentSelections - option
+                                } else {
+                                    currentSelections + option
+                                }
+                                selectedOptions = selectedOptions + (category.key to newSet)
+                            },
+                            label = { Text(option) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Color(0xFFFE8357),
+                                selectedLabelColor = Color.White,
+                                containerColor = Color.White,
+                                labelColor = Color(0xFF374151)
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = isSelected,
+                                borderColor = if (isSelected) Color.Transparent else Color(0xFFE5E7EB),
+                                borderWidth = 1.dp
+                            )
+                        )
+                    }
+                }
+                Spacer(Modifier.height(Spacing.lg))
+            }
+        }
+
+        // Demographics at the end
+        // Gender Section
+        Text(
+            text = "Gender (Optional)",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF111827)
+        )
+        Spacer(Modifier.height(Spacing.sm))
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+        ) {
+            genderOptions.forEach { gender ->
+                val isSelected = selectedGender == gender
+                FilterChip(
+                    selected = isSelected,
+                    onClick = { selectedGender = if (isSelected) "" else gender },
+                    label = { Text(gender) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = Color(0xFFFE8357), // Brand Orange
+                        selectedLabelColor = Color.White,
+                        containerColor = Color.White,
+                        labelColor = Color(0xFF374151)
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = isSelected,
+                        borderColor = if (isSelected) Color.Transparent else Color(0xFFE5E7EB),
+                        borderWidth = 1.dp
+                    )
+                )
+            }
+        }
+        
+        Spacer(Modifier.height(Spacing.lg))
+        
+        // Age Section
+        Text(
+            text = "Age Range",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF111827)
+        )
+        Spacer(Modifier.height(Spacing.sm))
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+        ) {
+            ageOptions.forEach { age ->
+                val isSelected = selectedAgeRange == age
+                FilterChip(
+                    selected = isSelected,
+                    onClick = { selectedAgeRange = if (isSelected) "" else age },
+                    label = { Text(age) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = Color(0xFFFE8357),
+                        selectedLabelColor = Color.White,
+                        containerColor = Color.White,
+                        labelColor = Color(0xFF374151)
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = isSelected,
+                        borderColor = if (isSelected) Color.Transparent else Color(0xFFE5E7EB),
+                        borderWidth = 1.dp
+                    )
+                )
+            }
+        }
+        
+        Spacer(Modifier.height(Spacing.xxl))
+        
+        Button(
+            onClick = {
+                scope.launch {
+                    // Save preferences
+                    if (selectedGender.isNotBlank()) userPreferences.saveUserGender(selectedGender)
+                    if (selectedAgeRange.isNotBlank()) userPreferences.saveUserAgeRange(selectedAgeRange)
+                    
+                    // Flatten all selected options into one set of interests for now
+                    val allInterests = selectedOptions.values.flatten().toSet()
+                    if (allInterests.isNotEmpty()) userPreferences.saveUserInterests(allInterests)
+                    
+                    onNext()
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFE8357)),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Text(
+                text = "Continue",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        
+        Spacer(Modifier.height(Spacing.md))
+    }
+}
+
+
+data class PersonalizationCategory(
+    val category: String,
+    val key: String,
+    val options: List<String>
+)
+
+@Composable
+fun CreateListContent(onNext: (String) -> Unit) {
+    var listName by remember { mutableStateOf("") }
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Icon
+        Box(
+            modifier = Modifier
+                .size(80.dp)
+                .background(Color(0xFFEFF6FF), RoundedCornerShape(20.dp)) // Blue bg
+                .align(Alignment.CenterHorizontally),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Edit,
+                contentDescription = null,
+                tint = Color(0xFF3B82F6), // Blue
+                modifier = Modifier.size(40.dp)
+            )
+        }
+        
+        Spacer(Modifier.height(Spacing.lg))
+        
+        Text(
+            text = "Name your list",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF111827)
+        )
+        
+        Spacer(Modifier.height(Spacing.sm))
+        
+        Text(
+            text = "Give your first shopping list a name.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color(0xFF6B7280)
+        )
+        
+        Spacer(Modifier.height(Spacing.xl))
+        
+        OutlinedTextField(
+            value = listName,
+            onValueChange = { listName = it },
+            label = { Text("List Name") },
+            placeholder = { Text("e.g., Weekly Groceries") },
+            singleLine = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(focusRequester),
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFFFE8357),
+                unfocusedBorderColor = Color(0xFFE5E7EB),
+                focusedLabelColor = Color(0xFFFE8357),
+                cursorColor = Color(0xFFFE8357)
+            )
+        )
+        
+        Spacer(Modifier.weight(1f))
+        
+        Button(
+            onClick = { onNext(listName.trim().ifEmpty { "My List" }) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFE8357)),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Text(
+                text = "Continue",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        
+        Spacer(Modifier.height(Spacing.md))
+    }
+}
+
+@Composable
+fun CompletedContent(onFinish: () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Spacer(Modifier.weight(1f))
+        
+        // Success Icon/Circle
+        Box(
+            modifier = Modifier
+                .size(100.dp)
+                .clip(CircleShape)
+                .background(Color(0xFFDCFCE7)), // Light Green
+            contentAlignment = Alignment.Center
+        ) {
+             Icon(
+                imageVector = Icons.Outlined.Check,
+                contentDescription = null,
+                tint = Color(0xFF16A34A), // Green
+                modifier = Modifier.size(50.dp)
+            )
+        }
+        
+        Spacer(Modifier.height(Spacing.xl))
+        
+        Text(
+            text = "You are now all set up",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF111827),
+            textAlign = TextAlign.Center
+        )
+        
+        Spacer(Modifier.height(Spacing.md))
+        
+        Text(
+            text = "Start tracking deals and saving money with Omiri.",
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+            color = Color(0xFF6B7280)
+        )
+        
+        Spacer(Modifier.weight(1f))
+        
+        Button(
+            onClick = onFinish,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFE8357)),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Text(
+                text = "Start using App",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        
+        Spacer(Modifier.height(Spacing.lg))
     }
 }

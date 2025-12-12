@@ -478,9 +478,60 @@ class UserPreferences(private val context: Context) {
         }
     }
 
+    /**
+     * Get user gender
+     */
+    val userGender: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[USER_GENDER]
+    }
+
+    /**
+     * Save user gender
+     */
+    suspend fun saveUserGender(gender: String) {
+        context.dataStore.edit { preferences ->
+            preferences[USER_GENDER] = gender
+        }
+    }
+
+    /**
+     * Get user age range
+     */
+    val userAgeRange: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[USER_AGE_RANGE]
+    }
+
+    /**
+     * Save user age range
+     */
+    suspend fun saveUserAgeRange(ageRange: String) {
+        context.dataStore.edit { preferences ->
+            preferences[USER_AGE_RANGE] = ageRange
+        }
+    }
+
+    /**
+     * Get user interests
+     */
+    val userInterests: Flow<Set<String>> = context.dataStore.data.map { preferences ->
+        preferences[USER_INTERESTS] ?: emptySet()
+    }
+
+    /**
+     * Save user interests
+     */
+    suspend fun saveUserInterests(interests: Set<String>) {
+        context.dataStore.edit { preferences ->
+            preferences[USER_INTERESTS] = interests
+        }
+    }
+
     companion object {
         private val SELECTED_COUNTRY = stringPreferencesKey("selected_country")
         private val SELECTED_STORES = stringSetPreferencesKey("selected_stores")
+        private val USER_GENDER = stringPreferencesKey("user_gender")
+        private val USER_AGE_RANGE = stringPreferencesKey("user_age_range")
+        private val USER_INTERESTS = stringSetPreferencesKey("user_interests")
         private val SHOPPING_LIST_ITEMS = stringPreferencesKey("shopping_list_items")
         private val SHOPPING_LIST_DEAL_IDS = stringSetPreferencesKey("shopping_list_deal_ids")
         private val MEMBERSHIP_CARDS = stringPreferencesKey("membership_cards")

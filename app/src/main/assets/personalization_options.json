@@ -1,0 +1,121 @@
+[
+    {
+        "category": "Shopping Goals",
+        "key": "shopping_goals",
+        "options": [
+            "Save money",
+            "Save time",
+            "Eat healthier",
+            "Stock up / bulk",
+            "Family essentials",
+            "Try new products",
+            "Premium quality",
+            "Eco-friendly picks"
+        ]
+    },
+    {
+        "category": "Deal Types",
+        "key": "deal_types",
+        "options": [
+            "% off",
+            "BOGO",
+            "Clearance",
+            "Coupons",
+            "Cashback",
+            "Bundle deals",
+            "Digital-only deals",
+            "Loyalty/member deals",
+            "Price drop alerts",
+            "Freebie / samples"
+        ]
+    },
+    {
+        "category": "Shopping Mode",
+        "key": "shopping_mode",
+        "options": [
+            "In-store",
+            "Pickup",
+            "Delivery",
+            "Any",
+            "Willing to switch stores",
+            "Prefer one main store"
+        ]
+    },
+    {
+        "category": "Distance Willing to Travel",
+        "key": "travel_distance",
+        "options": [
+            "0–2 miles",
+            "3–5 miles",
+            "6–10 miles",
+            "10–20 miles",
+            "Any"
+        ]
+    },
+    {
+        "category": "Weekly Budget",
+        "key": "weekly_budget",
+        "options": [
+            "Under $50",
+            "$50–$100",
+            "$100–$150",
+            "$150–$250",
+            "$250+"
+        ]
+    },
+    {
+        "category": "Household Context",
+        "key": "household_context",
+        "options": [
+            "Just me",
+            "2 adults",
+            "Family (3–4)",
+            "Large family (5+)",
+            "Kids in household",
+            "Pets in household"
+        ]
+    },
+    {
+        "category": "Dietary Style",
+        "key": "dietary_style",
+        "options": [
+            "No preference",
+            "High-protein",
+            "Low-carb / Keto",
+            "Vegetarian",
+            "Vegan",
+            "Pescatarian",
+            "Mediterranean",
+            "Low-sodium",
+            "Low-sugar",
+            "Dairy-free"
+        ]
+    },
+    {
+        "category": "Allergies / Restrictions",
+        "key": "allergies",
+        "options": [
+            "Gluten",
+            "Dairy",
+            "Egg",
+            "Peanut / Tree nut",
+            "Soy",
+            "Shellfish / Fish",
+            "Sesame"
+        ]
+    },
+    {
+        "category": "Cooking Routine",
+        "key": "cooking_routine",
+        "options": [
+            "Quick & easy (15 min)",
+            "Meal prep",
+            "Family meals",
+            "Budget cooking",
+            "Baking",
+            "Air fryer",
+            "Slow cooker",
+            "Gourmet"
+        ]
+    }
+]
