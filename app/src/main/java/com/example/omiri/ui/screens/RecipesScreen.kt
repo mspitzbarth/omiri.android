@@ -42,19 +42,22 @@ fun RecipesScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = Spacing.md),
+                .padding(padding),
             verticalArrangement = Arrangement.spacedBy(Spacing.lg)
         ) {
-            item { Spacer(Modifier.height(Spacing.sm)) }
-            
-            // Search Bar
+            // Spacer for top gap
+            item { Spacer(Modifier.height(Spacing.md)) }
+
+            // Search Bar (Scrollable)
             item {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = Color.White,
                     shadowElevation = 0.dp,
-                    modifier = Modifier.fillMaxWidth()
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = Spacing.md)
                 ) {
                     Row(
                         modifier = Modifier
@@ -68,10 +71,13 @@ fun RecipesScreen(
                     }
                 }
             }
+            
+            // Cook from your list Card
 
             // Cook from your list Card
             item {
                 Card(
+                     modifier = Modifier.padding(horizontal = Spacing.md),
                      shape = RoundedCornerShape(16.dp),
                      colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF7ED)), // Light Orange
                      border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFED7AA))
@@ -107,7 +113,10 @@ fun RecipesScreen(
             
             // Filters Row (Chips)
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.padding(horizontal = Spacing.md),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     FilterChip(selected = true, label = "For You", onClick = {})
                     FilterChip(selected = false, label = "From My List", onClick = {})
                     FilterChip(selected = false, label = "Matched Deals", onClick = {})
@@ -117,7 +126,7 @@ fun RecipesScreen(
             // Best Matches
             item {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.md),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -158,7 +167,7 @@ fun RecipesScreen(
             // Deal-Friendly Recipes
             item {
                  Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.md),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -168,16 +177,17 @@ fun RecipesScreen(
             }
             
             items(3) {
-                 RecipeListItem(
-                     title = "Homemade Margherita Pizza",
-                     time = "35 min",
-                     servings = "4",
-                     savedAmount = "€5.20",
-                     store = "Lidl & Aldi"
-                 )
+                  RecipeListItem(
+                      modifier = Modifier.padding(horizontal = Spacing.md),
+                      title = "Homemade Margherita Pizza",
+                      time = "35 min",
+                      servings = "4",
+                      savedAmount = "€5.20",
+                      store = "Lidl & Aldi"
+                  )
             }
             
-            item { Spacer(Modifier.height(80.dp)) } // Bottom padding
+            item { Spacer(Modifier.height(Spacing.xl)) } // Reduced bottom padding
         }
     }
 }
@@ -269,6 +279,7 @@ fun RecipeCard(
 
 @Composable
 fun RecipeListItem(
+    modifier: Modifier = Modifier,
     title: String,
     time: String,
     servings: String,
@@ -276,7 +287,7 @@ fun RecipeListItem(
     store: String
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),

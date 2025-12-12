@@ -34,7 +34,8 @@ enum class AttachmentType {
     SHOPPING_LIST_UPDATE,
     DEALS_MATCHED,
     STORE_ROUTE,
-    RECIPE_IDEAS
+    RECIPE_IDEAS,
+    SUGGESTIONS
 }
 
 /**
@@ -59,6 +60,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     private val _networkErrorType = MutableStateFlow<com.example.omiri.utils.NetworkErrorType?>(null)
     val networkErrorType: StateFlow<com.example.omiri.utils.NetworkErrorType?> = _networkErrorType.asStateFlow()
 
+    private val _isMockMode = MutableStateFlow(false)
+    val isMockMode: StateFlow<Boolean> = _isMockMode.asStateFlow()
+
     private val _conversationId = MutableStateFlow<String?>(null)
     val conversationId: StateFlow<String?> = _conversationId.asStateFlow()
 
@@ -69,13 +73,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         checkOnlineStatus()
         viewModelScope.launch {
             userPreferences.showDummyChatData.collect { show ->
-                if (show) {
+                _isMockMode.value = show
+                if (show && _messages.value.isEmpty()) {
                     loadDummyData()
-                } else {
-                    // If disabling dummy data, clear chat to avoid confusion or mixed state
-                    // _messages.value = emptyList() 
-                    // Commented out to prevent wiping real chat if user just toggles off. 
-                    // But usually debug toggles are disruptive.
                 }
             }
         }
@@ -92,21 +92,32 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             timestamp = now - 60000
         ))
         
-        // 2. User Request
+        // 2. Suggestions (New!)
+        mockMessages.add(ChatMessage(
+            text = "",
+            isUser = false,
+            timestamp = now - 59000,
+            attachmentType = AttachmentType.SUGGESTIONS,
+            attachmentData = mapOf(
+                "suggestions" to listOf("Show matched deals", "Plan my stores", "Suggest recipes")
+            )
+        ))
+        
+        // 3. User Request
         mockMessages.add(ChatMessage(
             text = "I need to create a shopping list for dinner tomorrow. Can you help me find deals on ingredients for pasta?",
             isUser = true,
             timestamp = now - 50000
         ))
         
-        // 3. Bot Response text
+        // 4. Bot Response text
         mockMessages.add(ChatMessage(
             text = "Great! I've found some pasta recipes and matched them with current deals. Let me create a list for you.",
             isUser = false,
             timestamp = now - 45000
         ))
         
-        // 4. Shopping List Update Card (Bot)
+        // 5. Shopping List Update Card (Bot)
         mockMessages.add(ChatMessage(
             text = "", // Empty text for card-only message
             isUser = false,
@@ -115,11 +126,11 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             attachmentData = mapOf(
                 "addedCount" to 4,
                 "status" to "Synced",
-                "items" to listOf("Spaghetti pasta", "Ground beef", "Tomato sauce", "+1 more")
+                "items" to listOf("Spaghetti pasta", "Ground beef", "Tomato sauce", "Parmesan cheese") 
             )
         ))
         
-        // 5. Deals Matched Card (Bot)
+        // 6. Deals Matched Card (Bot)
         mockMessages.add(ChatMessage(
             text = "",
             isUser = false,
@@ -136,21 +147,21 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             )
         ))
         
-        // 6. Bot Follow-up
+        // 7. Bot Follow-up
         mockMessages.add(ChatMessage(
             text = "Perfect! I found great deals that save you €2.89. Would you like me to plan the best route to get these items?",
             isUser = false,
             timestamp = now - 30000
         ))
         
-        // 7. User Reply
+        // 8. User Reply
         mockMessages.add(ChatMessage(
             text = "Yes, plan my route please!",
             isUser = true,
             timestamp = now - 20000
         ))
         
-        // 8. Store Route Card
+        // 9. Store Route Card
         mockMessages.add(ChatMessage(
             text = "",
             isUser = false,
@@ -163,21 +174,6 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 "steps" to listOf(
                     mapOf("store" to "Target", "desc" to "Pasta, Ground beef • 1.2 mi", "price" to "€1.99", "color" to "red"),
                     mapOf("store" to "Walmart", "desc" to "Tomato sauce, Cheese • 2.1 mi", "price" to "€0.90", "color" to "blue")
-                )
-            )
-        ))
-        
-        // 9. Recipe Ideas
-        mockMessages.add(ChatMessage(
-            text = "",
-            isUser = false,
-            timestamp = now - 10000,
-            attachmentType = AttachmentType.RECIPE_IDEAS,
-            attachmentData = mapOf(
-                "badge" to "Uses your list",
-                "recipes" to listOf(
-                    mapOf("name" to "Classic Spaghetti", "difficulty" to "Easy", "time" to "25 min", "color" to "orange"),
-                    mapOf("name" to "Meat Pasta Bake", "difficulty" to "Medium", "time" to "45 min", "color" to "yellow")
                 )
             )
         ))
@@ -230,14 +226,82 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 _error.value = errorMsg
                 _networkErrorType.value = com.example.omiri.utils.NetworkErrorParser.parseError(e)
 
-                _messages.value = _messages.value + ChatMessage(
-                    text = "Sorry, I'm having trouble connecting right now. Please try again.",
-                    isUser = false
-                )
+                if (_isMockMode.value) {
+                     Log.d(TAG, "Offline/Error but Mock Mode is ON. Simulating response.")
+                     simulateOfflineReply(trimmed)
+                } else {
+                     _messages.value = _messages.value + ChatMessage(
+                        text = "Sorry, I'm having trouble connecting right now. Please try again.",
+                        isUser = false
+                    )
+                }
+
             } finally {
                 _isLoading.value = false
             }
         }
+    }
+
+    private suspend fun simulateOfflineReply(userMessage: String) {
+        kotlinx.coroutines.delay(1500) // Fake network delay
+
+        val msgLower = userMessage.lowercase()
+        val mockResponse = when {
+            msgLower.contains("hello") || msgLower.contains("hi") -> {
+                ChatMessage(text = "Hello! I'm in offline debug mode. I can show you dummy cards if you ask for 'deals', 'list', or 'route'.", isUser = false)
+            }
+            msgLower.contains("deal") -> {
+                ChatMessage(
+                    text = "Here are some matched deals from our offline database:",
+                    isUser = false,
+                    attachmentType = AttachmentType.DEALS_MATCHED,
+                    attachmentData = mapOf(
+                        "count" to 3,
+                        "badge" to "Debug Match",
+                        "items" to listOf(
+                            mapOf("name" to "Mock Pasta", "price" to "€0.99", "oldPrice" to "€1.49", "discount" to "-33%", "icon" to "wheat"),
+                            mapOf("name" to "Debug Sauce", "price" to "€1.50", "oldPrice" to "€2.00", "discount" to "-25%", "icon" to "bottle"),
+                            mapOf("name" to "Test Cheese", "price" to "€2.99", "oldPrice" to "€3.99", "discount" to "-25%", "icon" to "cheese")
+                        )
+                    )
+                )
+            }
+            msgLower.contains("list") -> {
+                ChatMessage(
+                    text = "I've added mock items to your list.",
+                    isUser = false,
+                    attachmentType = AttachmentType.SHOPPING_LIST_UPDATE,
+                    attachmentData = mapOf(
+                        "addedCount" to 3,
+                        "status" to "Mocked",
+                        "items" to listOf("Mock Item A", "Mock Item B", "Mock Item C")
+                    )
+                )
+            }
+            msgLower.contains("route") -> {
+                 ChatMessage(
+                    text = "Here is a simulated route for your trip.",
+                    isUser = false,
+                    attachmentType = AttachmentType.STORE_ROUTE,
+                    attachmentData = mapOf(
+                        "stops" to 2,
+                        "savings" to "€5.50",
+                        "badge" to "Debug Route",
+                        "steps" to listOf(
+                           mapOf("store" to "Mock Store A", "desc" to "Items A, B • 0.5 mi", "price" to "€10.00", "color" to "green"),
+                           mapOf("store" to "Mock Store B", "desc" to "Item C • 1.2 mi", "price" to "€5.00", "color" to "blue")
+                        )
+                    )
+                )
+            }
+            else -> {
+                ChatMessage(text = "I'm in debug mock mode. Try asking for 'deals' to see a card.", isUser = false)
+            }
+        }
+        
+        _messages.value = _messages.value + mockResponse
+        _error.value = null // Clear error since we handled it
+        _networkErrorType.value = null
     }
 
     /**

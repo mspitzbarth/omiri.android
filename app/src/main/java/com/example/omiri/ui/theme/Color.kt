@@ -42,4 +42,23 @@ object AppColors {
     val HeroIce = Color(0xFFCFE9FF)
     val HeroOrange = Color(0xFFFFA24D)
     val HeroLemon = Color(0xFFFDE68A)
+
+    // Pastel Palette (Soft, using BrandOrangeSoft as reference)
+    // Reference Orange: 0xFFFE8357 -> Soft: 0xFFFFE5DB (BrandOrangeSoft)
+    // We will define specific "Pastel" tokens that are slightly more saturated than "Soft" but less than "Brand".
+    // Or just use the requested "pastel" look which often implies "Soft" colors used as backgrounds.
+    
+    val PastelOrange = Color(0xFFFFDBC9) // Slightly stronger than BrandOrangeSoft
+    val PastelBlue = Color(0xFFDBEAFE)   
+    val PastelGreen = Color(0xFFDCFCE7)
+    val PastelPurple = Color(0xFFF3E8FF)
+    val PastelYellow = Color(0xFFFEF3C7) // Amber-ish pastel
+    val PastelPink = Color(0xFFFFE4E6)
+    val PastelGrey = Color(0xFFF3F4F6)
+    
+    val PastelOrangeText = Color(0xFFC2410C) // Darker for text on pastel orange
+    val PastelBlueText = Color(0xFF1E40AF)
+    val PastelGreenText = Color(0xFF166534)
+    val PastelPurpleText = Color(0xFF6B21A8)
+    val PastelYellowText = Color(0xFF92400E)
 }

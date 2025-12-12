@@ -100,9 +100,9 @@ fun FilterModal(
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedSort) },
                         modifier = Modifier.menuAnchor().fillMaxWidth(),
                          colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFFFE8357),
-                            unfocusedBorderColor = Color(0xFFE5E7EB),
-                            focusedLabelColor = Color(0xFFFE8357)
+                            focusedBorderColor = com.example.omiri.ui.theme.AppColors.BrandOrange,
+                            unfocusedBorderColor = com.example.omiri.ui.theme.AppColors.PastelGrey,
+                            focusedLabelColor = com.example.omiri.ui.theme.AppColors.BrandOrange
                         )
                     )
                     ExposedDropdownMenu(
@@ -143,7 +143,7 @@ fun FilterModal(
                 Text(
                     text = "$${priceRange.start.toInt()} - $${priceRange.endInclusive.toInt()}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFFFE8357)
+                    color = com.example.omiri.ui.theme.AppColors.BrandOrange
                 )
                 Spacer(Modifier.height(Spacing.xs))
                 RangeSlider(
@@ -152,8 +152,8 @@ fun FilterModal(
                     valueRange = 0f..1000f,
                     steps = 19,
                     colors = SliderDefaults.colors(
-                        thumbColor = Color(0xFFFE8357),
-                        activeTrackColor = Color(0xFFFE8357)
+                        thumbColor = com.example.omiri.ui.theme.AppColors.BrandOrange,
+                        activeTrackColor = com.example.omiri.ui.theme.AppColors.BrandOrange
                     )
                 )
 
@@ -187,10 +187,10 @@ fun FilterModal(
                                 },
                                 label = { Text(store.name) },
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = Color(0xFFFE8357),
+                                    selectedContainerColor = com.example.omiri.ui.theme.AppColors.BrandOrange,
                                     selectedLabelColor = Color.White,
-                                    containerColor = Color(0xFFF3F4F6),
-                                    labelColor = Color.Black
+                                    containerColor = com.example.omiri.ui.theme.AppColors.PastelGrey,
+                                    labelColor = com.example.omiri.ui.theme.AppColors.BrandInk
                                 )
                             )
                         }
@@ -209,30 +209,66 @@ fun FilterModal(
                 if (categories.isEmpty()) {
                     Text("Loading categories...", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                 } else {
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+                     // Multi-select Dropdown
+                    var expandedCategories by remember { mutableStateOf(false) }
+                    val selectedCount = selectedCategories.size
+                    val displayText = if (selectedCount > 0) {
+                        if(selectedCount == 1) selectedCategories.first() else "$selectedCount Selected"
+                    } else {
+                        "Select Categories"
+                    }
+
+                    ExposedDropdownMenuBox(
+                        expanded = expandedCategories,
+                        onExpandedChange = { expandedCategories = it },
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        categories.forEach { category ->
-                            val isSelected = category in selectedCategories
-                            FilterChip(
-                                selected = isSelected,
-                                onClick = {
-                                    selectedCategories = if (isSelected) {
-                                        selectedCategories - category
-                                    } else {
-                                        selectedCategories + category
-                                    }
-                                },
-                                label = { Text(category) },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = Color(0xFFFE8357),
-                                    selectedLabelColor = Color.White,
-                                    containerColor = Color(0xFFF3F4F6),
-                                    labelColor = Color.Black
-                                )
+                        OutlinedTextField(
+                            value = displayText,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Categories") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCategories) },
+                            modifier = Modifier.menuAnchor().fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = com.example.omiri.ui.theme.AppColors.BrandOrange,
+                                unfocusedBorderColor = com.example.omiri.ui.theme.AppColors.PastelGrey,
+                                focusedLabelColor = com.example.omiri.ui.theme.AppColors.BrandOrange
                             )
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expandedCategories,
+                            onDismissRequest = { expandedCategories = false },
+                            modifier = Modifier.heightIn(max = 300.dp) // Scrollable if many
+                        ) {
+                            categories.forEach { category ->
+                                val isSelected = category in selectedCategories
+                                DropdownMenuItem(
+                                    text = { 
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Checkbox(
+                                                checked = isSelected,
+                                                onCheckedChange = null, // Handled by item click
+                                                colors = CheckboxDefaults.colors(
+                                                    checkedColor = com.example.omiri.ui.theme.AppColors.BrandOrange,
+                                                    checkmarkColor = Color.White
+                                                )
+                                            )
+                                            Spacer(Modifier.width(8.dp))
+                                            Text(text = category)
+                                        }
+                                    },
+                                    onClick = {
+                                        selectedCategories = if (isSelected) {
+                                            selectedCategories - category
+                                        } else {
+                                            selectedCategories + category
+                                        }
+                                        // Keep menu open for multi-select
+                                    },
+                                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                                )
+                            }
                         }
                     }
                 }
@@ -262,7 +298,7 @@ fun FilterModal(
                         onCheckedChange = { hasDiscount = it },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = Color.White,
-                            checkedTrackColor = Color(0xFFFE8357)
+                            checkedTrackColor = com.example.omiri.ui.theme.AppColors.BrandOrange
                         )
                     )
                 }
@@ -292,7 +328,7 @@ fun FilterModal(
                         onCheckedChange = { onlineOnly = it },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = Color.White,
-                            checkedTrackColor = Color(0xFFFE8357)
+                            checkedTrackColor = com.example.omiri.ui.theme.AppColors.BrandOrange
                         )
                     )
                 }
@@ -335,7 +371,7 @@ fun FilterModal(
                         },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFFE8357)
+                            containerColor = com.example.omiri.ui.theme.AppColors.BrandOrange
                         )
                     ) {
                         Text("Apply Filters")

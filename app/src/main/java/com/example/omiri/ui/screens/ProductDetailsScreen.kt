@@ -97,7 +97,7 @@ fun ProductDetailsScreen(
         }
     } else if (deal == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Product not found", color = MaterialTheme.colorScheme.onBackground)
+            Text("Product not found", color = AppColors.BrandInk)
         }
     } else {
         val currentDeal = deal!! // Safe unwrapping as we checked for null
@@ -211,7 +211,7 @@ fun ProductDetailsScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        // Heart Button (Primary Action) - Red Styled
+                        // Heart Button (Primary Action) - Brand Styled
                         Button(
                             onClick = { onAddToList(currentDeal) },
                             modifier = Modifier
@@ -219,17 +219,21 @@ fun ProductDetailsScreen(
                                 .height(56.dp),
                             shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isOnList) Color(0xFFDC2626) else Color.White,
-                                contentColor = if (isOnList) Color.White else Color(0xFFDC2626)
+                                containerColor = if (isOnList) AppColors.BrandOrange else AppColors.Surface,
+                                contentColor = if (isOnList) Color.White else AppColors.BrandOrange
                             ),
-                            border = if (!isOnList) androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFDC2626)) else null,
+                            border = if (!isOnList) androidx.compose.foundation.BorderStroke(1.dp, AppColors.BrandOrange) else null,
                             elevation = ButtonDefaults.buttonElevation(0.dp)
                         ) {
                              Icon(
                                 imageVector = if (isOnList) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
                                 contentDescription = if (isOnList) "Remove from list" else "Add to list",
-                                modifier = Modifier.size(32.dp)
+                                modifier = Modifier.size(24.dp)
                             )
+                            if (!isOnList) {
+                                Spacer(Modifier.width(8.dp))
+                                Text("Save", fontWeight = FontWeight.Bold)
+                            }
                         }
                         
                         // Flyer Button (Secondary) - Solid Orange
@@ -330,7 +334,7 @@ private fun DealInfoRow(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = Color(0xFF9CA3AF),
+                    tint = AppColors.SubtleText,
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(Modifier.width(8.dp))
@@ -338,14 +342,14 @@ private fun DealInfoRow(
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF6B7280)
+                color = AppColors.MutedText
             )
         }
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.SemiBold,
-            color = if (isHighlight) Color(0xFFFE8357) else Color(0xFF111827)
+            color = if (isHighlight) AppColors.BrandOrange else AppColors.BrandInk
         )
     }
 }

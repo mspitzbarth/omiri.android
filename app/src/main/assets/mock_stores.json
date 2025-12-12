@@ -1,0 +1,35 @@
+[
+    {
+        "id": "1",
+        "retailer": "ALDI USA",
+        "store_group_id": "aldi",
+        "latitude": 37.7749,
+        "longitude": -122.4194,
+        "zipcode": "94103",
+        "address": "123 Market St",
+        "city": "San Francisco",
+        "country": "US"
+    },
+    {
+        "id": "2",
+        "retailer": "Walmart",
+        "store_group_id": "walmart",
+        "latitude": 37.7849,
+        "longitude": -122.4094,
+        "zipcode": "94103",
+        "address": "888 Mission St",
+        "city": "San Francisco",
+        "country": "US"
+    },
+    {
+        "id": "3",
+        "retailer": "Target",
+        "store_group_id": "target",
+        "latitude": 37.7649,
+        "longitude": -122.4294,
+        "zipcode": "94103",
+        "address": "450 Folsom St",
+        "city": "San Francisco",
+        "country": "US"
+    }
+]

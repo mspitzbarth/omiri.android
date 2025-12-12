@@ -116,7 +116,7 @@ fun AiChatScreen(
                         Box(
                             modifier = Modifier
                                 .size(32.dp)
-                                .background(Color(0xFFFE8357), CircleShape),
+                                .background(com.example.omiri.ui.theme.AppColors.BrandOrange, CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -292,7 +292,7 @@ fun ChatBubble(
     
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
-    val maxBubbleWidth = screenWidth * 0.8f
+    val maxBubbleWidth = screenWidth * 0.9f
 
     Row(
         modifier = Modifier
@@ -301,23 +301,6 @@ fun ChatBubble(
         horizontalArrangement = if (message.isUser) Arrangement.End else Arrangement.Start,
         verticalAlignment = Alignment.Top
     ) {
-        if (!message.isUser) {
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .background(Color(0xFFFE8357), CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = androidx.compose.ui.res.painterResource(id = com.example.omiri.R.drawable.ic_omiri_logo),
-                    contentDescription = "Bot Avatar",
-                    tint = Color.White,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-        }
-
         Column(
             horizontalAlignment = if (message.isUser) Alignment.End else Alignment.Start,
             modifier = Modifier.widthIn(max = maxBubbleWidth)
@@ -401,6 +384,15 @@ fun ChatBubble(
                             data = message.attachmentData as? Map<String, Any> ?: emptyMap()
                         )
                     }
+                    com.example.omiri.viewmodels.AttachmentType.SUGGESTIONS -> {
+                        SuggestionsRow(
+                            data = message.attachmentData as? Map<String, Any> ?: emptyMap(),
+                            onSuggestionClick = { suggestion -> 
+                                if (suggestion.startsWith("Show")) onNavigateToShoppingList()
+                                // Handle others or just send as text
+                            }
+                        )
+                    }
                     else -> {}
                 }
             }
@@ -413,59 +405,73 @@ fun ChatBubble(
 @Composable
 fun ShoppingListUpdateCard(data: Map<String, Any>, onViewList: () -> Unit) {
     val items = data["items"] as? List<String> ?: emptyList()
+    val addedCount = data["addedCount"] ?: items.size
     
     Card(
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(24.dp), // Increased radius
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
-        modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.md)
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)), // Consistent border
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
-                    modifier = Modifier.size(40.dp).background(Color(0xFFDCFCE7), CircleShape),
+                    modifier = Modifier.size(48.dp).background(com.example.omiri.ui.theme.AppColors.PastelGreen, RoundedCornerShape(12.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(androidx.compose.material.icons.Icons.AutoMirrored.Outlined.List, null, tint = Color(0xFF16A34A))
+                    Icon(androidx.compose.material.icons.Icons.AutoMirrored.Outlined.List, null, tint = com.example.omiri.ui.theme.AppColors.PastelGreenText, modifier = Modifier.size(24.dp))
                 }
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(16.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("Shopping List Update", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
-                    Text("Added: ${data["addedCount"]} items", color = Color.Gray, style = MaterialTheme.typography.bodySmall)
+                    Text("Shopping List Update", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = com.example.omiri.ui.theme.AppColors.BrandInk)
+                    Text("Added: $addedCount items", color = com.example.omiri.ui.theme.AppColors.MutedText, style = MaterialTheme.typography.bodyMedium)
                 }
-                Surface(color = Color(0xFFDCFCE7), shape = RoundedCornerShape(4.dp)) {
-                    Text("Synced", modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), color = Color(0xFF16A34A), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                }
-            }
-            
-            Spacer(Modifier.height(12.dp))
-            items.take(4).forEach { item ->
-                Row(modifier = Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(androidx.compose.material.icons.Icons.Outlined.CheckCircle, null, tint = Color(0xFFD1D5DB), modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(item, style = MaterialTheme.typography.bodyMedium, color = Color(0xFF374151))
+                Surface(color = com.example.omiri.ui.theme.AppColors.PastelGreen, shape = RoundedCornerShape(100.dp)) {
+                    Text("Synced", modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp), color = com.example.omiri.ui.theme.AppColors.PastelGreenText, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                 }
             }
             
             Spacer(Modifier.height(16.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            
+            // Limit to 3 items, show +X more
+            val displayItems = items.take(3)
+            val remaining = if (items.size > 3) items.size - 3 else 0
+            
+            displayItems.forEach { item ->
+                Row(modifier = Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(androidx.compose.material.icons.Icons.Outlined.CheckCircle, null, tint = Color(0xFFD1D5DB), modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(12.dp))
+                    Text(item, style = MaterialTheme.typography.bodyLarge, color = Color(0xFF374151))
+                }
+            }
+            
+            if (remaining > 0) {
+                 Row(modifier = Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Spacer(Modifier.width(32.dp)) // Indent to align with text above
+                    Text("+$remaining more", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF9CA3AF))
+                }
+            }
+            
+            Spacer(Modifier.height(20.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Button(
                     onClick = onViewList,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFE8357)),
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(8.dp)
+                    colors = ButtonDefaults.buttonColors(containerColor = com.example.omiri.ui.theme.AppColors.BrandOrange),
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = ButtonDefaults.buttonElevation(0.dp)
                 ) {
-                    Text("View List")
+                    Text("View List", fontWeight = FontWeight.SemiBold)
                 }
-                OutlinedButton(
+                Button(
                     onClick = { },
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF374151)),
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(8.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFD1D5DB))
+                    colors = ButtonDefaults.buttonColors(containerColor = com.example.omiri.ui.theme.AppColors.PastelGrey, contentColor = com.example.omiri.ui.theme.AppColors.BrandInk),
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = ButtonDefaults.buttonElevation(0.dp)
                 ) {
-                    Text("Add More")
+                    Text("Add More", fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -477,63 +483,113 @@ fun DealsMatchedCard(data: Map<String, Any>) {
     val items = data["items"] as? List<Map<String, String>> ?: emptyList()
     
     Card(
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
-        modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.md)
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(40.dp).background(Color(0xFFFFEDD5), CircleShape), contentAlignment = Alignment.Center) {
-                    Icon(androidx.compose.material.icons.Icons.Outlined.LocalOffer, null, tint = Color(0xFFFE8357))
+                Box(modifier = Modifier.size(48.dp).background(com.example.omiri.ui.theme.AppColors.PastelOrange, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+                    Icon(androidx.compose.material.icons.Icons.Outlined.LocalOffer, null, tint = com.example.omiri.ui.theme.AppColors.PastelOrangeText, modifier = Modifier.size(24.dp))
                 }
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(16.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("Deals Matched to Your List", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
-                    Text("${data["count"]} items on sale", color = Color.Gray, style = MaterialTheme.typography.bodySmall)
+                    Text("Deals Matched to Your List", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = com.example.omiri.ui.theme.AppColors.BrandInk)
+                    Text("${data["count"]} items on sale", color = com.example.omiri.ui.theme.AppColors.MutedText, style = MaterialTheme.typography.bodyMedium)
                 }
-                Surface(color = Color(0xFFFE8357), shape = RoundedCornerShape(16.dp)) {
-                    Text(data["badge"]?.toString() ?: "Best Saves", modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), color = Color.White, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                Surface(color = com.example.omiri.ui.theme.AppColors.BrandOrange, shape = RoundedCornerShape(100.dp)) {
+                    Text(data["badge"]?.toString() ?: "Best Saves", modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp), color = Color.White, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                 }
             }
             
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(16.dp))
             items.forEach { item ->
-                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(32.dp).background(Color(0xFFF3F4F6), RoundedCornerShape(4.dp)), contentAlignment = Alignment.Center) {
+                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.size(40.dp).background(com.example.omiri.ui.theme.AppColors.PastelYellow, RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
                          // Simple icon placeholder logic
                          val iconVec = when(item["icon"]) {
-                             "wheat" -> androidx.compose.material.icons.Icons.Outlined.Grass // Placeholder
-                             "meat" -> androidx.compose.material.icons.Icons.Outlined.Restaurant // Placeholder
+                             "wheat" -> androidx.compose.material.icons.Icons.Outlined.Grass
+                             "meat" -> androidx.compose.material.icons.Icons.Outlined.Restaurant
                              else -> androidx.compose.material.icons.Icons.Outlined.LocalDining
                          }
-                         Icon(iconVec, null, tint = Color(0xFF6B7280), modifier = Modifier.size(16.dp))
+                         // Apply tint based on type somewhat
+                         val tint = com.example.omiri.ui.theme.AppColors.PastelYellowText 
+                         Icon(iconVec, null, tint = tint, modifier = Modifier.size(20.dp))
                     }
-                    Spacer(Modifier.width(12.dp))
+                    Spacer(Modifier.width(16.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(item["name"] ?: "", fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodyMedium)
+                        Text(item["name"] ?: "", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge, color = com.example.omiri.ui.theme.AppColors.BrandInk)
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(item["price"] ?: "", color = Color(0xFFFE8357), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                            Spacer(Modifier.width(6.dp))
-                            Text(item["oldPrice"] ?: "", color = Color.Gray, style = MaterialTheme.typography.bodySmall, textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)
+                            Text(item["price"] ?: "", color = com.example.omiri.ui.theme.AppColors.BrandOrange, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
                             Spacer(Modifier.width(8.dp))
-                            Surface(color = Color(0xFFFFEDD5), shape = RoundedCornerShape(4.dp)) {
-                                Text(item["discount"] ?: "", modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp), color = Color(0xFFFE8357), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                            Text(item["oldPrice"] ?: "", color = com.example.omiri.ui.theme.AppColors.MutedText, style = MaterialTheme.typography.bodySmall, textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)
+                            Spacer(Modifier.width(12.dp))
+                            Surface(color = com.example.omiri.ui.theme.AppColors.PastelOrange, shape = RoundedCornerShape(4.dp)) {
+                                Text(item["discount"] ?: "", modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), color = com.example.omiri.ui.theme.AppColors.PastelOrangeText, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
                 }
             }
             
-            Spacer(Modifier.height(16.dp))
-            Button(
-                onClick = {},
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFE8357)),
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp)
+            Spacer(Modifier.height(20.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(
+                    onClick = {},
+                    colors = ButtonDefaults.buttonColors(containerColor = com.example.omiri.ui.theme.AppColors.BrandOrange),
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = ButtonDefaults.buttonElevation(0.dp)
+                ) {
+                    Text("View All Deals", fontWeight = FontWeight.SemiBold)
+                }
+                Button(
+                    onClick = { },
+                    colors = ButtonDefaults.buttonColors(containerColor = com.example.omiri.ui.theme.AppColors.PastelGrey, contentColor = com.example.omiri.ui.theme.AppColors.BrandInk),
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = ButtonDefaults.buttonElevation(0.dp)
+                ) {
+                    Text("Add to Cart", fontWeight = FontWeight.SemiBold)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SuggestionsRow(data: Map<String, Any>, onSuggestionClick: (String) -> Unit) {
+    val suggestions = data["suggestions"] as? List<String> ?: emptyList()
+    
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp), // Spacing between chips
+    ) {
+        suggestions.forEach { suggestion ->
+            Surface(
+                onClick = { onSuggestionClick(suggestion) },
+                shape = RoundedCornerShape(100.dp), // Fully rounded pills
+                color = Color(0xFFF3F4F6),
+                modifier = Modifier.weight(1f) // Distribute evenly
             ) {
-                Text("View All Deals")
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.padding(vertical = 12.dp, horizontal = 4.dp)
+                ) {
+                    Text(
+                        text = suggestion,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF374151),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        lineHeight = 16.sp,
+                        maxLines = 2
+                    )
+                }
             }
         }
     }
@@ -548,20 +604,20 @@ fun StoreRouteCard(data: Map<String, Any>) {
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
-        modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.md)
+        modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(40.dp).background(Color(0xFFDBEAFE), CircleShape), contentAlignment = Alignment.Center) {
-                    Icon(androidx.compose.material.icons.Icons.Outlined.Map, null, tint = Color(0xFF2563EB))
+                Box(modifier = Modifier.size(40.dp).background(com.example.omiri.ui.theme.AppColors.PastelBlue, CircleShape), contentAlignment = Alignment.Center) {
+                    Icon(androidx.compose.material.icons.Icons.Outlined.Map, null, tint = com.example.omiri.ui.theme.AppColors.PastelBlueText)
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Text("Best Store Route", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
-                    Text("${data["stops"]} stops • Save ${data["savings"]}", color = Color.Gray, style = MaterialTheme.typography.bodySmall)
+                    Text("${data["stops"]} stops • Save ${data["savings"]}", color = com.example.omiri.ui.theme.AppColors.MutedText, style = MaterialTheme.typography.bodySmall)
                 }
-                Surface(color = Color(0xFFDBEAFE), shape = RoundedCornerShape(16.dp)) {
-                    Text(data["badge"]?.toString() ?: "Route", modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), color = Color(0xFF2563EB), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                Surface(color = com.example.omiri.ui.theme.AppColors.PastelBlue, shape = RoundedCornerShape(16.dp)) {
+                    Text(data["badge"]?.toString() ?: "Route", modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), color = com.example.omiri.ui.theme.AppColors.PastelBlueText, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                 }
             }
             
@@ -621,7 +677,7 @@ fun RecipeIdeasCard(data: Map<String, Any>) {
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
-        modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.md)
+        modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
              Row(verticalAlignment = Alignment.CenterVertically) {
@@ -769,15 +825,14 @@ fun ChatInputBar(
 
     Surface(
         tonalElevation = 0.dp,
-            shadowElevation = 4.dp,
+        shadowElevation = 4.dp,
         color = Color.White
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .navigationBarsPadding()
-                .imePadding()
-                .padding(start = Spacing.md, end = Spacing.md, top = 8.dp, bottom = 2.dp),
+                .windowInsetsPadding(WindowInsets.ime.union(WindowInsets.navigationBars))
+                .padding(vertical = 12.dp, horizontal = Spacing.md),
             verticalArrangement = Arrangement.spacedBy(Spacing.sm)
         ) {
 
@@ -830,7 +885,7 @@ fun ChatInputBar(
                 Surface(
                     modifier = Modifier
                         .weight(1f)
-                        .height(52.dp),
+                        .height(48.dp),
                     shape = RoundedCornerShape(26.dp), // Fully rounded pill
                     color = Color(0xFFF3F4F6), // Light grey like SearchBar
                     tonalElevation = 0.dp
@@ -848,9 +903,9 @@ fun ChatInputBar(
                             singleLine = true,
                             enabled = !isLoading && isOnline,
                             textStyle = MaterialTheme.typography.bodyLarge.copy(
-                                color = if (isOnline) Color(0xFF111827) else Color(0xFF9CA3AF)
+                                color = if (isOnline) com.example.omiri.ui.theme.AppColors.BrandInk else com.example.omiri.ui.theme.AppColors.SubtleText
                             ),
-                            cursorBrush = androidx.compose.ui.graphics.SolidColor(Color(0xFFFE8357)),
+                            cursorBrush = androidx.compose.ui.graphics.SolidColor(com.example.omiri.ui.theme.AppColors.BrandOrange),
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                             keyboardActions = KeyboardActions(onSend = { onSend() }),
                             decorationBox = { innerTextField ->
@@ -899,26 +954,19 @@ fun ChatInputBar(
                     onClick = onSend,
                     enabled = value.isNotBlank() && !isLoading && isOnline,
                     colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = Color(0xFFFE8357),
-                        disabledContainerColor = Color(0xFFE5E7EB),
+                        containerColor = com.example.omiri.ui.theme.AppColors.BrandOrange,
+                        disabledContainerColor = com.example.omiri.ui.theme.AppColors.PastelGrey,
                         contentColor = Color.White,
-                        disabledContentColor = Color(0xFF9CA3AF)
+                        disabledContentColor = com.example.omiri.ui.theme.AppColors.MutedText
                     ),
                     modifier = Modifier.size(48.dp)
                 ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp,
-                            color = Color.White
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Send,
-                            contentDescription = "Send",
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
+                    // Removed Spinner per request
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Send,
+                        contentDescription = "Send",
+                        modifier = Modifier.size(22.dp)
+                    )
                 }
             }
         }

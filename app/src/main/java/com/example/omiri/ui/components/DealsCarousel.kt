@@ -37,7 +37,7 @@ fun DealsCarousel(
         // Formula: Width = (AvailableWidth - (N * Gap)) / (N + 0.5)
         // We iterate to find an N that results in a card width closest to our ideal target (e.g., 160.dp)
         
-        val targetWidth = 160.dp
+        val targetWidth = 240.dp // Wider cards as requested
         val horizontalPadding = Spacing.lg * 2
         val gap = Spacing.lg // Increased to match padding so previous item is fully cleared
         

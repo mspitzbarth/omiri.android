@@ -41,10 +41,10 @@ fun MixedFilterChipsRow(
     initialToggled: Set<String> = emptySet(),
     onSelectedChange: (String) -> Unit = {},
     onToggledChange: (Set<String>) -> Unit = {},
-    selectedBackgroundColor: Color = Color(0xFFFE6B36),
-    selectedTextColor: Color = Color(0xFFFFFFFF),
-    unselectedBackgroundColor: Color = Color.Transparent,
-    unselectedTextColor: Color = MaterialTheme.colorScheme.onSurface
+    selectedBackgroundColor: Color = com.example.omiri.ui.theme.AppColors.BrandOrange,
+    selectedTextColor: Color = com.example.omiri.ui.theme.AppColors.Surface,
+    unselectedBackgroundColor: Color = com.example.omiri.ui.theme.AppColors.PastelGrey,
+    unselectedTextColor: Color = com.example.omiri.ui.theme.AppColors.BrandInk
 ) {
     var selected by remember { mutableStateOf(initialSelected) }
     var toggled by remember { mutableStateOf(initialToggled) }

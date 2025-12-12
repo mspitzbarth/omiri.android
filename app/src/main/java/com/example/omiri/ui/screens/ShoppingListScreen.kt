@@ -46,6 +46,7 @@ fun ShoppingListScreen(
     val filteredItems by viewModel.filteredItems.collectAsState()
     val availableCategories by viewModel.availableCategories.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
+    val filterStoreName by viewModel.filterStoreName.collectAsState()
     
     // Selection Mode State
     val selectedItemIds by viewModel.selectedItemIds.collectAsState()
@@ -125,68 +126,71 @@ fun ShoppingListScreen(
             ) {
                 // Screen Header Section
                 item {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = Spacing.lg)
-                            .padding(top = Spacing.md, bottom = Spacing.md)
+                    Surface(
+                        color = Color.White,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        // Caption
-                        Text(
-                            text = "Active List",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = Color(0xFF6B7280) // Gray 500
-                        )
-                        
-                        // Title Row
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth().clickable { showListSelectionSheet = true }
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = Spacing.lg)
+                                .padding(top = Spacing.md, bottom = Spacing.md)
                         ) {
+                            // Caption
                             Text(
-                                text = currentList?.name ?: "Weekly Groceries",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF111827)
+                                text = "Active List",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = Color(0xFF6B7280) // Gray 500
                             )
-                            Spacer(Modifier.width(8.dp))
-                            Icon(
-                                imageVector = Icons.Outlined.KeyboardArrowDown,
-                                contentDescription = "Switch List",
-                                tint = Color(0xFF6B7280)
-                            )
-                            Spacer(Modifier.weight(1f))
                             
-                            // Edit Icon
-                            IconButton(onClick = { /* Edit List Name? */ }) {
-                                Box(
-                                    modifier = Modifier.size(40.dp).background(Color(0xFFF3F4F6), CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(Icons.Outlined.Edit, "Edit", tint = Color(0xFF4B5563), modifier = Modifier.size(20.dp))
+                            // Title Row
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth().clickable { showListSelectionSheet = true }
+                            ) {
+                                Text(
+                                    text = currentList?.name ?: "Weekly Groceries",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF111827)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Icon(
+                                    imageVector = Icons.Outlined.KeyboardArrowDown,
+                                    contentDescription = "Switch List",
+                                    tint = Color(0xFF6B7280)
+                                )
+                                Spacer(Modifier.weight(1f))
+                                
+                                // Edit Icon
+                                IconButton(onClick = { /* Edit List Name? */ }) {
+                                    Box(
+                                        modifier = Modifier.size(40.dp).background(Color(0xFFF3F4F6), CircleShape),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(Icons.Outlined.Edit, "Edit", tint = Color(0xFF4B5563), modifier = Modifier.size(20.dp))
+                                    }
                                 }
                             }
-                        }
-                        
-
-
-                        Spacer(Modifier.height(4.dp))
-                        
-                        // Stats Row
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "$totalItemsCount items • $matchedDealsCount matched deals",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFF6B7280)
-                            )
-                            Spacer(Modifier.width(16.dp))
-                            Text(
-                                text = "You saved €${String.format("%.2f", savedAmount)} this week",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFF16A34A), // Green
-                                fontWeight = FontWeight.Bold
-                            )
+                            
+                            Spacer(Modifier.height(4.dp))
+                            
+                            // Stats Row
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "$totalItemsCount items • $matchedDealsCount matched deals",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color(0xFF6B7280)
+                                )
+                                Spacer(Modifier.width(16.dp))
+                                Text(
+                                    text = "You saved €${String.format("%.2f", savedAmount)} this week",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color(0xFF16A34A), // Green
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 }
@@ -200,8 +204,10 @@ fun ShoppingListScreen(
                             .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // All Chip (Active if selectedCategory is null)
-                        val isAllSelected = selectedCategory == null
+                        // Store Filter Chip removed as per request - handled inside RecommendedStoreRunCard visual state
+
+                        // All Chip (Active if selectedCategory is null AND filterStore is null)
+                        val isAllSelected = selectedCategory == null && filterStoreName == null
                         Box(modifier = Modifier.clickable { viewModel.selectCategory(null) }) {
                             FilterChipStub(
                                 text = "All ($totalItemsCount)", 
@@ -229,7 +235,16 @@ fun ShoppingListScreen(
                     if (smartPlan != null) {
                         RecommendedStoreRunCard(
                             plan = smartPlan!!,
-                            modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md)
+                            selectedStore = filterStoreName,
+                            containerColor = Color(0xFFEFF6FF), // Blue 50
+                            modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md),
+                            onStoreClick = { storeName, items ->
+                                if (filterStoreName == storeName) {
+                                    viewModel.clearStoreFilter()
+                                } else {
+                                    viewModel.setStoreFilter(storeName, items)
+                                }
+                            }
                         )
                     }
                 }

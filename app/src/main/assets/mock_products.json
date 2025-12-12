@@ -1,0 +1,259 @@
+[
+    {
+        "id": "1",
+        "pdf_id": 101,
+        "title": "Premium Wireless Headphones",
+        "description": "High fidelity audio with noise cancelling technology.",
+        "brand": "TechSound",
+        "price_amount": 79.00,
+        "price_currency": "$",
+        "original_price": 159.00,
+        "discount_percentage": 50.0,
+        "has_discount": true,
+        "categories": [
+            "Electronics",
+            "Audio"
+        ],
+        "badges": [
+            "Hot Deal",
+            "Best Seller"
+        ],
+        "page_number": 1,
+        "confidence": 0.98,
+        "retailer": "TechMart",
+        "country": "US",
+        "zipcode": "90210",
+        "online_only": false,
+        "featured": true,
+        "available_from": "2024-01-01T00:00:00",
+        "available_until": "2024-12-31T23:59:59",
+        "availability_text": "In Stock",
+        "pdf_source_url": null,
+        "product_image_url": "https://placehold.co/600x400/png?text=Headphones",
+        "search_term": "headphones"
+    },
+    {
+        "id": "2",
+        "pdf_id": 102,
+        "title": "Designer Sunglasses",
+        "description": "Stylish sunglasses for the modern look.",
+        "brand": "SunGlare",
+        "price_amount": 45.00,
+        "price_currency": "$",
+        "original_price": 89.00,
+        "discount_percentage": 49.0,
+        "has_discount": true,
+        "categories": [
+            "Accessories",
+            "Fashion"
+        ],
+        "badges": [
+            "Summer Sale"
+        ],
+        "page_number": 2,
+        "confidence": 0.95,
+        "retailer": "SunStyle",
+        "country": "US",
+        "zipcode": "10001",
+        "online_only": false,
+        "featured": true,
+        "available_from": "2024-05-01T00:00:00",
+        "available_until": "2024-08-31T23:59:59",
+        "availability_text": "Limited Stock",
+        "pdf_source_url": null,
+        "product_image_url": "https://placehold.co/600x400/png?text=Sunglasses",
+        "search_term": "sunglasses"
+    },
+    {
+        "id": "3",
+        "pdf_id": 103,
+        "title": "Smart Fitness Watch Pro",
+        "description": "Track your fitness goals with precision.",
+        "brand": "FitTech",
+        "price_amount": 129.00,
+        "price_currency": "$",
+        "original_price": 249.00,
+        "discount_percentage": 48.0,
+        "has_discount": true,
+        "categories": [
+            "Electronics",
+            "Fitness"
+        ],
+        "badges": [
+            "New Arrival"
+        ],
+        "page_number": 1,
+        "confidence": 0.99,
+        "retailer": "FitGear",
+        "country": "US",
+        "zipcode": "94103",
+        "online_only": true,
+        "featured": true,
+        "available_from": "2024-02-01T00:00:00",
+        "available_until": "2024-12-31T23:59:59",
+        "availability_text": "Pre-order",
+        "pdf_source_url": null,
+        "product_image_url": "https://placehold.co/600x400/png?text=Smart+Watch",
+        "search_term": "smart watch"
+    },
+    {
+        "id": "4",
+        "pdf_id": 104,
+        "title": "Portable Bluetooth Speaker",
+        "description": "Powerful sound in a compact design.",
+        "brand": "AudioMax",
+        "price_amount": 39.00,
+        "price_currency": "$",
+        "original_price": 79.00,
+        "discount_percentage": 51.0,
+        "has_discount": true,
+        "categories": [
+            "Electronics",
+            "Audio"
+        ],
+        "badges": [
+            "Clearance"
+        ],
+        "page_number": 3,
+        "confidence": 0.92,
+        "retailer": "AudioHub",
+        "country": "US",
+        "zipcode": "60601",
+        "online_only": false,
+        "featured": true,
+        "available_from": "2024-03-01T00:00:00",
+        "available_until": "2024-06-30T23:59:59",
+        "availability_text": "In Stock",
+        "pdf_source_url": null,
+        "product_image_url": "https://placehold.co/600x400/png?text=Speaker",
+        "search_term": "speaker"
+    },
+    {
+        "id": "5",
+        "pdf_id": 105,
+        "title": "Adventure Backpack 30L",
+        "description": "Durable backpack for hiking and travel.",
+        "brand": "TrailBlazer",
+        "price_amount": 59.00,
+        "price_currency": "$",
+        "original_price": 119.00,
+        "discount_percentage": 50.0,
+        "has_discount": true,
+        "categories": [
+            "Outdoors",
+            "Travel"
+        ],
+        "badges": [
+            "Durable"
+        ],
+        "page_number": 1,
+        "confidence": 0.97,
+        "retailer": "TravelGo",
+        "country": "US",
+        "zipcode": "80202",
+        "online_only": false,
+        "featured": true,
+        "available_from": "2024-04-01T00:00:00",
+        "available_until": "2024-09-30T23:59:59",
+        "availability_text": "In Stock",
+        "pdf_source_url": null,
+        "product_image_url": "https://placehold.co/600x400/png?text=Backpack",
+        "search_term": "backpack"
+    },
+    {
+        "id": "6",
+        "pdf_id": 106,
+        "title": "Waterproof Phone Case",
+        "description": "Protect your phone from water and dust.",
+        "brand": "SafeCase",
+        "price_amount": 19.00,
+        "price_currency": "$",
+        "original_price": 39.00,
+        "discount_percentage": 51.0,
+        "has_discount": true,
+        "categories": [
+            "Accessories",
+            "Mobile"
+        ],
+        "badges": [
+            "Waterproof"
+        ],
+        "page_number": 2,
+        "confidence": 0.96,
+        "retailer": "PhoneShield",
+        "country": "US",
+        "zipcode": "33101",
+        "online_only": true,
+        "featured": true,
+        "available_from": "2024-01-01T00:00:00",
+        "available_until": "2024-12-31T23:59:59",
+        "availability_text": "In Stock",
+        "pdf_source_url": null,
+        "product_image_url": "https://placehold.co/600x400/png?text=Phone+Case",
+        "search_term": "phone case"
+    },
+    {
+        "id": "c1",
+        "pdf_id": 201,
+        "title": "Tide Laundry Detergent 64 oz",
+        "description": "Powerful cleaning for your clothes.",
+        "brand": "Tide",
+        "price_amount": 2.99,
+        "price_currency": "$",
+        "original_price": 4.99,
+        "discount_percentage": 40.0,
+        "has_discount": true,
+        "categories": [
+            "Cleaning",
+            "Household"
+        ],
+        "badges": [
+            "Essential"
+        ],
+        "page_number": 1,
+        "confidence": 0.99,
+        "retailer": "ALDI USA",
+        "country": "US",
+        "zipcode": "60510",
+        "online_only": false,
+        "featured": false,
+        "available_from": "2024-01-01T00:00:00",
+        "available_until": "2024-12-31T23:59:59",
+        "availability_text": "In Stock",
+        "pdf_source_url": null,
+        "product_image_url": "https://placehold.co/600x400/png?text=Detergent",
+        "search_term": "detergent"
+    },
+    {
+        "id": "c2",
+        "pdf_id": 202,
+        "title": "Lysol Disinfectant Spray 19 oz",
+        "description": "Kills 99.9% of viruses and bacteria.",
+        "brand": "Lysol",
+        "price_amount": 3.49,
+        "price_currency": "$",
+        "original_price": 5.99,
+        "discount_percentage": 42.0,
+        "has_discount": true,
+        "categories": [
+            "Cleaning",
+            "Household"
+        ],
+        "badges": [
+            "Disinfectant"
+        ],
+        "page_number": 1,
+        "confidence": 0.98,
+        "retailer": "Walmart",
+        "country": "US",
+        "zipcode": "72712",
+        "online_only": false,
+        "featured": false,
+        "available_from": "2024-01-01T00:00:00",
+        "available_until": "2024-12-31T23:59:59",
+        "availability_text": "In Stock",
+        "pdf_source_url": null,
+        "product_image_url": "https://placehold.co/600x400/png?text=Disinfectant",
+        "search_term": "disinfectant"
+    }
+]

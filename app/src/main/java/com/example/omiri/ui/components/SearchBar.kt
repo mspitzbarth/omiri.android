@@ -51,7 +51,7 @@ fun OmiriSearchBar(
             .fillMaxWidth()
             .height(height),
         shape = shape,
-        color = Color(0xFFF3F4F6),
+        color = com.example.omiri.ui.theme.AppColors.PastelGrey,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
@@ -64,7 +64,7 @@ fun OmiriSearchBar(
             Icon(
                 imageVector = Icons.Outlined.Search,
                 contentDescription = null,
-                tint = Color(0xFF9DA3AF)
+                tint = com.example.omiri.ui.theme.AppColors.SubtleText
             )
 
             Spacer(Modifier.width(12.dp))
@@ -76,7 +76,8 @@ fun OmiriSearchBar(
                 if (query.isEmpty()) {
                     Text(
                         text = placeholder,
-                        color = Color(0xFF9DA3AF),
+
+                        color = com.example.omiri.ui.theme.AppColors.SubtleText,
                         style = MaterialTheme.typography.bodyLarge,
                         maxLines = 1,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
@@ -91,9 +92,9 @@ fun OmiriSearchBar(
                     },
                     singleLine = true,
                     textStyle = MaterialTheme.typography.bodyLarge.copy(
-                        color = Color(0xFF9DA3AF)
+                        color = com.example.omiri.ui.theme.AppColors.SubtleText
                     ),
-                    cursorBrush = SolidColor(Color(0xFF9DA3AF)),
+                    cursorBrush = SolidColor(com.example.omiri.ui.theme.AppColors.BrandOrange),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -118,7 +119,7 @@ fun OmiriSearchBar(
                 Icon(
                     imageVector = Icons.Outlined.Mic,
                     contentDescription = "Voice search",
-                    tint = Color(0xFF9DA3AF)
+                    tint = com.example.omiri.ui.theme.AppColors.SubtleText
                 )
             }
         }

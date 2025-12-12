@@ -129,14 +129,38 @@ class ShoppingListViewModel(application: Application) : AndroidViewModel(applica
             .sortedByDescending { it.count }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val filteredItems: StateFlow<List<ShoppingItem>> = combine(currentList, _searchQuery, _selectedCategory) { list, query, categoryId ->
+    // List Filtering (e.g. by Store Run)
+    private val _filterItemNames = MutableStateFlow<List<String>?>(null)
+    val filterItemNames: StateFlow<List<String>?> = _filterItemNames.asStateFlow()
+
+    private val _filterStoreName = MutableStateFlow<String?>(null)
+    val filterStoreName: StateFlow<String?> = _filterStoreName.asStateFlow()
+
+    fun setStoreFilter(storeName: String, itemNames: List<String>) {
+        _filterStoreName.value = storeName
+        _filterItemNames.value = itemNames
+    }
+
+    fun clearStoreFilter() {
+        _filterStoreName.value = null
+        _filterItemNames.value = null
+    }
+
+    val filteredItems: StateFlow<List<ShoppingItem>> = combine(currentList, _searchQuery, _selectedCategory, _filterItemNames) { list, query, categoryId, filterNames ->
         val items = list?.items ?: emptyList()
         var result = items
         
+        // 1. Filter by Store/Specific Items
+        if (filterNames != null) {
+            result = result.filter { item -> filterNames.any { it.equals(item.name, ignoreCase = true) } }
+        }
+
+        // 2. Filter by Category
         if (categoryId != null) {
             result = result.filter { it.categoryId == categoryId }
         }
         
+        // 3. Filter by Search Query
         if (query.isNotEmpty()) {
             result = result.filter { it.name.contains(query, ignoreCase = true) }
         }

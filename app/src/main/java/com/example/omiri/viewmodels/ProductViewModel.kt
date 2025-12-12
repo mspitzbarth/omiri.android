@@ -60,6 +60,9 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
 
     private val _networkErrorType = MutableStateFlow<com.example.omiri.utils.NetworkErrorType?>(null)
     val networkErrorType: StateFlow<com.example.omiri.utils.NetworkErrorType?> = _networkErrorType.asStateFlow()
+
+    private val _isMockMode = MutableStateFlow(false)
+    val isMockMode: StateFlow<Boolean> = _isMockMode.asStateFlow()
     
     private val _shoppingListMatches = MutableStateFlow<Map<String, List<Deal>>>(emptyMap())
     val shoppingListMatches: StateFlow<Map<String, List<Deal>>> = _shoppingListMatches.asStateFlow()
@@ -230,6 +233,30 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
                 _shoppingListDeals.value = syncDealsState(_shoppingListDeals.value)
             }
         }
+        
+        // Observe Mock Mode Preference
+        viewModelScope.launch {
+            userPreferences.showDummyChatData.distinctUntilChanged().collect { show ->
+                val prevMode = _isMockMode.value
+                _isMockMode.value = show
+                
+                // If mode changed, we must reload everything to switch between Real <-> Mock data
+                // Or if enabled and empty, load.
+                if (prevMode != show || (show && _featuredDeals.value.isEmpty())) {
+                    Log.d(TAG, "Mock Mode changed to $show. Clearing and reloading data.")
+                    
+                    // Clear existing data so 'loadIfNeeded' validations pass
+                    _featuredDeals.value = emptyList()
+                    _allDeals.value = emptyList()
+                    _shoppingListDeals.value = emptyList()
+                    _currentPage.value = 1
+                    _hasMore.value = true
+                    
+                    loadProducts() // Reload Home/Featured
+                    // Note: 'All Deals' will be reloaded next time the screen is visited via 'loadAllDealsIfNeeded'
+                }
+            }
+        }
     }
 
     /**
@@ -362,56 +389,23 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
                 
                 _loadingProgress.value = 0.2f // Preferences loaded
                 
-                // Use new Sync Endpoint
-                val result = repository.getAppSync(country = country)
-                
-                result.onSuccess { response -> 
-                     _loadingProgress.value = 0.8f
+                // App Sync
+                if (_isMockMode.value) {
+                     Log.d(TAG, "Mock Mode: Loading local JSON data")
+                     val mockResponse = getMockAppSyncResponse()
+                     handleAppSyncResponse(mockResponse, country, selectedStores)
+                } else {
+                     // Use new Sync Endpoint
+                     val result = repository.getAppSync(country = country)
                      
-                     // 1. Featured Deals
-                     val featured = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { 
-                         response.featuredDeals.toDeals() 
+                     result.onSuccess { response -> 
+                         handleAppSyncResponse(response, country, selectedStores)
+                     }.onFailure { error ->
+                        val errorMsg = "Sync failed: ${error.message}"
+                        Log.e(TAG, errorMsg, error)
+                        _error.value = errorMsg
+                        _networkErrorType.value = com.example.omiri.utils.NetworkErrorParser.parseError(error)
                      }
-                     _featuredDeals.value = featured
-                     userPreferences.saveCachedProducts("featured", response.featuredDeals)
-                     
-                     // 2. Categories
-                     if (!response.categories.isNullOrEmpty()) {
-                         _categories.value = response.categories
-                         userPreferences.saveCachedCategories(response.categories)
-                     }
-                     
-                     // 3. Stores
-                     if (!response.stores.isNullOrEmpty()) {
-                         cachedStores = response.stores
-                         cachedStoresCountry = country
-                         userPreferences.saveCachedStores(country, response.stores)
-                         
-                         // Update available stores filter options
-                         updateAvailableStores(selectedStores)
-                         
-                         // Determine retailers string for cache if needed
-                         val storesForCountry = selectedStores.filter { it.endsWith("_$country", ignoreCase = true) }
-                         if (storesForCountry.isNotEmpty()) {
-                             val retailers = storesForCountry.mapNotNull { id -> 
-                                 response.stores.find { it.id.toString() == id }?.retailer 
-                             }.distinct().joinToString(",")
-                             userPreferences.saveCachedRetailersString(retailers)
-                         }
-                     }
-                     
-                     Log.d(TAG, "App Sync completed in ${System.currentTimeMillis() - start}ms")
-                     
-                     // Trigger Smart Plan matches in background
-                    launch {
-                        executeCheckShoppingListMatches() 
-                    }
-                    
-                }.onFailure { error ->
-                    val errorMsg = "Sync failed: ${error.message}"
-                    Log.e(TAG, errorMsg, error)
-                    _error.value = errorMsg
-                    _networkErrorType.value = com.example.omiri.utils.NetworkErrorParser.parseError(error)
                 }
                 
             } catch (e: Exception) {
@@ -423,6 +417,80 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
                 _isLoading.value = false
                 _loadingProgress.value = 1.0f // Done
             }
+        }
+    }
+    
+    private suspend fun handleAppSyncResponse(response: com.example.omiri.data.api.models.AppSyncResponse, country: String?, selectedStores: Set<String>) {
+         _loadingProgress.value = 0.8f
+         
+         // 1. Featured Deals
+         val featured = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { 
+             response.featuredDeals.toDeals() 
+         }
+         _featuredDeals.value = featured
+         if (!_isMockMode.value) userPreferences.saveCachedProducts("featured", response.featuredDeals)
+         
+         // 2. Categories
+         if (!response.categories.isNullOrEmpty()) {
+             _categories.value = response.categories
+             if (!_isMockMode.value) userPreferences.saveCachedCategories(response.categories)
+         }
+         
+         // 3. Stores
+         if (!response.stores.isNullOrEmpty()) {
+             cachedStores = response.stores
+             cachedStoresCountry = country
+             if (!_isMockMode.value) userPreferences.saveCachedStores(country ?: "DE", response.stores)
+             
+             // Update available stores filter options
+             updateAvailableStores(selectedStores)
+             
+             // Determine retailers string for cache if needed
+             if (country != null) {
+                 val storesForCountry = selectedStores.filter { it.endsWith("_$country", ignoreCase = true) }
+                 if (storesForCountry.isNotEmpty()) {
+                     val retailers = storesForCountry.mapNotNull { id -> 
+                         response.stores.find { it.id.toString() == id }?.retailer 
+                     }.distinct().joinToString(",")
+                     if (!_isMockMode.value) userPreferences.saveCachedRetailersString(retailers)
+                 }
+             }
+         }
+         
+         Log.d(TAG, "App Sync completed")
+         
+         // Trigger Smart Plan matches in background
+         viewModelScope.launch {
+            executeCheckShoppingListMatches() 
+         }
+    }
+
+    private fun getMockAppSyncResponse(): com.example.omiri.data.api.models.AppSyncResponse {
+        return try {
+            val assets = getApplication<Application>().assets
+            val gson = com.google.gson.Gson()
+            
+            // Read Products
+            val productsJson = assets.open("mock_products.json").bufferedReader().use { it.readText() }
+            val productsType = object : com.google.gson.reflect.TypeToken<List<com.example.omiri.data.api.models.ProductResponse>>() {}.type
+            val products: List<com.example.omiri.data.api.models.ProductResponse> = gson.fromJson(productsJson, productsType)
+            
+            // Read Stores
+            val storesJson = assets.open("mock_stores.json").bufferedReader().use { it.readText() }
+            val storesType = object : com.google.gson.reflect.TypeToken<List<com.example.omiri.data.api.models.StoreListResponse>>() {}.type
+            val stores: List<com.example.omiri.data.api.models.StoreListResponse> = gson.fromJson(storesJson, storesType)
+            
+            val categories = products.flatMap { it.categories ?: emptyList() }.distinct()
+            
+            com.example.omiri.data.api.models.AppSyncResponse(
+                featuredDeals = products.filter { it.featured == true },
+                stores = stores,
+                categories = categories,
+                config = emptyMap()
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to load mock data", e)
+             com.example.omiri.data.api.models.AppSyncResponse(emptyList(), emptyList(), emptyList(), null)
         }
     }
     
@@ -1093,6 +1161,33 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
              // THIS_WEEK (Default) -> active_only=true (implied now)
         }
         
+        if (_isMockMode.value) {
+            // Mock Implementation for Load All Deals
+             val mockResp = getMockAppSyncResponse() // Reuse existing loader for PRODUCTS
+             // Filter logic (simple simulation)
+             val allProds = mockResp.featuredDeals // Actually need ALL products, not just featured. But mock sync returns featured mostly.
+             // Let's assume we want to read the full list again to be safe
+             val fullProds = try {
+                 val assets = getApplication<Application>().assets
+                 val gson = com.google.gson.Gson()
+                 val productsJson = assets.open("mock_products.json").bufferedReader().use { it.readText() }
+                 val productsType = object : com.google.gson.reflect.TypeToken<List<com.example.omiri.data.api.models.ProductResponse>>() {}.type
+                 gson.fromJson<List<com.example.omiri.data.api.models.ProductResponse>>(productsJson, productsType)
+             } catch (e: Exception) { emptyList() }
+             
+             // Apply category/price filters loosely
+             var filtered = fullProds
+             if (activeOnly == true) { /* no-op in mock */ }
+             if (_priceRange != null) {
+                 filtered = filtered.filter { (it.priceAmount ?: 0.0).toFloat() in _priceRange!! }
+             }
+             
+             _allDeals.value = filtered.toDeals() 
+             _hasMore.value = false
+             _totalCount.value = filtered.size
+             return
+        }
+
         val result = repository.getProducts(
             country = country,
             retailer = null,

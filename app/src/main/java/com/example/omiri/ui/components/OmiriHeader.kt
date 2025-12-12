@@ -71,7 +71,7 @@ fun OmiriHeader(
                             if (notificationCount > 0) {
                                 Badge(
                                     modifier = Modifier.offset(x = 4.dp, y = (-4).dp),
-                                    containerColor = Color(0xFFEF4444),
+                                    containerColor = com.example.omiri.ui.theme.AppColors.Danger,
                                     contentColor = Color.White
                                 ) {
                                     Text(

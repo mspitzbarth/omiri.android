@@ -131,7 +131,15 @@ fun HomeScreen(
                 val pages = mutableListOf<@Composable () -> Unit>()
                 
                 if (smartPlan != null && smartPlan!!.steps.isNotEmpty()) {
-                    pages.add { com.example.omiri.ui.components.SmartPlanCard(plan = smartPlan) }
+                    pages.add { 
+                        com.example.omiri.ui.components.SmartPlanCard(
+                            plan = smartPlan,
+                            onStoreClick = { storeName, items ->
+                                shoppingListViewModel.setStoreFilter(storeName, items)
+                                onNavigateToShoppingListTab()
+                            }
+                        ) 
+                    }
                 }
                 
                 // Smart Alerts removed as per request to merge/remove.

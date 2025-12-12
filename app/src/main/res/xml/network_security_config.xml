@@ -5,7 +5,7 @@
         <!-- For Android Emulator -->
         <domain includeSubdomains="true">10.0.2.2</domain>
         <!-- For physical device - local network IP -->
-        <domain includeSubdomains="true">192.168.0.66</domain>
+        <domain includeSubdomains="true">192.168.1.220</domain>
         <!-- Localhost variations -->
         <domain includeSubdomains="true">localhost</domain>
         <domain includeSubdomains="true">127.0.0.1</domain>

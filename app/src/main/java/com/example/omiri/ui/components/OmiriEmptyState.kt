@@ -87,8 +87,8 @@ fun OmiriEmptyState(
             Button(
                 onClick = onButtonClick,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFFE8357),
-                    contentColor = Color.White
+                    containerColor = com.example.omiri.ui.theme.AppColors.BrandOrange,
+                    contentColor = com.example.omiri.ui.theme.AppColors.Surface
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {

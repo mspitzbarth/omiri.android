@@ -260,7 +260,7 @@ fun SettingsScreen(
                         icon = Icons.Outlined.ChatBubbleOutline,
                         iconColor = Color(0xFFE0F2FE), // Light Blue
                         iconTint = Color(0xFF0284C7), // Blue
-                        title = "Show Dummy Chat",
+                        title = "Dummy Data",
                         trailingContent = {
                             val dummyData by viewModel.showDummyData.collectAsState()
                             Switch(

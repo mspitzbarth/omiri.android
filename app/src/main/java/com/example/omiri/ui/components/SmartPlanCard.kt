@@ -1,6 +1,7 @@
 package com.example.omiri.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -18,7 +19,9 @@ import com.example.omiri.ui.theme.Spacing
 
 @Composable
 fun SmartPlanCard(
-    plan: com.example.omiri.data.api.models.ShoppingListOptimizeResponse? = null
+    plan: com.example.omiri.data.api.models.ShoppingListOptimizeResponse? = null,
+    selectedStore: String? = null,
+    onStoreClick: (String, List<String>) -> Unit = { _, _ -> }
 ) {
     if (plan == null) return
 
@@ -54,8 +57,21 @@ fun SmartPlanCard(
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleMedium
                     )
+
+                    // Calculate current week range (Mon-Sun)
+                    val calendar = java.util.Calendar.getInstance()
+                    calendar.firstDayOfWeek = java.util.Calendar.MONDAY
+                    calendar.set(java.util.Calendar.DAY_OF_WEEK, java.util.Calendar.MONDAY)
+                    val start = calendar.time
+                    calendar.add(java.util.Calendar.DATE, 6)
+                    val end = calendar.time
+                    
+                    val formatter = java.text.SimpleDateFormat("MMM dd", java.util.Locale.getDefault())
+                    val endFormatter = java.text.SimpleDateFormat("dd", java.util.Locale.getDefault())
+                    val dateRange = "${formatter.format(start)} - ${endFormatter.format(end)}"
+
                     Text(
-                        text = "Jan 15 - 21",
+                        text = dateRange,
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Gray
                     )
@@ -96,7 +112,7 @@ fun SmartPlanCard(
             // Expanded Content (Steps)
             if (expanded) {
                 Spacer(Modifier.height(16.dp))
-                RecommendedStoreRunCard(plan = plan)
+                RecommendedStoreRunCard(plan = plan, selectedStore = selectedStore, onStoreClick = onStoreClick)
             }
         }
     }
@@ -105,11 +121,14 @@ fun SmartPlanCard(
 @Composable
 fun RecommendedStoreRunCard(
     plan: com.example.omiri.data.api.models.ShoppingListOptimizeResponse,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    selectedStore: String? = null,
+    containerColor: Color = Color.White,
+    onStoreClick: (String, List<String>) -> Unit = { _, _ -> }
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
@@ -137,10 +156,13 @@ fun RecommendedStoreRunCard(
 
             // Store Rows
             plan.steps.forEachIndexed { index, step ->
+                val isSelected = selectedStore == step.storeName
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 12.dp),
+                        .background(if (isSelected) Color(0xFFEFF6FF) else Color.Transparent, RoundedCornerShape(8.dp))
+                        .clickable { onStoreClick(step.storeName, step.items) }
+                        .padding(vertical = 12.dp, horizontal = if (isSelected) 8.dp else 0.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Store Icon

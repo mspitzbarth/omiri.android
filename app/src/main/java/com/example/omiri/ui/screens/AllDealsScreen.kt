@@ -40,9 +40,14 @@ import com.example.omiri.viewmodels.SettingsViewModel
 import com.example.omiri.viewmodels.ProductViewModel
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material.icons.outlined.WifiOff
 import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.ui.zIndex
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.material.icons.outlined.LocalOffer
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -128,16 +133,30 @@ fun AllDealsScreen(
         }
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize()
+    // Nested Scroll Logic for Collapsible Header
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    var topBarHeightPx by remember { mutableFloatStateOf(0f) }
+    var filterBarHeightPx by remember { mutableFloatStateOf(0f) }
+    var filterBarOffsetPx by remember { mutableFloatStateOf(0f) }
+
+    val nestedScrollConnection = remember {
+        object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
+            override fun onPreScroll(available: androidx.compose.ui.geometry.Offset, source: androidx.compose.ui.input.nestedscroll.NestedScrollSource): androidx.compose.ui.geometry.Offset {
+                val delta = available.y
+                val newOffset = (filterBarOffsetPx + delta).coerceIn(-filterBarHeightPx, 0f)
+                filterBarOffsetPx = newOffset
+                // Do NOT consume the scroll. Let the LazyColumn scroll simultaneously.
+                // This ensures the list content moves up WITH the header, preventing the "gap" or "space" issue.
+                return androidx.compose.ui.geometry.Offset.Zero
+            }
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .nestedScroll(nestedScrollConnection)
     ) {
-        // Fixed Header Section
-        OmiriHeader(
-            notificationCount = 2,
-            onNotificationClick = onNotificationsClick,
-            onProfileClick = onProfileClick
-        )
-        
         // Interstitial Ad Logic: Show every 200 items
         LaunchedEffect(allDeals.size) {
              if (allDeals.size > 0 && allDeals.size % 200 == 0) {
@@ -145,98 +164,38 @@ fun AllDealsScreen(
              }
         }
 
-        // Search and Filters (Fixed)
-        Column(modifier = Modifier.padding(horizontal = Spacing.lg)) {
-            Spacer(Modifier.height(Spacing.sm))
-            OmiriSearchBar()
-            Spacer(Modifier.height(Spacing.md))
-            
-            // Filters & Sort Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Filter button (on the left) with badge
-                val activeFilterCount = listOf(
-                    currentFilters.priceRange != 0f..1000f,
-                    currentFilters.selectedStores.isNotEmpty(),
-                    currentFilters.selectedCategories.isNotEmpty(),
-                    currentFilters.onlineOnly
-                ).count { it }
-
-                val hasActiveFilters = activeFilterCount > 0
-
-                BadgedBox(
-                    badge = {
-                        if (activeFilterCount > 0) {
-                            Badge(
-                                containerColor = Color(0xFFFE8357),
-                                contentColor = Color.White
-                            ) {
-                                Text(
-                                    text = activeFilterCount.toString(),
-                                    style = MaterialTheme.typography.labelSmall
-                                )
-                            }
-                        }
-                    }
-                ) {
-                    IconButton(
-                        onClick = { showFilterModal = true },
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.FilterList,
-                            contentDescription = "More filters",
-                            tint = if (hasActiveFilters) Color(0xFFFE8357) else Color(0xFF1F2937)
-                        )
-                    }
-                }
-
-                MixedFilterChipsRow(
-                    modifier = Modifier.weight(1f),
-                    options = listOf(
-                        MixedFilterOption("My Deals", Icons.Outlined.BookmarkBorder, isToggleable = true),
-                        MixedFilterOption("This Week", Icons.Outlined.Today, isToggleable = false),
-                        MixedFilterOption("Next Week", Icons.Outlined.Event, isToggleable = false)
-                    ),
-                    initialSelected = selectedFilterChip,
-                    initialToggled = toggledFilterChips,
-                    onSelectedChange = { selectedFilterChip = it },
-                    onToggledChange = { toggledFilterChips = it },
-                    selectedBackgroundColor = Color(0xFFFE6B36),
-                    selectedTextColor = Color.White,
-                    unselectedBackgroundColor = Color(0xFFF3F4F6),
-                    unselectedTextColor = Color.Black
-                )
-            }
-            
-            Spacer(Modifier.height(Spacing.lg))
-        }
-
-
-
+        // List Content
         PullToRefreshBox(
             isRefreshing = isRefreshing,
             state = pullRefreshState,
             onRefresh = { isRefreshing = true },
-            modifier = Modifier.weight(1f) // Take remaining space
+            modifier = Modifier.fillMaxSize()
         ) {
+            val topBarHeightDp = with(density) { topBarHeightPx.toDp() }
+            val filterBarHeightDp = with(density) { filterBarHeightPx.toDp() }
+            val totalHeaderHeightDp = topBarHeightDp + filterBarHeightDp
+            
             if (isLoading && !isPaging) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState()),
-                    contentAlignment = Alignment.Center
+                // Skeleton Grid State
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.md),
+                    contentPadding = PaddingValues(top = totalHeaderHeightDp + Spacing.md, bottom = Spacing.md, start = Spacing.lg, end = Spacing.lg)
                 ) {
-                            com.example.omiri.ui.components.OmiriLoader()
+                    items(6) { // Show 6 rows of skeletons
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.md)
+                        ) {
+                            com.example.omiri.ui.components.DealCardSkeleton(modifier = Modifier.weight(1f))
+                            com.example.omiri.ui.components.DealCardSkeleton(modifier = Modifier.weight(1f))
+                        }
+                    }
                 }
             } else {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(top = totalHeaderHeightDp, bottom = 0.dp) // Header space + no bottom padding (handled by items)
                 ) {
-                    // Search/Filters moved out
                     
                     // Track cumulative items for ad insertion
             var cumulativeItemCount = 0
@@ -391,9 +350,15 @@ fun AllDealsScreen(
                 }
                 
                  if (isLoading && !justInsertedAd) {
-                    item(key = "loading_spinner") {
-                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.xl)) {
-                                    com.example.omiri.ui.components.OmiriLoader()
+                    item(key = "loading_skeleton_row") {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = Spacing.lg, vertical = Spacing.md),
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.md)
+                        ) {
+                            com.example.omiri.ui.components.DealCardSkeleton(modifier = Modifier.weight(1f))
+                            com.example.omiri.ui.components.DealCardSkeleton(modifier = Modifier.weight(1f))
                         }
                     }
                 }
@@ -403,6 +368,105 @@ fun AllDealsScreen(
                 Spacer(Modifier.height(Spacing.xxxl))
             }
         }
+        }
+    }
+
+    // 1. Fixed Main Header (Logo) - Highest Z-Index
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .onGloballyPositioned { coordinates ->
+                topBarHeightPx = coordinates.size.height.toFloat()
+            }
+            .background(Color.White) // Changed to White to ensure opacity
+            .zIndex(2f)
+    ) {
+        OmiriHeader(
+            notificationCount = 2,
+            onNotificationClick = onNotificationsClick,
+            onProfileClick = onProfileClick
+        )
+    }
+
+    // 2. Collapsible Search/Filters Header - Z-Index 1
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .onGloballyPositioned { coordinates ->
+                filterBarHeightPx = coordinates.size.height.toFloat()
+            }
+            .offset { IntOffset(x = 0, y = (topBarHeightPx + filterBarOffsetPx).roundToInt()) }
+            .background(Color.White)  // Changed to White for consistency and opacity
+            .zIndex(1f)
+    ) {
+        // Search and Filters Content
+        Column(modifier = Modifier.padding(horizontal = Spacing.lg)) {
+            Spacer(Modifier.height(Spacing.sm))
+            OmiriSearchBar()
+            Spacer(Modifier.height(Spacing.md))
+            
+            // Filters & Sort Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Filter button (on the left) with badge
+                val activeFilterCount = listOf(
+                    currentFilters.priceRange != 0f..1000f,
+                    currentFilters.selectedStores.isNotEmpty(),
+                    currentFilters.selectedCategories.isNotEmpty(),
+                    currentFilters.onlineOnly
+                ).count { it }
+
+                val hasActiveFilters = activeFilterCount > 0
+
+                BadgedBox(
+                    badge = {
+                        if (activeFilterCount > 0) {
+                            Badge(
+                                containerColor = com.example.omiri.ui.theme.AppColors.BrandOrange,
+                                contentColor = com.example.omiri.ui.theme.AppColors.Surface
+                            ) {
+                                Text(
+                                    text = activeFilterCount.toString(),
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
+                        }
+                    }
+                ) {
+                    IconButton(
+                        onClick = { showFilterModal = true },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.FilterList,
+                            contentDescription = "More filters",
+                            tint = if (hasActiveFilters) com.example.omiri.ui.theme.AppColors.BrandOrange else com.example.omiri.ui.theme.AppColors.BrandInk
+                        )
+                    }
+                }
+
+                MixedFilterChipsRow(
+                    modifier = Modifier.weight(1f),
+                    options = listOf(
+                        MixedFilterOption("My Deals", Icons.Outlined.BookmarkBorder, isToggleable = true),
+                        MixedFilterOption("This Week", Icons.Outlined.Today, isToggleable = false),
+                        MixedFilterOption("Next Week", Icons.Outlined.Event, isToggleable = false)
+                    ),
+                    initialSelected = selectedFilterChip,
+                    initialToggled = toggledFilterChips,
+                    onSelectedChange = { selectedFilterChip = it },
+                    onToggledChange = { toggledFilterChips = it },
+                    selectedBackgroundColor = com.example.omiri.ui.theme.AppColors.BrandOrange,
+                    selectedTextColor = com.example.omiri.ui.theme.AppColors.Surface,
+                    unselectedBackgroundColor = com.example.omiri.ui.theme.AppColors.PastelGrey,
+                    unselectedTextColor = com.example.omiri.ui.theme.AppColors.BrandInk
+                )
+            }
+            
+            Spacer(Modifier.height(Spacing.lg))
         }
     }
     }
@@ -482,15 +546,15 @@ fun CategoriesSwipeFilterRow(
                     )
                 },
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = Color(0xFFFE8357),
-                    selectedLabelColor = Color.White,
-                    containerColor = Color.White,
-                    labelColor = Color(0xFF1F2937)
+                    selectedContainerColor = com.example.omiri.ui.theme.AppColors.BrandOrange,
+                    selectedLabelColor = com.example.omiri.ui.theme.AppColors.Surface,
+                    containerColor = com.example.omiri.ui.theme.AppColors.Surface,
+                    labelColor = com.example.omiri.ui.theme.AppColors.BrandInk
                 ),
                 border = FilterChipDefaults.filterChipBorder(
                      enabled = true,
                      selected = isSelected,
-                     borderColor = if (isSelected) Color(0xFFFE8357) else Color(0xFFE5E7EB)
+                     borderColor = if (isSelected) com.example.omiri.ui.theme.AppColors.BrandOrange else com.example.omiri.ui.theme.AppColors.PastelGrey
                 )
             )
         }

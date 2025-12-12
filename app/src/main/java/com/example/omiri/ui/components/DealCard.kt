@@ -186,7 +186,9 @@ fun DealCard(
                 Text(
                     text = deal.store,
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF6B7280)
+                    color = Color(0xFF6B7280),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 
@@ -197,6 +199,7 @@ fun DealCard(
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 2,
+                minLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 color = Color(0xFF1F2937)
             )
