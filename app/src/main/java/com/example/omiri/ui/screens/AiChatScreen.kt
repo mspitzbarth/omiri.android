@@ -347,30 +347,35 @@ fun ChatBubble(
                         )
                     }
                     com.example.omiri.viewmodels.AttachmentType.SHOPPING_LIST_UPDATE -> {
-                        ShoppingListUpdateCard(
+                        com.example.omiri.ui.components.ShoppingListUpdateCard(
                             data = message.attachmentData as? Map<String, Any> ?: emptyMap(),
                             onViewList = onNavigateToShoppingList
                         )
                     }
                     com.example.omiri.viewmodels.AttachmentType.DEALS_MATCHED -> {
-                        DealsMatchedCard(
+                        com.example.omiri.ui.components.DealsMatchedCard(
+                            data = message.attachmentData as? Map<String, Any> ?: emptyMap()
+                        )
+                    }
+                    com.example.omiri.viewmodels.AttachmentType.FOUND_DEALS -> {
+                        com.example.omiri.ui.components.FoundDealsCard(
                             data = message.attachmentData as? Map<String, Any> ?: emptyMap()
                         )
                     }
                     com.example.omiri.viewmodels.AttachmentType.STORE_ROUTE -> {
-                        StoreRouteCard(
+                        com.example.omiri.ui.components.RecommendedStoreRunCard(
                             data = message.attachmentData as? Map<String, Any> ?: emptyMap()
                         )
                     }
                     com.example.omiri.viewmodels.AttachmentType.RECIPE_IDEAS -> {
-                        RecipeIdeasCard(
+                        com.example.omiri.ui.components.RecipeIdeasCard(
                             data = message.attachmentData as? Map<String, Any> ?: emptyMap()
                         )
                     }
                     com.example.omiri.viewmodels.AttachmentType.SUGGESTIONS -> {
-                        SuggestionsRow(
+                        com.example.omiri.ui.components.SuggestionsRow(
                             data = message.attachmentData as? Map<String, Any> ?: emptyMap(),
-                            onSuggestionClick = { suggestion -> 
+                            onSuggestionClick = { suggestion: String -> 
                                 if (suggestion.startsWith("Show")) onNavigateToShoppingList()
                                 // Handle others or just send as text
                             }
@@ -383,353 +388,7 @@ fun ChatBubble(
     }
 }
 
-// --- Rich Cards ---
-
-@Composable
-fun ShoppingListUpdateCard(data: Map<String, Any>, onViewList: () -> Unit) {
-    val items = data["items"] as? List<String> ?: emptyList()
-    val addedCount = data["addedCount"] ?: items.size
-    
-    Card(
-        shape = RoundedCornerShape(24.dp), // Increased radius
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)), // Consistent border
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier.size(48.dp).background(com.example.omiri.ui.theme.AppColors.PastelGreen, RoundedCornerShape(12.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(androidx.compose.material.icons.Icons.AutoMirrored.Outlined.List, null, tint = com.example.omiri.ui.theme.AppColors.PastelGreenText, modifier = Modifier.size(24.dp))
-                }
-                Spacer(Modifier.width(16.dp))
-                Column(Modifier.weight(1f)) {
-                    Text("Shopping List Update", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = com.example.omiri.ui.theme.AppColors.BrandInk)
-                    Text("Added: $addedCount items", color = com.example.omiri.ui.theme.AppColors.MutedText, style = MaterialTheme.typography.bodyMedium)
-                }
-                Surface(color = com.example.omiri.ui.theme.AppColors.PastelGreen, shape = RoundedCornerShape(100.dp)) {
-                    Text("Synced", modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp), color = com.example.omiri.ui.theme.AppColors.PastelGreenText, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                }
-            }
-            
-            Spacer(Modifier.height(16.dp))
-            
-            // Limit to 3 items, show +X more
-            val displayItems = items.take(3)
-            val remaining = if (items.size > 3) items.size - 3 else 0
-            
-            displayItems.forEach { item ->
-                Row(modifier = Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(androidx.compose.material.icons.Icons.Outlined.CheckCircle, null, tint = Color(0xFFD1D5DB), modifier = Modifier.size(20.dp))
-                    Spacer(Modifier.width(12.dp))
-                    Text(item, style = MaterialTheme.typography.bodyLarge, color = Color(0xFF374151))
-                }
-            }
-            
-            if (remaining > 0) {
-                 Row(modifier = Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Spacer(Modifier.width(32.dp)) // Indent to align with text above
-                    Text("+$remaining more", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF9CA3AF))
-                }
-            }
-            
-            Spacer(Modifier.height(20.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(
-                    onClick = onViewList,
-                    colors = ButtonDefaults.buttonColors(containerColor = com.example.omiri.ui.theme.AppColors.BrandOrange),
-                    modifier = Modifier.weight(1f).height(48.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = ButtonDefaults.buttonElevation(0.dp)
-                ) {
-                    Text("View List", fontWeight = FontWeight.SemiBold)
-                }
-                Button(
-                    onClick = { },
-                    colors = ButtonDefaults.buttonColors(containerColor = com.example.omiri.ui.theme.AppColors.PastelGrey, contentColor = com.example.omiri.ui.theme.AppColors.BrandInk),
-                    modifier = Modifier.weight(1f).height(48.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = ButtonDefaults.buttonElevation(0.dp)
-                ) {
-                    Text("Add More", fontWeight = FontWeight.SemiBold)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun DealsMatchedCard(data: Map<String, Any>) {
-    val items = data["items"] as? List<Map<String, String>> ?: emptyList()
-    
-    Card(
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(48.dp).background(com.example.omiri.ui.theme.AppColors.PastelOrange, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
-                    Icon(androidx.compose.material.icons.Icons.Outlined.LocalOffer, null, tint = com.example.omiri.ui.theme.AppColors.PastelOrangeText, modifier = Modifier.size(24.dp))
-                }
-                Spacer(Modifier.width(16.dp))
-                Column(Modifier.weight(1f)) {
-                    Text("Deals Matched to Your List", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = com.example.omiri.ui.theme.AppColors.BrandInk)
-                    Text("${data["count"]} items on sale", color = com.example.omiri.ui.theme.AppColors.MutedText, style = MaterialTheme.typography.bodyMedium)
-                }
-                Surface(color = com.example.omiri.ui.theme.AppColors.BrandOrange, shape = RoundedCornerShape(100.dp)) {
-                    Text(data["badge"]?.toString() ?: "Best Saves", modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp), color = Color.White, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                }
-            }
-            
-            Spacer(Modifier.height(16.dp))
-            items.forEach { item ->
-                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(40.dp).background(com.example.omiri.ui.theme.AppColors.PastelYellow, RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
-                         // Simple icon placeholder logic
-                         val iconVec = when(item["icon"]) {
-                             "wheat" -> androidx.compose.material.icons.Icons.Outlined.Grass
-                             "meat" -> androidx.compose.material.icons.Icons.Outlined.Restaurant
-                             else -> androidx.compose.material.icons.Icons.Outlined.LocalDining
-                         }
-                         // Apply tint based on type somewhat
-                         val tint = com.example.omiri.ui.theme.AppColors.PastelYellowText 
-                         Icon(iconVec, null, tint = tint, modifier = Modifier.size(20.dp))
-                    }
-                    Spacer(Modifier.width(16.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(item["name"] ?: "", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge, color = com.example.omiri.ui.theme.AppColors.BrandInk)
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(item["price"] ?: "", color = com.example.omiri.ui.theme.AppColors.BrandOrange, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                            Spacer(Modifier.width(8.dp))
-                            Text(item["oldPrice"] ?: "", color = com.example.omiri.ui.theme.AppColors.MutedText, style = MaterialTheme.typography.bodySmall, textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)
-                            Spacer(Modifier.width(12.dp))
-                            Surface(color = com.example.omiri.ui.theme.AppColors.PastelOrange, shape = RoundedCornerShape(4.dp)) {
-                                Text(item["discount"] ?: "", modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), color = com.example.omiri.ui.theme.AppColors.PastelOrangeText, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
-                }
-            }
-            
-            Spacer(Modifier.height(20.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(
-                    onClick = {},
-                    colors = ButtonDefaults.buttonColors(containerColor = com.example.omiri.ui.theme.AppColors.BrandOrange),
-                    modifier = Modifier.weight(1f).height(48.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = ButtonDefaults.buttonElevation(0.dp)
-                ) {
-                    Text("View All Deals", fontWeight = FontWeight.SemiBold)
-                }
-                Button(
-                    onClick = { },
-                    colors = ButtonDefaults.buttonColors(containerColor = com.example.omiri.ui.theme.AppColors.PastelGrey, contentColor = com.example.omiri.ui.theme.AppColors.BrandInk),
-                    modifier = Modifier.weight(1f).height(48.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = ButtonDefaults.buttonElevation(0.dp)
-                ) {
-                    Text("Add to Cart", fontWeight = FontWeight.SemiBold)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun SuggestionsRow(data: Map<String, Any>, onSuggestionClick: (String) -> Unit) {
-    val suggestions = data["suggestions"] as? List<String> ?: emptyList()
-    
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp), // Spacing between chips
-    ) {
-        suggestions.forEach { suggestion ->
-            Surface(
-                onClick = { onSuggestionClick(suggestion) },
-                shape = RoundedCornerShape(100.dp), // Fully rounded pills
-                color = Color(0xFFF3F4F6),
-                modifier = Modifier.weight(1f) // Distribute evenly
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.padding(vertical = 12.dp, horizontal = 4.dp)
-                ) {
-                    Text(
-                        text = suggestion,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF374151),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                        lineHeight = 16.sp,
-                        maxLines = 2
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun StoreRouteCard(data: Map<String, Any>) {
-    val steps = data["steps"] as? List<Map<String, String>> ?: emptyList()
-    
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(40.dp).background(com.example.omiri.ui.theme.AppColors.PastelBlue, CircleShape), contentAlignment = Alignment.Center) {
-                    Icon(androidx.compose.material.icons.Icons.Outlined.Map, null, tint = com.example.omiri.ui.theme.AppColors.PastelBlueText)
-                }
-                Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f)) {
-                    Text("Best Store Route", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
-                    Text("${data["stops"]} stops • Save ${data["savings"]}", color = com.example.omiri.ui.theme.AppColors.MutedText, style = MaterialTheme.typography.bodySmall)
-                }
-                Surface(color = com.example.omiri.ui.theme.AppColors.PastelBlue, shape = RoundedCornerShape(16.dp)) {
-                    Text(data["badge"]?.toString() ?: "Route", modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), color = com.example.omiri.ui.theme.AppColors.PastelBlueText, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                }
-            }
-            
-            Spacer(Modifier.height(16.dp))
-            steps.forEachIndexed { index, step ->
-                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(36.dp).background(
-                        if(step["color"] == "red") Color(0xFFEF4444) else Color(0xFF3B82F6), 
-                        RoundedCornerShape(8.dp)), 
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(androidx.compose.material.icons.Icons.Outlined.Storefront, null, tint = Color.White, modifier = Modifier.size(20.dp))
-                    }
-                    Spacer(Modifier.width(12.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(step["store"] ?: "", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                        Text(step["desc"] ?: "", color = Color.Gray, style = MaterialTheme.typography.bodySmall)
-                    }
-                    Text(step["price"] ?: "", color = Color(0xFF16A34A), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                }
-                if (index < steps.size - 1) {
-                    // Dotted line or plain divider
-                    Spacer(Modifier.height(8.dp)) // Simplifying
-                }
-            }
-            
-             Spacer(Modifier.height(16.dp))
-             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(
-                    onClick = {},
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFE8357)),
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text("Open Plan")
-                }
-                OutlinedButton(
-                    onClick = { },
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF374151)),
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(8.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFD1D5DB))
-                ) {
-                    Text("Map")
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun RecipeIdeasCard(data: Map<String, Any>) {
-    val recipes = data["recipes"] as? List<Map<String, String>> ?: emptyList()
-    
-     Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(40.dp).background(Color(0xFFF3E8FF), CircleShape), contentAlignment = Alignment.Center) {
-                    Icon(androidx.compose.material.icons.Icons.Outlined.RestaurantMenu, null, tint = Color(0xFF9333EA))
-                }
-                Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f)) {
-                    Text("Recipe Ideas", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
-                    Text("Using your ingredients", color = Color.Gray, style = MaterialTheme.typography.bodySmall)
-                }
-                Surface(color = Color(0xFFF3E8FF), shape = RoundedCornerShape(16.dp)) {
-                    Text(data["badge"]?.toString() ?: "Tips", modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), color = Color(0xFF9333EA), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                }
-            }
-            
-            Spacer(Modifier.height(16.dp))
-            
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                recipes.take(2).forEach { recipe ->
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .background(Color(0xFFFFF7ED), RoundedCornerShape(12.dp))
-                            .padding(12.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(60.dp) // Placeholder for image
-                                .background(
-                                    if(recipe["color"] == "orange") Color(0xFFFFCCBC) else Color(0xFFFFE082), 
-                                    RoundedCornerShape(8.dp)
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                             // Icon emoji logic
-                             val emoji = if(recipe["color"] == "orange") "🍝" else "🍕"
-                             Text(emoji, fontSize = 24.sp)
-                        }
-                        
-                        Spacer(Modifier.height(8.dp))
-                        Text(recipe["name"] ?: "", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
-                        Spacer(Modifier.height(4.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                             Surface(color = Color(0xFFDCFCE7), shape = RoundedCornerShape(4.dp)) {
-                                 Text(recipe["difficulty"] ?: "Easy", modifier = Modifier.padding(horizontal = 4.dp), color = Color(0xFF166534), style = MaterialTheme.typography.labelSmall)
-                             }
-                             Surface(color = Color(0xFFDBEAFE), shape = RoundedCornerShape(4.dp)) {
-                                 Text(recipe["time"] ?: "20m", modifier = Modifier.padding(horizontal = 4.dp), color = Color(0xFF1E40AF), style = MaterialTheme.typography.labelSmall)
-                             }
-                        }
-                    }
-                }
-            }
-            
-            Spacer(Modifier.height(16.dp))
-            Button(
-                onClick = {},
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFE8357)),
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text("Cook This")
-            }
-        }
-    }
-}
-
+// Typing Indicator and Dot remain here
 @Composable
 fun TypingIndicator() {
     val transition = rememberInfiniteTransition(label = "TypeIndicator")

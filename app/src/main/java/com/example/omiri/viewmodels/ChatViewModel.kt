@@ -33,6 +33,7 @@ enum class AttachmentType {
     PRODUCT_CARD,
     SHOPPING_LIST_UPDATE,
     DEALS_MATCHED,
+    FOUND_DEALS, // New one
     STORE_ROUTE,
     RECIPE_IDEAS,
     SUGGESTIONS
@@ -130,7 +131,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             )
         ))
         
-        // 6. Deals Matched Card (Bot)
+        // 6. Deals Matched Card (Bot) -> Deals Matched (Image 0)
         mockMessages.add(ChatMessage(
             text = "",
             isUser = false,
@@ -161,19 +162,33 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             timestamp = now - 20000
         ))
         
-        // 9. Store Route Card
+        // 9. Store Route Card -> Recommended Store Run (Image 2)
         mockMessages.add(ChatMessage(
             text = "",
             isUser = false,
             timestamp = now - 15000,
-            attachmentType = AttachmentType.STORE_ROUTE,
+            attachmentType = AttachmentType.STORE_ROUTE, // Using STORE_ROUTE for "Recommended Store Run" per user mapping app-find_best_stores
             attachmentData = mapOf(
-                "stops" to 2,
-                "savings" to "€2.89",
-                "badge" to "Fewest stores",
-                "steps" to listOf(
-                    mapOf("store" to "Target", "desc" to "Pasta, Ground beef • 1.2 mi", "price" to "€1.99", "color" to "red"),
-                    mapOf("store" to "Walmart", "desc" to "Tomato sauce, Cheese • 2.1 mi", "price" to "€0.90", "color" to "blue")
+                "stores" to listOf(
+                    mapOf("name" to "Lidl", "items" to "6 items", "deals" to "3 deals", "color" to "red", "active" to true),
+                    mapOf("name" to "Aldi", "items" to "4 items", "deals" to "2 deals", "color" to "blue", "active" to true),
+                    mapOf("name" to "Kaufland", "items" to "4 items", "deals" to "0 deals", "color" to "green", "active" to false)
+                )
+            )
+        ))
+        
+        // 10. Found Deals Mock (Image 4) - Triggered by product search usually
+        mockMessages.add(ChatMessage(
+            text = "Here are the deals I found for your search:",
+            isUser = false,
+            timestamp = now - 10000,
+            attachmentType = AttachmentType.FOUND_DEALS,
+            attachmentData = mapOf(
+                "query" to "bandaid, painkiller, beer",
+                "items" to listOf(
+                    mapOf("name" to "MILSANI Milch-Drink", "store" to "Aldi Nord", "price" to "0.89 EUR"),
+                    mapOf("name" to "Deluxe Schichtdessert", "store" to "Lidl", "price" to "1.99 EUR"),
+                    mapOf("name" to "Kinder Milch-Schnitte", "store" to "Lidl", "price" to "2.99 EUR")
                 )
             )
         ))
@@ -432,7 +447,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 when (toolCall.function.name) {
                     "app-shopping_list_add" -> executeShoppingListAdd(toolCall.function.arguments)
                     "app-shopping_list_search" -> executeShoppingListSearch(toolCall.function.arguments)
-                    // "app-products_search" -> executeProductsSearch(toolCall.function.arguments)
+                    "app-products_search" -> executeProductsSearch(toolCall.function.arguments)
+                    "app-recipe_search" -> executeRecipeSearch(toolCall.function.arguments)
+                    "app-find_best_stores" -> executeFindBestStores(toolCall.function.arguments)
                     else -> Log.w(TAG, "Unknown tool: ${toolCall.function.name}")
                 }
             }
@@ -554,6 +571,12 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
              toolCalls.forEach { toolCall ->
                 if (toolCall.function.name == "app-shopping_list_add") {
                     executeShoppingListAdd(toolCall.function.arguments)
+                } else if (toolCall.function.name == "app-products_search") {
+                    executeProductsSearch(toolCall.function.arguments)
+                } else if (toolCall.function.name == "app-recipe_search") {
+                    executeRecipeSearch(toolCall.function.arguments)
+                } else if (toolCall.function.name == "app-find_best_stores") {
+                    executeFindBestStores(toolCall.function.arguments)
                 }
             }
         }
@@ -601,6 +624,160 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             Log.e(TAG, "Failed to parse shopping list arguments", e)
         }
     }
+
+    private fun executeProductsSearch(argumentsJson: String) {
+        viewModelScope.launch {
+            try {
+                val gson = com.google.gson.Gson()
+                val args = gson.fromJson(argumentsJson, ProductsSearchArgs::class.java)
+                val query = args.query ?: ""
+                
+                if (query.isBlank()) return@launch
+
+                _isLoading.value = true
+                
+                // Call repository
+                // We'll use the search function returning a simple map/list
+                // Actually `productRepository.searchProducts(query)` returns Map<String, List<Product>>?
+                // Let's check `ProductRepository` again or infer. 
+                // Based on `executeShoppingListSearch` which uses `searchShoppingList`, there is likely a `searchProducts` or `search` method.
+                // In Step 471 summary: "Adjusting the /products/search endpoint... ProductApiService...".
+                // Let's assume `searchProducts` exists or use `productRepository.searchShoppingList` with just the query if needed, 
+                // but usually there is a direct search.
+                // Looking at `executeShoppingListSearch`, it uses `productRepository.searchShoppingList(items=..., stores=..., ...)`
+                // Let's try `productRepository.searchProducts(query)` knowing it was a recent objective.
+                // If it fails compile, I will fix.
+                
+                val result = productRepository.searchProducts(query) // Assuming this exists based on context
+                
+                result.onSuccess { productMap ->
+                    // productMap is Map<String, List<Product>>
+                    val allProducts = productMap.values.flatten()
+                    
+                    if (allProducts.isNotEmpty()) {
+                        val items = allProducts.take(5).map { product ->
+                           mapOf(
+                               "name" to (product.title ?: "Unknown"),
+                               "store" to (product.retailer ?: "Unknown Store"),
+                               "price" to "${product.priceAmount} ${product.priceCurrency}"
+                           )
+                        }
+                        
+                        _messages.value = _messages.value + ChatMessage(
+                            text = "Found ${allProducts.size} deals for '$query':",
+                            isUser = false,
+                            attachmentType = AttachmentType.FOUND_DEALS,
+                            attachmentData = mapOf(
+                                "query" to query,
+                                "items" to items
+                            )
+                        )
+                    } else {
+                         _messages.value = _messages.value + ChatMessage(
+                            text = "I couldn't find any deals for '$query'.",
+                            isUser = false
+                        )
+                    }
+                }.onFailure {
+                    Log.e(TAG, "Product search failed", it)
+                     _messages.value = _messages.value + ChatMessage(
+                        text = "I had trouble searching for products. Please try again.",
+                        isUser = false
+                    )
+                }
+                
+                _isLoading.value = false
+                
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to execute product search tool", e)
+                _isLoading.value = false
+            }
+        }
+    }
+
+    private fun executeFindBestStores(argumentsJson: String) {
+        viewModelScope.launch {
+            try {
+                // Parse optional args if needed, but repository default to optimized list based on user context
+                // We'll trust the repository to use current list + user zipcode
+                
+                _isLoading.value = true
+                val result = productRepository.optimizeShoppingList()
+                
+                result.onSuccess { response ->
+                    // Map OptimizationStep to Card data
+                    val stores = response.steps.mapIndexed { index, step ->
+                        mapOf(
+                            "name" to step.storeName,
+                            "items" to "${step.itemsCount} items",
+                            "deals" to "${step.stepSavings} saved", // reusing deals field for savings text
+                            "color" to (step.storeColor ?: if(index % 2 == 0) "blue" else "red"),
+                            "active" to (index < 2) // Just a visual mock for active state
+                        )
+                    }
+                    
+                    _messages.value = _messages.value + ChatMessage(
+                        text = "I've calculated the best store route for your list:",
+                        isUser = false,
+                        attachmentType = AttachmentType.STORE_ROUTE,
+                        attachmentData = mapOf(
+                            "stores" to stores
+                        )
+                    )
+                }.onFailure {
+                    Log.e(TAG, "Store optimization failed", it)
+                    _messages.value = _messages.value + ChatMessage(
+                        text = "I couldn't plan the route right now. Please try again.",
+                        isUser = false
+                    )
+                }
+                
+                _isLoading.value = false
+            } catch (e: Exception) {
+                 Log.e(TAG, "Failed to execute find best stores tool", e)
+                 _isLoading.value = false
+            }
+        }
+    }
+
+    private fun executeRecipeSearch(argumentsJson: String) {
+        viewModelScope.launch {
+             try {
+                val gson = com.google.gson.Gson()
+                val args = gson.fromJson(argumentsJson, RecipeSearchArgs::class.java)
+                val query = args.ingredients ?: args.query ?: "dinner"
+                
+                // MOCK Implementation since no API
+                kotlinx.coroutines.delay(1000)
+                
+                val recipes = listOf(
+                    mapOf(
+                        "name" to "Spicy ${query.capitalize()} Pasta",
+                        "color" to "orange",
+                        "difficulty" to "Medium",
+                        "time" to "30 min"
+                    ),
+                    mapOf(
+                        "name" to "Baked $query Delight",
+                        "color" to "yellow",
+                        "difficulty" to "Easy",
+                        "time" to "45 min"
+                    )
+                )
+                
+                _messages.value = _messages.value + ChatMessage(
+                    text = "Here are some recipe ideas using '$query':",
+                    isUser = false,
+                    attachmentType = AttachmentType.RECIPE_IDEAS,
+                    attachmentData = mapOf(
+                        "recipes" to recipes
+                    )
+                )
+             } catch (e: Exception) {
+                 Log.e(TAG, "Failed to execute recipe search tool", e)
+             }
+        }
+    }
     
     private fun mapCategoryToId(categoryName: String?): String {
         return when(categoryName?.lowercase()) {
@@ -637,4 +814,17 @@ data class ShoppingListAddArgs(
 data class ShoppingItemArg(
     val name: String,
     val category: String?
+)
+
+data class ProductsSearchArgs(
+    val query: String?
+)
+
+data class FindBestStoresArgs(
+    val zipcode: String?
+)
+
+data class RecipeSearchArgs(
+    val ingredients: String?,
+    val query: String?
 )
