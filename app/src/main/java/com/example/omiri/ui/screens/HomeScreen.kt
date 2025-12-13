@@ -13,9 +13,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.WifiOff
 import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.material.icons.outlined.LocalOffer
+import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -201,34 +205,109 @@ fun HomeScreen(
                     onListClick = onNavigateToList
                 )
 
-                // 5. Featured Deals
+                // 5. Dynamic Deals Section with Filter Pills
                 Spacer(Modifier.height(Spacing.xl))
-                // Pass error context
-                val networkErrorType by viewModel.networkErrorType.collectAsState()
+
+                // Collect extra state for Expiring Soon
+                val expiringSoonDeals by viewModel.leavingSoonDeals.collectAsState()
                 
-                com.example.omiri.ui.components.FeaturedDealsRow(
-                    title = "Top Deals",
-                    deals = topDeals,
-                    isLoading = isLoading,
-                    error = error, // Shared error state for now
-                    networkErrorType = networkErrorType,
-                    onRetry = { viewModel.loadProducts() },
-                    onViewAll = onNavigateAllDeals, // Navigate to all deals for now, maybe filtered later
-                    onDealClick = onDealClick
-                )
+                // Local state for home filters
+                // "Top Deals", "Deals for you", "Expiring Soon"
+                // Using exact strings mapping to the view logic or IDs
+                var selectedHomeFilter by remember { mutableStateOf("Top Deals") }
 
-                Spacer(Modifier.height(Spacing.xl))
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    // Header with Pills
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Spacing.lg),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                         com.example.omiri.ui.components.MixedFilterChipsRow(
+                            modifier = Modifier.weight(1f),
+                            options = listOf(
+                                com.example.omiri.ui.components.MixedFilterOption("Top Deals", Icons.Outlined.EmojiEvents, isToggleable = false),
+                                com.example.omiri.ui.components.MixedFilterOption("Deals for you", Icons.Outlined.LocalOffer, isToggleable = false), // "For You" icon?
+                                com.example.omiri.ui.components.MixedFilterOption("Expiring Soon", Icons.Outlined.AccessTime, isToggleable = false)
+                            ),
+                            initialSelected = selectedHomeFilter,
+                            initialToggled = emptySet(), // No multi-select
+                            onSelectedChange = { selectedHomeFilter = it },
+                            onToggledChange = {},
+                            selectedBackgroundColor = com.example.omiri.ui.theme.AppColors.BrandOrange,
+                            selectedTextColor = com.example.omiri.ui.theme.AppColors.Surface,
+                            unselectedBackgroundColor = com.example.omiri.ui.theme.AppColors.PastelGrey,
+                            unselectedTextColor = com.example.omiri.ui.theme.AppColors.BrandInk
+                        )
+                    }
 
-                com.example.omiri.ui.components.FeaturedDealsRow(
-                    title = "Deals for you", // Restore original title explicitly or let it default if I hadn't changed default
-                    deals = featuredDeals.take(5), 
-                    isLoading = isLoading,
-                    error = error,
-                    networkErrorType = networkErrorType,
-                    onRetry = { viewModel.loadProducts() }, // or specific loadFeaturedDeals
-                    onViewAll = onNavigateAllDeals,
-                    onDealClick = onDealClick
-                )
+                    Spacer(Modifier.height(Spacing.md))
+                    
+                    // Determine which list to show
+                    val currentDisplayDeals = when(selectedHomeFilter) {
+                        "Deals for you" -> featuredDeals
+                        "Expiring Soon" -> expiringSoonDeals
+                        else -> topDeals // Top Deals default
+                    }
+                    
+                    // Display Row (Reusing FeaturedDealsRow logic but just the list part? 
+                    // No, FeaturedDealsRow includes the title header which we might not want if pills serve as header.
+                    // But FeaturedDealsRow creates a Carousel.
+                    // If we want a vertical list like All Deals, we'd use LazyColumn items, but we are inside a Column in verticalScroll.
+                    // So we cannot use LazyColumn here easily without nested scroll issues (unless customized height).
+                    // Best pattern for Home is horizontal carousel (LazyRow).
+                    // Or if user wants "slide/update", maybe they want the Carousel to update its content?
+                    // Let's use DealsCarousel directly or FeaturedDealsRow with hidden title? 
+                    // FeaturedDealsRow has "View All" button which is useful.
+                    
+                    // Let's render the Content Row
+                    // We need to pass the 'title' to FeaturedDealsRow to keep "View All" context, 
+                    // OR we render a custom SectionHeader + DealsCarousel.
+                    
+                    // Actually, "View All" usually navigates to AllDealsScreen filtering by that type.
+                    // For now, simple redirection to AllDeals is fine.
+                    
+                    // Pass error context
+                    val networkErrorType by viewModel.networkErrorType.collectAsState()
+                    
+                    if (isLoading && currentDisplayDeals.isEmpty()) {
+                         Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                             com.example.omiri.ui.components.OmiriLoader(size = 32.dp)
+                         }
+                    } else if (currentDisplayDeals.isEmpty()) {
+                        // Empty State for specific section
+                        Box(modifier = Modifier.fillMaxWidth().padding(Spacing.lg), contentAlignment = Alignment.Center) {
+                            Text(
+                                text = "No deals found for $selectedHomeFilter",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = com.example.omiri.ui.theme.AppColors.Neutral500
+                            )
+                        }
+                    } else {
+                        // We use DealsCarousel directly to avoid redundant title if pills act as title?
+                        // Or we keep "View All" row separate.
+                        // Let's keep "View All" aligned with the currently selected pill logic concept.
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.xs),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                             Text(
+                                 text = "View All",
+                                 style = MaterialTheme.typography.labelLarge,
+                                 color = com.example.omiri.ui.theme.AppColors.BrandOrange,
+                                 fontWeight = FontWeight.Bold,
+                                 modifier = Modifier.clickable { onNavigateAllDeals() }
+                             )
+                        }
+                        
+                        DealsCarousel(
+                            deals = currentDisplayDeals,
+                            onDealClick = { deal -> onDealClick(deal.id) }
+                        )
+                    }
+                }
 
                 Spacer(Modifier.height(Spacing.md))
             }

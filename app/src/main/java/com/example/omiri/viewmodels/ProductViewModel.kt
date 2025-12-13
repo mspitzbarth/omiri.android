@@ -515,6 +515,13 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
          }
          _topDeals.value = top
          if (!_isMockMode.value && !response.topDeals.isNullOrEmpty()) userPreferences.saveCachedProducts("top_deals", response.topDeals)
+
+         // 1.8 Expiring Soon
+         val expiring = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+             response.expiringSoon?.toDeals() ?: emptyList()
+         }
+         _leavingSoonDeals.value = expiring
+         if (!_isMockMode.value && !response.expiringSoon.isNullOrEmpty()) userPreferences.saveCachedProducts("expiring_soon", response.expiringSoon)
          
          // 2. Categories
          if (!response.categories.isNullOrEmpty()) {
@@ -571,13 +578,14 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
             com.example.omiri.data.api.models.AppSyncResponse(
                 featuredDeals = products.filter { it.featured == true },
                 topDeals = products.take(5),
+                expiringSoon = emptyList(),
                 stores = stores,
                 categories = categories,
                 config = emptyMap()
             )
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load mock data", e)
-             com.example.omiri.data.api.models.AppSyncResponse(emptyList(), emptyList(), emptyList(), emptyList(), null)
+             com.example.omiri.data.api.models.AppSyncResponse(emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyMap())
         }
     }
     

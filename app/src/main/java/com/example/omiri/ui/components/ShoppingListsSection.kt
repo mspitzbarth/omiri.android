@@ -148,13 +148,13 @@ private fun ShoppingListItemRow(
                 color = if (percentage == 100) Color(0xFFDCFCE7) else Color(0xFFFFE5DB), // Green if done, else Orange
                 shape = RoundedCornerShape(16.dp), // Pill shape
                 contentColor = if (percentage == 100) Color(0xFF166534) else Color(0xFFFE8357), // Text color
-                modifier = Modifier.size(48.dp)
+                // Removed fixed size to let it wrap content
             ) {
                  Text(
                     text = "$percentage%",
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                     fontSize = 12.sp
                 )
             }

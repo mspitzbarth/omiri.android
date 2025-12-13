@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import com.example.omiri.data.models.ShoppingItem
 import com.example.omiri.ui.theme.Spacing
+import com.example.omiri.ui.theme.AppColors
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
@@ -42,8 +43,8 @@ fun ShoppingListItem(
     onEdit: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val backgroundColor = if (isSelected) com.example.omiri.ui.theme.AppColors.InfoSoft else Color.White
-    val borderColor = if (isSelected) com.example.omiri.ui.theme.AppColors.Info else Color(0xFFE5E7EB)
+    val backgroundColor = if (isSelected) com.example.omiri.ui.theme.AppColors.InfoSoft else AppColors.Surface
+    val borderColor = if (isSelected) com.example.omiri.ui.theme.AppColors.Info else AppColors.Neutral200
 
     Card(
         colors = CardDefaults.cardColors(
@@ -85,8 +86,8 @@ fun ShoppingListItem(
                     },
                     colors = CheckboxDefaults.colors(
                         checkedColor = com.example.omiri.ui.theme.AppColors.BrandOrange, // Orange Branding
-                        uncheckedColor = Color(0xFFD1D5DB), // Gray outline
-                        checkmarkColor = Color.White
+                        uncheckedColor = AppColors.Neutral300, 
+                        checkmarkColor = AppColors.Surface
                     )
                 )
             }
@@ -101,7 +102,7 @@ fun ShoppingListItem(
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = FontWeight.Bold
                     ),
-                    color = if (item.isDone) Color(0xFF9CA3AF) else Color(0xFF111827),
+                    color = if (item.isDone) AppColors.Neutral400 else AppColors.Neutral900,
                     textDecoration = if (item.isDone) TextDecoration.LineThrough else null
                 )
                 
@@ -111,7 +112,7 @@ fun ShoppingListItem(
                 Text(
                     text = item.category.getName(),
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF6B7280)
+                    color = AppColors.Neutral500
                 )
                 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -125,47 +126,47 @@ fun ShoppingListItem(
                     
                     // Price / Deal Badge
                     if (item.discountPrice != null || item.price != null) {
-                         if (item.discountPrice != null && (item.price != null && item.discountPrice < item.price)) {
-                             // Discounted State
-                             Surface(
-                                 color = Color(0xFFFEF2F2), // Red 50
-                                 shape = RoundedCornerShape(4.dp),
-                                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFECACA))
-                             ) {
-                                 Row(
-                                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                                     verticalAlignment = Alignment.CenterVertically,
-                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
+                             if (item.discountPrice != null && (item.price != null && item.discountPrice < item.price)) {
+                                 // Discounted State
+                                 Surface(
+                                     color = AppColors.Red50, 
+                                     shape = RoundedCornerShape(4.dp),
+                                     border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.Red200)
                                  ) {
-                                         Surface(
-                                             color = Color(0xFFFFE5DB), // Light Orange
-                                             shape = CircleShape
-                                         ) {
-                                             Text(
-                                                 text = "${item.discountPercentage}%",
-                                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
-                                                 color = Color(0xFFFE8357),
-                                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                             )
-                                         }
-                                     Text(
-                                         text = "€${String.format("%.2f", item.discountPrice)}",
-                                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                         color = Color(0xFFDC2626)
-                                     )
+                                     Row(
+                                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                                         verticalAlignment = Alignment.CenterVertically,
+                                         horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                     ) {
+                                             Surface(
+                                                 color = AppColors.BrandOrangeSoft,
+                                                 shape = RoundedCornerShape(50) // Pill shape
+                                             ) {
+                                                 Text(
+                                                     text = "${item.discountPercentage}%",
+                                                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
+                                                     color = AppColors.BrandOrange,
+                                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                 )
+                                             }
+                                         Text(
+                                             text = "€${String.format("%.2f", item.discountPrice)}",
+                                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                             color = AppColors.Red600
+                                         )
+                                     }
                                  }
-                             }
                          } else {
                              // Regular Price Badge
                              item.price?.let {
                                  Surface(
-                                     color = Color(0xFFF3F4F6),
+                                     color = AppColors.Neutral100,
                                      shape = RoundedCornerShape(4.dp)
                                  ) {
                                      Text(
                                          text = "€${String.format("%.2f", it)}",
                                          style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                         color = Color(0xFF374151),
+                                         color = AppColors.Neutral700,
                                          modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                      )
                                  }
@@ -173,12 +174,12 @@ fun ShoppingListItem(
                          }
                     } else if (item.isInDeals) {
                         Surface(
-                            color = Color(0xFFF3E8FF), // Light Purple
+                            color = AppColors.Purple50, 
                             shape = RoundedCornerShape(4.dp)
                         ) {
                             Text(
                                 text = "Matched Deal",
-                                color = Color(0xFFA12AF9), // Purple
+                                color = AppColors.PurpleText, 
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
@@ -189,7 +190,7 @@ fun ShoppingListItem(
                         Icon(
                             imageVector = Icons.Outlined.Refresh,
                             contentDescription = "Recurring",
-                            tint = Color(0xFF6B7280),
+                            tint = AppColors.Neutral500,
                             modifier = Modifier.size(16.dp)
                         )
                     }

@@ -39,15 +39,15 @@ fun DealCard(
     var isFav by remember(deal.id) { mutableStateOf(deal.isFavorite) }
 
     val shape = MaterialTheme.shapes.medium
-    val borderColor = Color(0xFFF3F4F6)
+    val borderColor = AppColors.Neutral100
 
     Card(
         modifier = modifier
             .fillMaxWidth()
             .clickable { onClick(deal) },
         shape = shape,
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
+        colors = CardDefaults.cardColors(containerColor = AppColors.Surface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.Neutral200),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         // Image placeholder with time-left badge + favorite button
@@ -83,11 +83,12 @@ fun DealCard(
                 // 2. Time Left Badge
                 if (!deal.timeLeftLabel.isNullOrBlank()) {
                      val badgeColor = when {
-                        deal.timeLeftLabel!!.contains("hour", ignoreCase = true) -> Color(0xFFDC2626)
-                        deal.timeLeftLabel!!.contains("today", ignoreCase = true) -> AppColors.BrandOrange
+                        deal.timeLeftLabel!!.contains("hour", ignoreCase = true) -> AppColors.Red600
+                        deal.timeLeftLabel!!.contains("today", ignoreCase = true) -> AppColors.Red600
+                        deal.timeLeftLabel!!.contains("expired", ignoreCase = true) -> AppColors.Red600
                         deal.timeLeftLabel!!.contains("1 day", ignoreCase = true) ||
-                                deal.timeLeftLabel!!.contains("2 day", ignoreCase = true) -> Color(0xFFFB923C)
-                        else -> Color(0xFF0EA5E9)
+                                deal.timeLeftLabel!!.contains("2 day", ignoreCase = true) -> AppColors.Orange400
+                        else -> AppColors.Sky500
                     }
                     
                     Surface(
@@ -107,7 +108,7 @@ fun DealCard(
                 // 3. In List Badge
                 if (deal.isOnShoppingList) {
                     Surface(
-                        color = Color(0xFFF3E8FF), // Light Purple
+                        color = AppColors.Purple50, // Light Purple
                         shape = RoundedCornerShape(4.dp)
                     ) {
                         Row(
@@ -123,7 +124,7 @@ fun DealCard(
                             Spacer(modifier = Modifier.width(2.dp))
                             Text(
                                 text = "In List",
-                                color = Color(0xFFA12AF9), // Purple
+                                color = AppColors.PurpleText, // Purple
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold)
                             )
                         }
@@ -137,7 +138,7 @@ fun DealCard(
                     .padding(Spacing.sm)
                     .size(28.dp)
                     .background(
-                        color = Color.White.copy(alpha = 0.9f),
+                        color = AppColors.Surface.copy(alpha = 0.9f),
                         shape = CircleShape
                     )
                     .clickable {
@@ -149,7 +150,7 @@ fun DealCard(
                 Icon(
                     imageVector = if (isFav) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                     contentDescription = "Favorite",
-                    tint = if (isFav) AppColors.Danger else Color(0xFF1F2937),
+                    tint = if (isFav) AppColors.Danger else AppColors.Neutral800,
                     modifier = Modifier.size(16.dp)
                 )
             }
@@ -167,12 +168,12 @@ fun DealCard(
                     imageVector = Icons.Outlined.Store,
                     contentDescription = null,
                     modifier = Modifier.size(14.dp),
-                    tint = Color(0xFF6B7280)
+                    tint = AppColors.Neutral500
                 )
                 Text(
                     text = deal.store,
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF6B7280),
+                    color = AppColors.Neutral500,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -187,7 +188,7 @@ fun DealCard(
                 maxLines = 2,
                 minLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                color = Color(0xFF1F2937)
+                color = AppColors.Neutral800
             )
 
             Spacer(Modifier.height(Spacing.sm))
@@ -206,7 +207,7 @@ fun DealCard(
                     Text(
                         text = deal.originalPrice!!,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF9CA3AF),
+                        color = AppColors.Neutral400,
                         textDecoration = TextDecoration.LineThrough
                     )
                 }
@@ -218,8 +219,8 @@ fun DealCard(
                     if (deal.discountPercentage > 0) {
                         Surface(
                             shape = MaterialTheme.shapes.small,
-                            color = Color(0xFFDCFCE7),
-                            contentColor = Color(0xFF166534)
+                            color = AppColors.Green100,
+                            contentColor = AppColors.GreenTextDark
                         ) {
                             Text(
                                 text = "${deal.discountPercentage}% OFF",

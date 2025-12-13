@@ -89,7 +89,17 @@ private fun calculateTimeLeft(availableUntil: String?): String? {
         val now = Date()
         
         val diffInMillis = endDate.time - now.time
-        if (diffInMillis <= 0) return "Expired"
+        if (diffInMillis <= 0) {
+            // Check if it's the same day (meaning it expires at the end of today)
+            val cal1 = Calendar.getInstance()
+            val cal2 = Calendar.getInstance()
+            cal1.time = now
+            cal2.time = endDate
+            val sameDay = cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
+                          cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
+            
+            return if (sameDay) "Ends today" else "Expired"
+        }
         
         val days = (diffInMillis / (1000 * 60 * 60 * 24)).toInt()
         val hours = ((diffInMillis / (1000 * 60 * 60)) % 24).toInt()

@@ -252,9 +252,10 @@ fun ProductDetailsScreen(
                                     val saved = calculateSavings(currentDeal.price, currentDeal.originalPrice)
                                     if (saved != null) {
                                         Surface(
-                                            color = AppColors.SuccessSoft,
-                                            shape = RoundedCornerShape(8.dp),
-                                            modifier = Modifier.padding(bottom = 6.dp)
+                                            color = AppColors.Red50,
+                                            shape = RoundedCornerShape(4.dp),
+                                            modifier = Modifier.padding(bottom = 6.dp),
+                                            border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.Red200)
                                         ) {
                                             Text(
                                                 text = "Save $saved",
@@ -334,7 +335,7 @@ fun ProductDetailsScreen(
                                                 Icon(
                                                     imageVector = Icons.Outlined.CheckCircle, 
                                                     contentDescription = null,
-                                                    tint = AppColors.Success,
+                                                    tint = AppColors.Neutral500,
                                                     modifier = Modifier.size(16.dp).offset(y = 2.dp)
                                                 )
                                                 Spacer(Modifier.width(8.dp))

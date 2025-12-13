@@ -30,6 +30,7 @@ import com.example.omiri.ui.components.RecommendedStoreRunCard
 import com.example.omiri.ui.components.ShoppingListItem
 import com.example.omiri.ui.components.simpleVerticalScrollbar
 import com.example.omiri.ui.theme.Spacing
+import com.example.omiri.ui.theme.AppColors
 import com.example.omiri.viewmodels.ShoppingListViewModel
 import com.example.omiri.viewmodels.ProductViewModel
 
@@ -127,7 +128,7 @@ fun ShoppingListScreen(
                 // Screen Header Section
                 item {
                     Surface(
-                        color = Color.White,
+                        color = AppColors.Surface,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
@@ -145,13 +146,13 @@ fun ShoppingListScreen(
                                     text = currentList?.name ?: "Weekly Groceries",
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF111827)
+                                    color = AppColors.Neutral900
                                 )
                                 Spacer(Modifier.width(8.dp))
                                 Icon(
                                     imageVector = Icons.Outlined.KeyboardArrowDown,
                                     contentDescription = "Switch List",
-                                    tint = Color(0xFF6B7280)
+                                    tint = AppColors.Neutral500
                                 )
                             }
                             
@@ -162,13 +163,13 @@ fun ShoppingListScreen(
                                 Text(
                                     text = "$totalItemsCount items • $matchedDealsCount matched deals",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = Color(0xFF6B7280)
+                                    color = AppColors.Neutral500
                                 )
                                 Spacer(Modifier.width(16.dp))
                                 Text(
                                     text = "You saved €${String.format("%.2f", savedAmount)} this week",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = Color(0xFF16A34A), // Green
+                                    color = AppColors.Green600, // Green
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -193,7 +194,7 @@ fun ShoppingListScreen(
                             FilterChipStub(
                                 text = "All ($totalItemsCount)", 
                                 selected = isAllSelected, 
-                                color = Color(0xFFFE8357)
+                                color = AppColors.BrandOrange
                             )
                         }
                         
@@ -204,7 +205,7 @@ fun ShoppingListScreen(
                                 FilterChipStub(
                                     text = "${category.name} (${category.count})", 
                                     selected = isSelected,
-                                    color = Color(0xFFFE8357)
+                                    color = AppColors.BrandOrange
                                 )
                             }
                         }
@@ -217,7 +218,7 @@ fun ShoppingListScreen(
                         RecommendedStoreRunCard(
                             plan = smartPlan!!,
                             selectedStore = filterStoreName,
-                            containerColor = Color(0xFFEFF6FF), // Blue 50
+                            containerColor = AppColors.Blue50, // Blue 50
                             modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md),
                             onStoreClick = { storeName, items ->
                                 if (filterStoreName == storeName) {
@@ -274,7 +275,7 @@ fun ShoppingListScreen(
                 .padding(bottom = 100.dp) // Above FAB/Nav
         ) { data ->
             Surface(
-                color = Color(0xFF1F2937), // Dark Gray
+                color = AppColors.Neutral800, // Dark Gray
                 shape = RoundedCornerShape(50.dp),
                 modifier = Modifier.padding(horizontal = 16.dp)
             ) {
@@ -286,20 +287,20 @@ fun ShoppingListScreen(
                     Box(
                         modifier = Modifier
                             .size(24.dp)
-                            .background(Color(0xFF10B981), CircleShape),
+                            .background(AppColors.Green500, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.Check, // Need Check icon
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = AppColors.Surface,
                             modifier = Modifier.size(16.dp)
                         )
                     }
                     Spacer(Modifier.width(12.dp))
                     Text(
                         text = data.visuals.message,
-                        color = Color.White,
+                        color = AppColors.Surface,
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -313,8 +314,8 @@ fun ShoppingListScreen(
                 .align(Alignment.BottomEnd)
                 .padding(Spacing.lg)
                 .padding(bottom = 110.dp), // Above Bottom Nav (96dp) + Margin
-            containerColor = Color(0xFFFE8357),
-            contentColor = Color.White
+            containerColor = AppColors.BrandOrange,
+            contentColor = AppColors.Surface
         ) {
             Icon(
                 imageVector = Icons.Outlined.Add,
@@ -403,9 +404,9 @@ fun ShoppingListScreen(
 @Composable
 fun FilterChipStub(text: String, selected: Boolean, color: Color = Color.White) {
     Surface(
-        color = if (selected) color else Color.White,
+        color = if (selected) color else AppColors.Surface,
         shape = RoundedCornerShape(20.dp), // Pill shape
-        border = if (!selected) androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)) else null, // Gray border if not selected
+        border = if (!selected) androidx.compose.foundation.BorderStroke(1.dp, AppColors.Neutral200) else null, // Gray border if not selected
         modifier = Modifier.height(32.dp)
     ) {
         Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 16.dp)) {
@@ -413,7 +414,7 @@ fun FilterChipStub(text: String, selected: Boolean, color: Color = Color.White) 
                 text = text,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Medium,
-                color = if (selected) Color.White else Color(0xFF374151)
+                color = if (selected) AppColors.Surface else AppColors.Neutral700
             )
         }
     }

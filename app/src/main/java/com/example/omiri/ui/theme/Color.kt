@@ -66,4 +66,32 @@ object AppColors {
     val PastelGreenText = Color(0xFF166534)
     val PastelPurpleText = Color(0xFF6B21A8)
     val PastelYellowText = Color(0xFF92400E)
+
+    // Expanded Palette for UI (Tailwind-ish matches from hardcoded values)
+    val Neutral900 = Color(0xFF111827)
+    val Neutral800 = Color(0xFF1F2937) // Snackbar
+    val Neutral700 = Color(0xFF374151)
+    val Neutral500 = Color(0xFF6B7280)
+    val Neutral400 = Color(0xFF9CA3AF)
+    val Neutral300 = Color(0xFFD1D5DB)
+    val Neutral200 = Color(0xFFE5E7EB)
+    val Neutral100 = Color(0xFFF3F4F6)
+    
+    // Semantic / Accents
+    val Red600 = Color(0xFFDC2626) // Discount Price
+    val Red200 = Color(0xFFFECACA)
+    val Red50 = Color(0xFFFEF2F2)
+    
+    val PurpleText = Color(0xFFA12AF9) // "In List" check
+    val Purple50 = Color(0xFFF3E8FF)
+    val Purple700 = Color(0xFF9333EA)
+    
+    val Green600 = Color(0xFF16A34A) // Savings Text
+    val Green500 = Color(0xFF10B981) // Check Icon
+    val GreenTextDark = Color(0xFF166534)
+    val Green100 = Color(0xFFDCFCE7)
+    
+    val Blue50 = Color(0xFFEFF6FF)
+    val Sky500 = Color(0xFF0EA5E9)
+    val Orange400 = Color(0xFFFB923C)
 }
