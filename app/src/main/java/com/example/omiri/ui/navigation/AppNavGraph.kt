@@ -120,9 +120,16 @@ fun AppNavGraph(
                 onBackClick = { navController.popBackStack() },
                 onMyStoresClick = { navController.navigate("my_stores") },
                 onMembershipCardsClick = { navController.navigate("membership_cards") },
+                onInterestsClick = { navController.navigate(Routes.Interests) },
                 onOnboardingClick = { navController.navigate("onboarding") },
                 viewModel = settingsViewModel
             )
+            }
+            composable(Routes.Interests) {
+                InterestsScreen(
+                    onBackClick = { navController.navigateUp() },
+                    viewModel = settingsViewModel
+                )
             }
             composable(Routes.MyStores) {
                 MyStoresScreen(

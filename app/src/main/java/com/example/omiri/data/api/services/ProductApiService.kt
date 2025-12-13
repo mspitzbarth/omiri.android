@@ -50,7 +50,7 @@ interface ProductApiService {
         @Query("zipcode") zipcode: String? = null,
         @Query("limit_per_item") limitPerItem: Int = 5,
         @Query("active_only") activeOnly: Boolean = true
-    ): Map<String, List<ProductResponse>>
+    ): com.example.omiri.data.api.models.ProductSearchResponse
     
     /**
      * Get product by ID

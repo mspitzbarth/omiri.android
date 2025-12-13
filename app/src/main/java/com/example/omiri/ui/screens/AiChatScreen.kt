@@ -4,6 +4,8 @@ import kotlinx.coroutines.launch
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -24,6 +26,7 @@ import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material.icons.outlined.LocalDining
 import androidx.compose.material.icons.outlined.Map
@@ -160,14 +163,24 @@ fun AiChatScreen(
                 onNotificationClick = onNotificationsClick,
                 onProfileClick = onProfileClick,
                 customAction = {
-                    IconButton(onClick = { viewModel.resetConversation() }) {
-                        Icon(
-                            imageVector = androidx.compose.material.icons.Icons.Default.Delete,
-                            contentDescription = "Clear Chat",
-                            tint = Color(0xFF1F2937),
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
+                    Surface(
+                         shape = CircleShape,
+                         color = Color.White,
+                         shadowElevation = 2.dp,
+                         modifier = Modifier
+                             .size(40.dp)
+                             .clip(CircleShape)
+                             .clickable { viewModel.resetConversation() }
+                     ) {
+                         Box(contentAlignment = Alignment.Center) {
+                             Icon(
+                                 imageVector = Icons.Outlined.Delete,
+                                 contentDescription = "Clear Chat",
+                                 tint = Color(0xFF1F2937),
+                                 modifier = Modifier.size(22.dp)
+                             )
+                         }
+                     }
                 }
             )
 

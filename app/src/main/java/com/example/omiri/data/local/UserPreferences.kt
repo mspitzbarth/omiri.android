@@ -525,6 +525,33 @@ class UserPreferences(private val context: Context) {
             preferences[USER_INTERESTS] = interests
         }
     }
+    
+    /**
+     * Get all personalization options
+     */
+    val personalizationOptions: Flow<Map<String, Set<String>>> = context.dataStore.data.map { preferences ->
+        val json = preferences[PERSONALIZATION_OPTIONS] ?: ""
+        if (json.isNotEmpty()) {
+            try {
+                val type = object : TypeToken<Map<String, Set<String>>>() {}.type
+                gson.fromJson(json, type)
+            } catch (e: Exception) {
+                emptyMap()
+            }
+        } else {
+            emptyMap()
+        }
+    }
+
+    /**
+     * Save all personalization options
+     */
+    suspend fun savePersonalizationOptions(options: Map<String, Set<String>>) {
+        val json = gson.toJson(options)
+        context.dataStore.edit { preferences ->
+            preferences[PERSONALIZATION_OPTIONS] = json
+        }
+    }
 
     companion object {
         private val SELECTED_COUNTRY = stringPreferencesKey("selected_country")
@@ -532,6 +559,7 @@ class UserPreferences(private val context: Context) {
         private val USER_GENDER = stringPreferencesKey("user_gender")
         private val USER_AGE_RANGE = stringPreferencesKey("user_age_range")
         private val USER_INTERESTS = stringSetPreferencesKey("user_interests")
+        private val PERSONALIZATION_OPTIONS = stringPreferencesKey("personalization_options")
         private val SHOPPING_LIST_ITEMS = stringPreferencesKey("shopping_list_items")
         private val SHOPPING_LIST_DEAL_IDS = stringSetPreferencesKey("shopping_list_deal_ids")
         private val MEMBERSHIP_CARDS = stringPreferencesKey("membership_cards")

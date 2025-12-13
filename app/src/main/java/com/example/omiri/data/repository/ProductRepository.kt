@@ -109,12 +109,14 @@ class ProductRepository {
         zipcode: String? = null
     ): Result<Map<String, List<ProductResponse>>> {
         return try {
-            val results = apiService.searchProducts(
+            val response = apiService.searchProducts(
                 query = query,
                 retailer = retailer,
                 zipcode = zipcode
             )
-            Result.success(results)
+            // Transform results map<String, Result> to map<String, List<Product>>
+            val transformed = response.results.mapValues { it.value.products }
+            Result.success(transformed)
         } catch (e: Exception) {
             Result.failure(e)
         }

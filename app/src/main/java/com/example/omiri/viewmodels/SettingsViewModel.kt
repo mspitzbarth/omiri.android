@@ -53,6 +53,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     private val context = application.applicationContext
 
+    private val _categories = MutableStateFlow<List<com.example.omiri.ui.models.PersonalizationCategory>>(emptyList())
+    val categories: StateFlow<List<com.example.omiri.ui.models.PersonalizationCategory>> = _categories.asStateFlow()
+
+    private val _personalizationOptions = MutableStateFlow<Map<String, Set<String>>>(emptyMap())
+    val personalizationOptions: StateFlow<Map<String, Set<String>>> = _personalizationOptions.asStateFlow()
+
     companion object {
         private const val CHANNEL_ID = "omiri_debug_channel"
         private const val NOTIFICATION_ID = 1001
@@ -61,8 +67,67 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     init {
         createNotificationChannel()
         loadSelectedStoresCount()
+        loadPersonalizationCategories()
+        loadSavedPersonalizationOptions()
     }
     
+    private fun loadSavedPersonalizationOptions() {
+        viewModelScope.launch {
+            userPreferences.personalizationOptions.collect { options ->
+                _personalizationOptions.value = options
+            }
+        }
+    }
+    
+    private fun loadPersonalizationCategories() {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val context = getApplication<Application>()
+                val jsonString = context.assets.open("personalization_options.json").bufferedReader().use { it.readText() }
+                val jsonArray = org.json.JSONArray(jsonString)
+                val loadedCategories = mutableListOf<com.example.omiri.ui.models.PersonalizationCategory>()
+                for (i in 0 until jsonArray.length()) {
+                    val obj = jsonArray.getJSONObject(i)
+                    val category = obj.getString("category")
+                    val key = obj.getString("key")
+                    val optionsArray = obj.getJSONArray("options")
+                    val options = mutableListOf<String>()
+                    for (j in 0 until optionsArray.length()) {
+                        options.add(optionsArray.getString(j))
+                    }
+                    loadedCategories.add(com.example.omiri.ui.models.PersonalizationCategory(category, key, options))
+                }
+                _categories.value = loadedCategories
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun togglePersonalizationOption(key: String, option: String, isSelected: Boolean) {
+        val currentSet = _personalizationOptions.value[key] ?: emptySet()
+        val newSet = if (isSelected) currentSet + option else currentSet - option
+        val newOptions = _personalizationOptions.value + (key to newSet)
+        _personalizationOptions.value = newOptions
+        
+        viewModelScope.launch {
+            userPreferences.savePersonalizationOptions(newOptions)
+            
+            // Also update legacy/specific user preferences if needed
+            // e.g. userInterests might map to shopping_goals
+            if (key == "shopping_goals") {
+                userPreferences.saveUserInterests(newSet)
+            }
+            if (key == "gender") {
+                // Single selection logic for gender?
+                 userPreferences.saveUserGender(if(newSet.isNotEmpty()) newSet.first() else "")
+            }
+            if (key == "age_range") {
+                 userPreferences.saveUserAgeRange(if(newSet.isNotEmpty()) newSet.first() else "")
+            }
+        }
+    }
+
     private fun loadSelectedStoresCount() {
         viewModelScope.launch {
             userPreferences.selectedStores.collect { stores ->

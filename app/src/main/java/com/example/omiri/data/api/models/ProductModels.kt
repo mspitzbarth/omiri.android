@@ -96,3 +96,17 @@ data class AppSyncResponse(
     @SerializedName("categories") val categories: List<String>?,
     @SerializedName("config") val config: Map<String, Any>?
 )
+
+/**
+ * Response for product search
+ */
+data class ProductSearchResponse(
+    @SerializedName("search_items") val searchItems: List<String>,
+    @SerializedName("total_items") val totalItems: Int,
+    @SerializedName("results") val results: Map<String, ProductSearchResult>
+)
+
+data class ProductSearchResult(
+    @SerializedName("count") val count: Int,
+    @SerializedName("products") val products: List<ProductResponse>
+)

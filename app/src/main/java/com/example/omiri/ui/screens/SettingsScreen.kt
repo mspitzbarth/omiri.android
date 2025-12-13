@@ -50,6 +50,7 @@ fun SettingsScreen(
     onBackClick: () -> Unit = {},
     onMyStoresClick: () -> Unit = {},
     onMembershipCardsClick: () -> Unit = {},
+    onInterestsClick: () -> Unit = {},
     onOnboardingClick: () -> Unit = {},
     viewModel: SettingsViewModel = viewModel()
 ) {
@@ -171,7 +172,7 @@ fun SettingsScreen(
                         iconColor = Color(0xFFFEF3C7), // Yellow bg
                         iconTint = Color(0xFFD97706), // Yellow icon
                         title = "Interests",
-                        onClick = { showToast("Interests coming soon!") }
+                        onClick = onInterestsClick
                     )
                 }
                 

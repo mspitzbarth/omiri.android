@@ -387,7 +387,19 @@ fun AllDealsScreen(
         // Search and Filters Content
         Column(modifier = Modifier.padding(horizontal = Spacing.lg)) {
             Spacer(Modifier.height(Spacing.sm))
-            OmiriSearchBar()
+            var searchQuery by remember { mutableStateOf("") }
+            
+            OmiriSearchBar(
+                value = searchQuery,
+                onQueryChange = { query ->
+                    searchQuery = query
+                    if (query.length > 2) {
+                        viewModel.searchProducts(query)
+                    } else if (query.isEmpty()) {
+                         viewModel.loadProducts() // Reset
+                    }
+                }
+            )
             Spacer(Modifier.height(Spacing.md))
             
             // Filters & Sort Row

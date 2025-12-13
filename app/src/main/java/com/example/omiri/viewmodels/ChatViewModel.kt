@@ -342,14 +342,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             _conversationId.value = convId
             Log.d(TAG, "Conversation started: $convId")
 
-            val aiText = extractAssistantTextFromStart(response)
+            handleResponse(response.response?.content, response.response?.toolCalls, null)
 
-            _messages.value = _messages.value + ChatMessage(
-                text = aiText ?: "I'm here to help! What would you like to know?",
-                isUser = false
-            )
-
-            Log.d(TAG, "AI start response: ${aiText ?: "<fallback>"}")
         }.onFailure { error ->
             Log.e(TAG, "Failed to start conversation", error)
             throw error
@@ -369,14 +363,12 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         val result = repository.sendMessage(conversationId, messageWithContext)
 
         result.onSuccess { response ->
-            val aiText = extractAssistantTextFromMessage(response)
+            // Extract Tool Calls from various possible locations
+            val toolCalls = extractToolCalls(response)
+            val content = extractContent(response)
 
-            _messages.value = _messages.value + ChatMessage(
-                text = aiText ?: "I received your message. How can I help you?",
-                isUser = false
-            )
-
-            Log.d(TAG, "AI message response: ${aiText ?: "<fallback>"}")
+            handleResponse(content, toolCalls, response)
+            
         }.onFailure { error ->
             Log.e(TAG, "Failed to send message", error)
             throw error
@@ -397,61 +389,69 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             "User's shopping list is currently empty."
         }
     }
-
-    /**
-     * Extract assistant text from ConversationResponse
-     */
-    private fun extractAssistantTextFromStart(response: ConversationResponse): String? {
-        return response.response?.content
-    }
-
-    /**
-     * Extract assistant text from MessageResponse
-     */
-    private fun extractAssistantTextFromMessage(response: MessageResponse): String? {
-        // Check for tool calls first!
-        // Top-level check for client tools
-        if (response.isClientToolCall) {
-            handleToolCalls(response)
-            return null // Return null so we don't display a text message if it was just a tool call
-        }
-
-        val msg = response.messages?.lastOrNull()
-        if (msg?.toolCalls != null) {
-            handleToolCallsFromContent(msg)
-        }
-        
-        // Try top-level content first (MessageResponse has it)
-        if (!response.content.isNullOrBlank()) {
-            return response.content
-        }
-        
-        // Fallback to nested response object
-        return response.response?.content
-    }
-
-    /**
-     * Parse and execute tool calls if present
-     */
-    private fun handleToolCalls(response: MessageResponse) {
-        // Use the explicit tool_calls from top-level response if isClientToolCall is true
-        val toolCalls = if (response.isClientToolCall && !response.toolCalls.isNullOrEmpty()) {
-            response.toolCalls
-        } else {
-            response.messages?.lastOrNull()?.toolCalls ?: response.response?.toolCalls
-        }
-        
+    
+    private fun handleResponse(content: String?, toolCalls: List<com.example.omiri.data.api.models.ToolCall>?, originalResponse: MessageResponse?) {
+        // 1. Execute Tools if any
         if (!toolCalls.isNullOrEmpty()) {
-            Log.d(TAG, "Found ${toolCalls.size} tool calls")
-            toolCalls.forEach { toolCall ->
-                when (toolCall.function.name) {
-                    "app-shopping_list_add" -> executeShoppingListAdd(toolCall.function.arguments)
-                    "app-shopping_list_search" -> executeShoppingListSearch(toolCall.function.arguments)
-                    "app-products_search" -> executeProductsSearch(toolCall.function.arguments)
-                    "app-recipe_search" -> executeRecipeSearch(toolCall.function.arguments)
-                    "app-find_best_stores" -> executeFindBestStores(toolCall.function.arguments)
-                    else -> Log.w(TAG, "Unknown tool: ${toolCall.function.name}")
-                }
+            Log.d(TAG, "Handling ${toolCalls.size} tool calls")
+            executeToolCalls(toolCalls)
+            
+            // If there is also text content, show it
+            if (!content.isNullOrBlank()) {
+                _messages.value = _messages.value + ChatMessage(text = content, isUser = false)
+            }
+            return
+        }
+
+        // 2. No tools -> Show content
+        if (!content.isNullOrBlank()) {
+            _messages.value = _messages.value + ChatMessage(text = content, isUser = false)
+            return
+        }
+        
+        // 3. Fallback (only if NO tools and NO content)
+        Log.w(TAG, "Received empty response")
+        _messages.value = _messages.value + ChatMessage(
+            text = "I received your message, but the response was empty.",
+            isUser = false
+        )
+    }
+
+    private fun extractToolCalls(response: MessageResponse): List<com.example.omiri.data.api.models.ToolCall> {
+        val calls = mutableListOf<com.example.omiri.data.api.models.ToolCall>()
+        
+        // 1. Client Tool Calls (Top level)
+        if (!response.toolCalls.isNullOrEmpty()) {
+            calls.addAll(response.toolCalls)
+        }
+        
+        // 2. Nested Messages
+        response.messages?.lastOrNull()?.toolCalls?.let {
+            calls.addAll(it)
+        }
+        
+        // 3. Nested Response Object (The one we were missing)
+        response.response?.toolCalls?.let {
+            calls.addAll(it)
+        }
+        
+        return calls
+    }
+
+    private fun extractContent(response: MessageResponse): String? {
+        if (!response.content.isNullOrBlank()) return response.content
+        return response.response?.content
+    }
+
+    private fun executeToolCalls(toolCalls: List<com.example.omiri.data.api.models.ToolCall>) {
+        toolCalls.forEach { toolCall ->
+            when (toolCall.function.name) {
+                "app-shopping_list_add" -> executeShoppingListAdd(toolCall.function.arguments)
+                "app-shopping_list_search" -> executeShoppingListSearch(toolCall.function.arguments)
+                "app-products_search" -> executeProductsSearch(toolCall.function.arguments)
+                "app-recipe_search" -> executeRecipeSearch(toolCall.function.arguments)
+                "app-find_best_stores" -> executeFindBestStores(toolCall.function.arguments)
+                else -> Log.w(TAG, "Unknown tool: ${toolCall.function.name}")
             }
         }
     }
@@ -551,13 +551,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         val result = repository.sendMessage(convId, messageWithContext)
         
         result.onSuccess { response ->
-            val aiText = extractAssistantTextFromMessage(response)
-            if (!aiText.isNullOrBlank()) {
-                 _messages.value = _messages.value + ChatMessage(
-                    text = aiText,
-                    isUser = false
-                )
-            }
+            val toolCalls = extractToolCalls(response)
+            val content = extractContent(response)
+            handleResponse(content, toolCalls, response)
         }.onFailure { error ->
              Log.e(TAG, "Failed to submit tool output", error)
         }

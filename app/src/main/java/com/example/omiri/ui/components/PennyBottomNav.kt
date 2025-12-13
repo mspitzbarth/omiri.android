@@ -113,10 +113,10 @@ fun PennyBottomNav(
                     onClick = {
                          navController.navigate(item.route) {
                             popUpTo(navController.graph.startDestinationId) {
-                                saveState = false
+                                saveState = true
                             }
                             launchSingleTop = true
-                            restoreState = false
+                            restoreState = true
                         }
                     },
                     icon = {
