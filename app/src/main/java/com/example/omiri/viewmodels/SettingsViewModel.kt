@@ -47,6 +47,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     private val _showDummyData = MutableStateFlow(false)
     val showDummyData: StateFlow<Boolean> = _showDummyData.asStateFlow()
+    
+    private val _selectedCountry = MutableStateFlow(UserPreferences.DEFAULT_COUNTRY)
+    val selectedCountry: StateFlow<String> = _selectedCountry.asStateFlow()
 
     private val _allStores = MutableStateFlow<List<com.example.omiri.data.api.models.StoreListResponse>>(emptyList())
     val allStores: StateFlow<List<com.example.omiri.data.api.models.StoreListResponse>> = _allStores.asStateFlow()
@@ -143,6 +146,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             userPreferences.showDummyChatData.collect { show ->
                  _showDummyData.value = show
+            }
+        }
+        viewModelScope.launch {
+            userPreferences.selectedCountry.collect { country ->
+                _selectedCountry.value = country
             }
         }
         // Fetch all stores for Popular Stores section

@@ -235,6 +235,7 @@ fun SavingsGoalCard(
             .padding(horizontal = Spacing.md),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
         // No elevation as per design rules (flat)
     ) {
         Column(modifier = Modifier.padding(Spacing.lg)) {

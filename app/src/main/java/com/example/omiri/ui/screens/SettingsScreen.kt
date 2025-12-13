@@ -57,6 +57,7 @@ fun SettingsScreen(
     val shoppingListNotifications by viewModel.shoppingListNotifications.collectAsState()
     val debugMode by viewModel.debugMode.collectAsState()
     val selectedStoresCount by viewModel.selectedStoresCount.collectAsState()
+    val selectedCountry by viewModel.selectedCountry.collectAsState()
     
     // Dummy state for new UI demo
     var emailNotifications by remember { mutableStateOf(true) }
@@ -150,7 +151,7 @@ fun SettingsScreen(
                         iconColor = Color(0xFFCCFBF1), // Teal bg
                         iconTint = Color(0xFF14B8A6), // Teal icon
                         title = "Location",
-                        subtitle = if (selectedStoresCount > 0) "$selectedStoresCount stores selected" else "Select stores",
+                        subtitle = if (selectedStoresCount > 0) "$selectedCountry • $selectedStoresCount stores selected" else "$selectedCountry • Select stores",
                         onClick = onMyStoresClick
                     )
 

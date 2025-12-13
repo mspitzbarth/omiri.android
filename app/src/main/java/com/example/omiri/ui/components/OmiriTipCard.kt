@@ -25,11 +25,12 @@ fun OmiriTipCard(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFFEFF6FF) // Light Blue 50
         ),
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFDBEAFE)), // Blue 100
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         onClick = { onClick?.invoke() },
         enabled = onClick != null
     ) {

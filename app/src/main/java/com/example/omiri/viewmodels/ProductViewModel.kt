@@ -225,6 +225,49 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
                 }
             }
         }
+        
+        // Observe Country changes
+        viewModelScope.launch {
+            userPreferences.selectedCountry.distinctUntilChanged().collect { country ->
+                Log.d(TAG, "Country selection changed: $country")
+                // Clear cached stores and products to prevent stale data
+                cachedStores = null
+                cachedStoresCountry = null
+                _categories.value = emptyList() // Clear categories to force refresh
+                
+                // Clear persistent product cache
+                launch(kotlinx.coroutines.Dispatchers.IO) {
+                     userPreferences.clearCachedProducts()
+                }
+
+                // Clear in-memory lists to force UI refresh
+                _allDeals.value = emptyList()
+                _featuredDeals.value = emptyList()
+                _shoppingListDeals.value = emptyList()
+                _currentPage.value = 1
+                _hasMore.value = true
+                
+                // Reload Featured Deals and other App Sync data
+                loadProducts()
+                
+                // Reload All Deals (Page 1) with new country context
+                launch(kotlinx.coroutines.Dispatchers.IO) {
+                    try {
+                        val selectedStores = userPreferences.selectedStores.first()
+                        val storesForCountry = selectedStores.filter { it.endsWith("_$country", ignoreCase = true) }
+                        val storesResult = storeRepository.getStores(country)
+                        val allStores = storesResult.getOrNull() ?: emptyList()
+                        val retailers = if (storesForCountry.isNotEmpty()) {
+                            storesForCountry.mapNotNull { id -> allStores.find { it.id == id }?.retailer }.joinToString(",")
+                        } else null
+                        
+                        loadAllDeals(country, retailers)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to reload all deals on country change", e)
+                    }
+                }
+            }
+        }
 
         // Observe Favorites
         viewModelScope.launch {

@@ -33,7 +33,8 @@ fun SmartPlanCard(
             .fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF7ED)),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFED7AA))
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFED7AA)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             // Header Row

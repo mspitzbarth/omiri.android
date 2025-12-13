@@ -430,6 +430,17 @@ class UserPreferences(private val context: Context) {
     }
 
     /**
+     * Clear cached products
+     */
+    suspend fun clearCachedProducts() {
+        context.dataStore.edit { preferences ->
+            preferences.remove(CACHED_FEATURED_PRODUCTS)
+            preferences.remove(CACHED_ALL_PRODUCTS)
+            preferences.remove(CACHED_SHOPPING_LIST_DEALS)
+        }
+    }
+
+    /**
      * Get favorite deal IDs
      */
     val favoriteDealIds: Flow<Set<String>> = context.dataStore.data.map { preferences ->

@@ -49,7 +49,7 @@ fun ShoppingListItem(
         colors = CardDefaults.cardColors(
             containerColor = backgroundColor
         ),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, borderColor), // Light gray border
         modifier = modifier
             .fillMaxWidth()
