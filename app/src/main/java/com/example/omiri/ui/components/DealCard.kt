@@ -55,7 +55,8 @@ fun DealCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(140.dp)
-                .background(backgroundColor ?: deal.heroColor ?: AppColors.SurfaceAlt),
+                .height(140.dp)
+                .background(backgroundColor ?: deal.heroColor ?: EmojiHelper.getCategoryColor(deal.category)),
             contentAlignment = Alignment.Center
         ) {
             if (!deal.imageUrl.isNullOrBlank()) {
@@ -78,21 +79,6 @@ fun DealCard(
                     .align(Alignment.TopStart)
                     .padding(8.dp)
             ) {
-                // 1. Discount Badge
-                if (deal.discountPercentage > 0) {
-                    Surface(
-                        color = Color(0xFFDC2626), // Red
-                        shape = RoundedCornerShape(4.dp)
-                    ) {
-                        Text(
-                            text = "-${deal.discountPercentage}%",
-                            color = Color.White,
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                }
                 
                 // 2. Time Left Badge
                 if (!deal.timeLeftLabel.isNullOrBlank()) {

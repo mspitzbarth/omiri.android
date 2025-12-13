@@ -57,6 +57,9 @@ object AppColors {
     val PastelYellow = Color(0xFFFEF3C7) // Amber-ish pastel
     val PastelPink = Color(0xFFFFE4E6)
     val PastelGrey = Color(0xFFF3F4F6)
+    val PastelRed = Color(0xFFFEE2E2)
+    val PastelTeal = Color(0xFFCCFBF1)
+    val PastelIndigo = Color(0xFFE0E7FF)
     
     val PastelOrangeText = Color(0xFFC2410C) // Darker for text on pastel orange
     val PastelBlueText = Color(0xFF1E40AF)

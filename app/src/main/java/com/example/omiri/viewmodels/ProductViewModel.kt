@@ -43,6 +43,9 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
     private val _featuredDeals = MutableStateFlow<List<Deal>>(emptyList())
     val featuredDeals: StateFlow<List<Deal>> = _featuredDeals.asStateFlow()
     
+    private val _topDeals = MutableStateFlow<List<Deal>>(emptyList())
+    val topDeals: StateFlow<List<Deal>> = _topDeals.asStateFlow()
+    
     private val _shoppingListDeals = MutableStateFlow<List<Deal>>(emptyList())
     val shoppingListDeals: StateFlow<List<Deal>> = _shoppingListDeals.asStateFlow()
     
@@ -176,6 +179,11 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
                  _featuredDeals.value = cachedFeatured.toDeals()
              }
              
+             val cachedTop = userPreferences.getCachedProducts("top_deals").firstOrNull()
+             if (!cachedTop.isNullOrEmpty()) {
+                 _topDeals.value = cachedTop.toDeals()
+             }
+             
              val cachedAll = userPreferences.getCachedProducts("all_deals").firstOrNull()
              if (!cachedAll.isNullOrEmpty()) {
                  _allDeals.value = cachedAll.toDeals()
@@ -243,6 +251,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
                 // Clear in-memory lists to force UI refresh
                 _allDeals.value = emptyList()
                 _featuredDeals.value = emptyList()
+                _topDeals.value = emptyList()
                 _shoppingListDeals.value = emptyList()
                 _currentPage.value = 1
                 _hasMore.value = true
@@ -274,6 +283,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
             userPreferences.favoriteDealIds.collect { ids ->
                 _favoriteDealIds.value = ids
                 _featuredDeals.value = syncDealsState(_featuredDeals.value)
+                _topDeals.value = syncDealsState(_topDeals.value)
                 _allDeals.value = syncDealsState(_allDeals.value)
                 _shoppingListDeals.value = syncDealsState(_shoppingListDeals.value)
             }
@@ -292,6 +302,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
                     
                     // Clear existing data so 'loadIfNeeded' validations pass
                     _featuredDeals.value = emptyList()
+                    _topDeals.value = emptyList()
                     _allDeals.value = emptyList()
                     _shoppingListDeals.value = emptyList()
                     _currentPage.value = 1
@@ -455,8 +466,16 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
                          }
                      }
                      
+                     // Get Zipcodes from selected stores
+                     val zipcodes = mutableSetOf<String>()
+                     selectedStores.forEach { storeId ->
+                         val locs = userPreferences.getStoreLocations(storeId).first()
+                         zipcodes.addAll(locs)
+                     }
+                     val zipcodeParam = if(zipcodes.isNotEmpty()) zipcodes.joinToString(",") else null
+                     
                      // Use new Sync Endpoint
-                     val result = repository.getAppSync(country = country, stores = storesParam, activeOnly = true)
+                     val result = repository.getAppSync(country = country, zipcode = zipcodeParam, stores = storesParam, activeOnly = true)
                      
                      result.onSuccess { response -> 
                          handleAppSyncResponse(response, country, selectedStores)
@@ -489,6 +508,13 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
          }
          _featuredDeals.value = featured
          if (!_isMockMode.value) userPreferences.saveCachedProducts("featured", response.featuredDeals)
+
+         // 1.5 Top Deals
+         val top = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { 
+             response.topDeals?.toDeals() ?: emptyList()
+         }
+         _topDeals.value = top
+         if (!_isMockMode.value && !response.topDeals.isNullOrEmpty()) userPreferences.saveCachedProducts("top_deals", response.topDeals)
          
          // 2. Categories
          if (!response.categories.isNullOrEmpty()) {
@@ -544,13 +570,14 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
             
             com.example.omiri.data.api.models.AppSyncResponse(
                 featuredDeals = products.filter { it.featured == true },
+                topDeals = products.take(5),
                 stores = stores,
                 categories = categories,
                 config = emptyMap()
             )
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load mock data", e)
-             com.example.omiri.data.api.models.AppSyncResponse(emptyList(), emptyList(), emptyList(), null)
+             com.example.omiri.data.api.models.AppSyncResponse(emptyList(), emptyList(), emptyList(), emptyList(), null)
         }
     }
     
@@ -1327,6 +1354,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
         // 1. Check Memory Cache
         val cachedDeal = _allDeals.value.find { it.id == productId }
             ?: _featuredDeals.value.find { it.id == productId }
+            ?: _topDeals.value.find { it.id == productId }
             ?: _shoppingListDeals.value.find { it.id == productId }
             ?: _shoppingListMatches.value.values.flatten().find { it.id == productId }
             

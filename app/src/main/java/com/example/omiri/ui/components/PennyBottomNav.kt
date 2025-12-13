@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Home
@@ -40,7 +41,8 @@ data class BottomNavItem(
     val route: String,
     val label: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
-    val badgeCount: Int? = null
+    val badgeCount: Int? = null,
+    val isBeta: Boolean = false
 )
 
 @Composable
@@ -71,7 +73,8 @@ fun PennyBottomNav(
         BottomNavItem(
             route = Routes.AiChat,
             label = "AI",
-            icon = Icons.Filled.AutoAwesome
+            icon = Icons.Filled.AutoAwesome,
+            isBeta = true
         ),
         BottomNavItem(
             route = Routes.Recipes,
@@ -133,6 +136,29 @@ fun PennyBottomNav(
                                             text = count.toString(),
                                             fontSize = 9.sp,
                                             style = MaterialTheme.typography.labelSmall
+                                        )
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = item.icon,
+                                    contentDescription = item.label,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        } else if (item.isBeta) {
+                           BadgedBox(
+                                badge = {
+                                    Badge(
+                                        containerColor = Color(0xFF3B82F6), // Blue
+                                        contentColor = Color.White,
+                                        modifier = Modifier.offset(x = 10.dp, y = (-6).dp)
+                                    ) {
+                                        Text(
+                                            text = "BETA",
+                                            fontSize = 8.sp,
+                                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                            modifier = Modifier.padding(horizontal = 2.dp)
                                         )
                                     }
                                 }

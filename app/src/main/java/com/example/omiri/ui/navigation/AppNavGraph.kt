@@ -144,9 +144,9 @@ fun AppNavGraph(
                 ProductDetailsScreen(
                     dealId = dealId,
                     onBackClick = { navController.navigateUp() },
-                    onAddToList = { deal -> 
-                         shoppingListViewModel.setDealListed(deal, true)
-                         // Optional: Show snackbar or feedback?
+                    onAddToList = { deal, isListed -> 
+                         shoppingListViewModel.setDealListed(deal, isListed)
+                         productViewModel.toggleShoppingList(deal)
                     },
                     onViewFlyer = { url ->
                         navController.navigate(Routes.webView(url, "Product Flyer"))

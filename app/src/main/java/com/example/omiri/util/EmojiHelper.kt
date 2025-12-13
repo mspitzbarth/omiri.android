@@ -211,4 +211,49 @@ object EmojiHelper {
         for (n in needles) if (haystack.contains(n)) return true
         return false
     }
+
+    /**
+     * Returns a specific background color for a category.
+     * Use when image is missing.
+     */
+    fun getCategoryColor(category: String?): androidx.compose.ui.graphics.Color {
+        val cat = category?.lowercase() ?: return com.example.omiri.ui.theme.AppColors.SurfaceAlt
+        return CATEGORY_COLORS[cat] ?: com.example.omiri.ui.theme.AppColors.SurfaceAlt
+    }
+    
+    // Category Colors Mapping
+    private val CATEGORY_COLORS: Map<String, androidx.compose.ui.graphics.Color> = mapOf(
+        // Electronics -> Blue/Indigo
+        "electronics" to com.example.omiri.ui.theme.AppColors.PastelBlue,
+        "tv_home_theater" to com.example.omiri.ui.theme.AppColors.PastelIndigo,
+        "computers" to com.example.omiri.ui.theme.AppColors.PastelGrey,
+        "gaming" to com.example.omiri.ui.theme.AppColors.PastelPurple,
+        
+        // Food -> Orange/Yellow/Teal
+        "food" to com.example.omiri.ui.theme.AppColors.PastelOrange,
+        "beverages" to com.example.omiri.ui.theme.AppColors.PastelTeal,
+        "snacks" to com.example.omiri.ui.theme.AppColors.PastelYellow,
+        "sweets" to com.example.omiri.ui.theme.AppColors.PastelPink,
+        "frozen" to com.example.omiri.ui.theme.AppColors.PastelBlue,
+        "snacks_sweets" to com.example.omiri.ui.theme.AppColors.PastelYellow,
+        "confectionery" to com.example.omiri.ui.theme.AppColors.PastelPink,
+        
+        // Beauty -> Pink
+        "beauty" to com.example.omiri.ui.theme.AppColors.PastelPink,
+        "personal_care" to com.example.omiri.ui.theme.AppColors.PastelTeal,
+        
+        // Home -> Green/Yellow
+        "home_decor" to com.example.omiri.ui.theme.AppColors.PastelOrange,
+        "kitchen" to com.example.omiri.ui.theme.AppColors.PastelYellow,
+        "garden" to com.example.omiri.ui.theme.AppColors.PastelGreen,
+        
+        // Fashion -> Purple/Indigo
+        "clothing" to com.example.omiri.ui.theme.AppColors.PastelPurple,
+        
+        // Kids -> Yellow
+        "toys" to com.example.omiri.ui.theme.AppColors.PastelYellow,
+        
+        // Seasonal -> Red/Green
+        "seasonal" to com.example.omiri.ui.theme.AppColors.PastelRed
+    )
 }

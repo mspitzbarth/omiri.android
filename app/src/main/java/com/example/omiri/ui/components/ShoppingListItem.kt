@@ -137,13 +137,17 @@ fun ShoppingListItem(
                                      verticalAlignment = Alignment.CenterVertically,
                                      horizontalArrangement = Arrangement.spacedBy(4.dp)
                                  ) {
-                                     if (item.discountPercentage != null) {
-                                         Text(
-                                             text = "-${item.discountPercentage}%",
-                                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                             color = Color(0xFFDC2626)
-                                         )
-                                     }
+                                         Surface(
+                                             color = Color(0xFFFFE5DB), // Light Orange
+                                             shape = CircleShape
+                                         ) {
+                                             Text(
+                                                 text = "${item.discountPercentage}%",
+                                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
+                                                 color = Color(0xFFFE8357),
+                                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                             )
+                                         }
                                      Text(
                                          text = "€${String.format("%.2f", item.discountPrice)}",
                                          style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),

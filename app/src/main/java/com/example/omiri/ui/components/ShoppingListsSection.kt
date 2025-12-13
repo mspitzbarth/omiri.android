@@ -140,12 +140,15 @@ private fun ShoppingListItemRow(
                     }
                 }
             }
-            
+
+
+
             // Percentage Badge
             Surface(
-                color = if (percentage == 100) Color(0xFF10B981) else Color(0xFFFE8357), // Green if done, else Orange
+                color = if (percentage == 100) Color(0xFFDCFCE7) else Color(0xFFFFE5DB), // Green if done, else Orange
                 shape = RoundedCornerShape(16.dp), // Pill shape
-                contentColor = Color.White
+                contentColor = if (percentage == 100) Color(0xFF166534) else Color(0xFFFE8357), // Text color
+                modifier = Modifier.size(48.dp)
             ) {
                  Text(
                     text = "$percentage%",

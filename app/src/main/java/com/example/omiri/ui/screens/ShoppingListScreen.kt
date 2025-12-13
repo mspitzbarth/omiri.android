@@ -71,7 +71,7 @@ fun ShoppingListScreen(
     val savedAmount = 12.40 // Mocked per image, or calculate if data available
 
     Box(
-        modifier = Modifier.fillMaxSize().background(Color(0xFFF9FAFB)) // Ensure background is light gray so white items pop
+        modifier = Modifier.fillMaxSize().background(com.example.omiri.ui.theme.AppColors.Bg) // Ensure background is light gray so white items pop
     ) {
         Column(
             modifier = Modifier.fillMaxSize()

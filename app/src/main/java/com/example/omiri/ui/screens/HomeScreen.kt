@@ -63,6 +63,7 @@ fun HomeScreen(
 ) {
     // Collect state from ViewModel
     val featuredDeals by viewModel.featuredDeals.collectAsState()
+    val topDeals by viewModel.topDeals.collectAsState()
     val shoppingListDeals by viewModel.shoppingListDeals.collectAsState()
     val shoppingLists by shoppingListViewModel.shoppingLists.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -206,6 +207,20 @@ fun HomeScreen(
                 val networkErrorType by viewModel.networkErrorType.collectAsState()
                 
                 com.example.omiri.ui.components.FeaturedDealsRow(
+                    title = "Top Deals",
+                    deals = topDeals,
+                    isLoading = isLoading,
+                    error = error, // Shared error state for now
+                    networkErrorType = networkErrorType,
+                    onRetry = { viewModel.loadProducts() },
+                    onViewAll = onNavigateAllDeals, // Navigate to all deals for now, maybe filtered later
+                    onDealClick = onDealClick
+                )
+
+                Spacer(Modifier.height(Spacing.xl))
+
+                com.example.omiri.ui.components.FeaturedDealsRow(
+                    title = "Deals for you", // Restore original title explicitly or let it default if I hadn't changed default
                     deals = featuredDeals.take(5), 
                     isLoading = isLoading,
                     error = error,

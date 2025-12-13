@@ -19,57 +19,57 @@ val provider = GoogleFont.Provider(
     certificates = R.array.com_google_android_gms_fonts_certs
 )
 
-val InterFont = GoogleFont("Inter")
+val PoppinsFont = GoogleFont("Poppins")
 
-val InterFontFamily = FontFamily(
-    Font(googleFont = InterFont, fontProvider = provider),
-    Font(googleFont = InterFont, fontProvider = provider, weight = FontWeight.Medium),
-    Font(googleFont = InterFont, fontProvider = provider, weight = FontWeight.Bold),
-    Font(googleFont = InterFont, fontProvider = provider, weight = FontWeight.SemiBold),
+val PoppinsFontFamily = FontFamily(
+    Font(googleFont = PoppinsFont, fontProvider = provider),
+    Font(googleFont = PoppinsFont, fontProvider = provider, weight = FontWeight.Medium),
+    Font(googleFont = PoppinsFont, fontProvider = provider, weight = FontWeight.Bold),
+    Font(googleFont = PoppinsFont, fontProvider = provider, weight = FontWeight.SemiBold),
 )
 
 /**
- * Typography using Google Font 'Inter'
+ * Typography using Google Font 'Poppins'
  */
 val AppTypography = Typography(
     displaySmall = TextStyle(
-        fontFamily = InterFontFamily,
+        fontFamily = PoppinsFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 30.sp,
         lineHeight = 34.sp
     ),
     headlineSmall = TextStyle(
-        fontFamily = InterFontFamily,
+        fontFamily = PoppinsFontFamily,
         fontWeight = FontWeight.SemiBold,
         fontSize = 22.sp,
         lineHeight = 26.sp
     ),
     titleLarge = TextStyle(
-        fontFamily = InterFontFamily,
+        fontFamily = PoppinsFontFamily,
         fontWeight = FontWeight.SemiBold,
         fontSize = 18.sp,
         lineHeight = 22.sp
     ),
     titleMedium = TextStyle(
-        fontFamily = InterFontFamily,
+        fontFamily = PoppinsFontFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 16.sp,
         lineHeight = 20.sp
     ),
     bodyLarge = TextStyle(
-        fontFamily = InterFontFamily,
+        fontFamily = PoppinsFontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 15.sp,
         lineHeight = 20.sp
     ),
     bodyMedium = TextStyle(
-        fontFamily = InterFontFamily,
+        fontFamily = PoppinsFontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
         lineHeight = 19.sp
     ),
     labelLarge = TextStyle(
-        fontFamily = InterFontFamily,
+        fontFamily = PoppinsFontFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 12.sp,
         lineHeight = 16.sp

@@ -163,6 +163,7 @@ fun AllDealsScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .background(com.example.omiri.ui.theme.AppColors.Bg)
                 .nestedScroll(nestedScrollConnection)
         ) {
             // Interstitial Ad Logic: Show every 200 items
@@ -208,7 +209,7 @@ fun AllDealsScreen(
                 item(key = "header_$category") {
                     Text(
                         text = category.replaceFirstChar { if (it.isLowerCase()) it.titlecase(java.util.Locale.getDefault()) else it.toString() },
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF111827),
                         modifier = Modifier

@@ -109,32 +109,7 @@ private fun calculateTimeLeft(availableUntil: String?): String? {
  * Get color for category using AppColors palettes
  */
 private fun getHeroColor(category: String?, id: String): Color {
-    val cat = category?.lowercase() ?: "general"
-    
-    // Palettes based on dummy data logic
-    val electronicsPalette = listOf(AppColors.HeroBlue, AppColors.HeroSlate, AppColors.HeroViolet)
-    val accessoriesPalette = listOf(AppColors.HeroSand, AppColors.HeroAqua)
-    val cleaningPalette = listOf(AppColors.HeroCream, AppColors.HeroMint, AppColors.HeroIce, AppColors.HeroOrange, AppColors.HeroBlueSoft, AppColors.HeroLemon)
-    val outdoorsPalette = listOf(AppColors.HeroForest)
-    val foodPalette = listOf(AppColors.HeroMint, AppColors.HeroOrange, AppColors.HeroLemon, AppColors.HeroCream)
-    
-    // Default palette combining all
-    val defaultPalette = listOf(
-        AppColors.HeroBlue, AppColors.HeroSand, AppColors.HeroSlate, 
-        AppColors.HeroViolet, AppColors.HeroForest, AppColors.HeroAqua,
-        AppColors.HeroCream, AppColors.HeroMint, AppColors.HeroIce,
-        AppColors.HeroOrange, AppColors.HeroLemon, AppColors.HeroBlueSoft
-    )
-
-    val palette = when {
-        cat.contains("electronic") || cat.contains("tech") -> electronicsPalette
-        cat.contains("accessor") -> accessoriesPalette
-        cat.contains("cleaning") || cat.contains("home") -> cleaningPalette
-        cat.contains("outdoor") || cat.contains("garden") -> outdoorsPalette
-        cat.contains("food") || cat.contains("grocer") || cat.contains("snack") -> foodPalette
-        else -> defaultPalette
-    }
-    
-    val index = Math.abs(id.hashCode()) % palette.size
-    return palette[index]
+    // Determine category color using Helper (Single Pastel Color per Category)
+    // We ignore ID randomization to strictly follow "each category should have its own unique background color"
+    return com.example.omiri.util.EmojiHelper.getCategoryColor(category)
 }

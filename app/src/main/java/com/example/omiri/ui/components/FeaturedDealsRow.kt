@@ -20,6 +20,7 @@ import com.example.omiri.ui.theme.AppColors
 
 @Composable
 fun FeaturedDealsRow(
+    title: String = "Featured Deals for You",
     deals: List<Deal>,
     isLoading: Boolean = false,
     error: String? = null,
@@ -34,7 +35,7 @@ fun FeaturedDealsRow(
     ) {
         Padding(padding = PaddingValues(horizontal = Spacing.lg)) {
              SectionHeader(
-                title = "Featured Deals for You",
+                title = title,
                 actionText = "View All",
                 onActionClick = onViewAll
             )
