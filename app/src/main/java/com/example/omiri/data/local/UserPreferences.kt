@@ -553,6 +553,22 @@ class UserPreferences(private val context: Context) {
         }
     }
 
+    /**
+     * Get monthly savings goal
+     */
+    val monthlySavingsGoal: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[MONTHLY_SAVINGS_GOAL] ?: ""
+    }
+
+    /**
+     * Save monthly savings goal
+     */
+    suspend fun saveMonthlySavingsGoal(goal: String) {
+        context.dataStore.edit { preferences ->
+            preferences[MONTHLY_SAVINGS_GOAL] = goal
+        }
+    }
+
     companion object {
         private val SELECTED_COUNTRY = stringPreferencesKey("selected_country")
         private val SELECTED_STORES = stringSetPreferencesKey("selected_stores")
@@ -579,6 +595,7 @@ class UserPreferences(private val context: Context) {
         
         private val CACHED_RETAILERS_STRING = stringPreferencesKey("cached_retailers_string")
         private val SMART_PLAN = stringPreferencesKey("smart_plan")
+        private val MONTHLY_SAVINGS_GOAL = stringPreferencesKey("monthly_savings_goal")
         private val SHOPPING_LIST_MATCHES_RESPONSE = stringPreferencesKey("shopping_list_matches_response")
         
         // Product Caching Keys

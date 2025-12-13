@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.omiri.ui.models.PersonalizationCategory
+import com.example.omiri.ui.theme.AppColors
 import com.example.omiri.ui.theme.Spacing
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
@@ -84,7 +85,7 @@ fun InterestsContent(
             SettingsGroup(title = "What are you shopping for?") {
                  Column(modifier = Modifier.padding(Spacing.md)) {
                      if (showHeader) {
-                         Text("Choose up to 3 -- we'll optimize your feed.", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                         Text("Choose up to 3 -- we'll optimize your feed.", style = MaterialTheme.typography.bodyMedium, color = AppColors.MutedText)
                          Spacer(Modifier.height(Spacing.xl))
                      }
                      FlowRow(

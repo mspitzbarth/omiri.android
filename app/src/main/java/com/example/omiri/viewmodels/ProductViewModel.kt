@@ -102,6 +102,8 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
     private val _smartPlan = MutableStateFlow<com.example.omiri.data.api.models.ShoppingListOptimizeResponse?>(null)
     val smartPlan: StateFlow<com.example.omiri.data.api.models.ShoppingListOptimizeResponse?> = _smartPlan.asStateFlow()
     
+    val monthlySavingsGoal: kotlinx.coroutines.flow.Flow<String> = userPreferences.monthlySavingsGoal
+    
     
     // Savings Calculation
     // We derive this from shoppingListDeals whenever it changes

@@ -71,6 +71,7 @@ fun HomeScreen(
     val potentialSavings by viewModel.shoppingListSavings.collectAsState(initial = 0.0)
     val smartPlan by viewModel.smartPlan.collectAsState()
     val smartAlerts by viewModel.smartAlerts.collectAsState()
+    val monthlySavingsGoal by viewModel.monthlySavingsGoal.collectAsState(initial = "")
     
     // AdMob Interstitial
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -124,6 +125,15 @@ fun HomeScreen(
                 // We will handle errors inside sections (e.g. FeaturedDealsRow)
                 
                 Spacer(modifier = Modifier.height(Spacing.lg))
+
+                // 1. Savings Goal Card
+                if (monthlySavingsGoal.isNotEmpty()) {
+                    SavingsGoalCard(
+                        monthlyGoal = monthlySavingsGoal, 
+                        currentSavings = potentialSavings
+                    )
+                    Spacer(Modifier.height(Spacing.lg))
+                }
 
                 // 2 & 3. Smart Plan / Alerts Carousel
                 
@@ -207,6 +217,73 @@ fun HomeScreen(
 
                 Spacer(Modifier.height(Spacing.md))
             }
+        }
+    }
+}
+
+@Composable
+fun SavingsGoalCard(
+    monthlyGoal: String,
+    currentSavings: Double
+) {
+    val goal = monthlyGoal.toDoubleOrNull() ?: return
+    val progress = (currentSavings / goal).toFloat().coerceIn(0f, 1f)
+    
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.md),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        // No elevation as per design rules (flat)
+    ) {
+        Column(modifier = Modifier.padding(Spacing.lg)) {
+             Row(
+                 modifier = Modifier.fillMaxWidth(),
+                 horizontalArrangement = Arrangement.SpaceBetween,
+                 verticalAlignment = Alignment.CenterVertically
+             ) {
+                 Text(
+                     text = "Monthly goal: Save €$monthlyGoal",
+                     style = MaterialTheme.typography.titleMedium,
+                     fontWeight = FontWeight.Bold,
+                     color = Color(0xFF111827)
+                 )
+                 
+                 Text(
+                     text = "€${"%.0f".format(currentSavings)} / €$monthlyGoal",
+                     style = MaterialTheme.typography.bodyMedium,
+                     fontWeight = FontWeight.Bold,
+                     color = Color(0xFF9CA3AF)
+                 )
+             }
+             
+             Spacer(Modifier.height(Spacing.md))
+             
+             // Progress Bar
+             Box(
+                 modifier = Modifier
+                     .fillMaxWidth()
+                     .height(8.dp)
+                     .clip(RoundedCornerShape(4.dp))
+                     .background(Color(0xFFF3F4F6))
+             ) {
+                 Box(
+                     modifier = Modifier
+                         .fillMaxWidth(progress)
+                         .fillMaxHeight()
+                         .clip(RoundedCornerShape(4.dp))
+                         .background(Color(0xFFFE8357))
+                 )
+             }
+             
+             Spacer(Modifier.height(Spacing.sm))
+             
+             Text(
+                 text = "Saved so far: €${"%.0f".format(currentSavings)}", // Round to integer for cleaner look in card
+                 style = MaterialTheme.typography.bodyMedium,
+                 color = Color(0xFF6B7280)
+             )
         }
     }
 }

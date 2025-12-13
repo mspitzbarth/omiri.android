@@ -21,6 +21,8 @@ object AppColors {
     val MutedText = Color(0xFF6B7280)
     val SubtleText = Color(0xFF94A3B8)
 
+    var SubTextGrey = Color(0xFF6C7280)
+
     // Status / tags
     val Success = Color(0xFF1E9E5A)
     val SuccessSoft = Color(0xFFE8F7EF)

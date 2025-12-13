@@ -49,6 +49,7 @@ import com.example.omiri.data.local.UserPreferences
 
 enum class OnboardingStep {
     STEP_1_GOALS,
+    SAVINGS_GOAL,
     STEP_2_DEALS,
     STEP_3_DIETARY,
     STORES,
@@ -90,6 +91,9 @@ fun OnboardingScreen(
 
     // List Name State
     var listName by remember { mutableStateOf("") }
+    
+    // Savings Goal State
+    var savingsGoal by remember { mutableStateOf("") }
 
     // Personalization Data Loading
     var categories by remember { mutableStateOf<List<PersonalizationCategory>>(emptyList()) }
@@ -151,7 +155,8 @@ fun OnboardingScreen(
                          if (currentStep != OnboardingStep.STEP_1_GOALS && currentStep != OnboardingStep.COMPLETED) {
                              IconButton(onClick = {
                                  currentStep = when(currentStep) {
-                                     OnboardingStep.STEP_2_DEALS -> OnboardingStep.STEP_1_GOALS
+                                     OnboardingStep.SAVINGS_GOAL -> OnboardingStep.STEP_1_GOALS
+                                     OnboardingStep.STEP_2_DEALS -> OnboardingStep.SAVINGS_GOAL
                                      OnboardingStep.STEP_3_DIETARY -> OnboardingStep.STEP_2_DEALS
                                      OnboardingStep.STORES -> OnboardingStep.STEP_3_DIETARY
                                      OnboardingStep.CREATE_LIST -> OnboardingStep.STORES
@@ -188,17 +193,19 @@ fun OnboardingScreen(
                     // Skip Button Logic
                     val progressStep = when(currentStep) {
                         OnboardingStep.STEP_1_GOALS -> 0
-                        OnboardingStep.STEP_2_DEALS -> 1
-                        OnboardingStep.STEP_3_DIETARY -> 2
-                        OnboardingStep.STORES -> 3
-                        OnboardingStep.CREATE_LIST -> 4
+                        OnboardingStep.SAVINGS_GOAL -> 1
+                        OnboardingStep.STEP_2_DEALS -> 2
+                        OnboardingStep.STEP_3_DIETARY -> 3
+                        OnboardingStep.STORES -> 4
+                        OnboardingStep.CREATE_LIST -> 5
                         else -> -1
                     }
 
                     if (progressStep != -1 && progressStep < 3) { 
                         TextButton(onClick = {
                             currentStep = when(currentStep) {
-                                OnboardingStep.STEP_1_GOALS -> OnboardingStep.STEP_2_DEALS
+                                OnboardingStep.STEP_1_GOALS -> OnboardingStep.SAVINGS_GOAL
+                                OnboardingStep.SAVINGS_GOAL -> OnboardingStep.STEP_2_DEALS
                                 OnboardingStep.STEP_2_DEALS -> OnboardingStep.STEP_3_DIETARY
                                 OnboardingStep.STEP_3_DIETARY -> {
                                     storesViewModel.loadStores()
@@ -217,10 +224,11 @@ fun OnboardingScreen(
                 // Linear Progress Indicator
                 val progressStep = when(currentStep) {
                         OnboardingStep.STEP_1_GOALS -> 0
-                        OnboardingStep.STEP_2_DEALS -> 1
-                        OnboardingStep.STEP_3_DIETARY -> 2
-                        OnboardingStep.STORES -> 3
-                        OnboardingStep.CREATE_LIST -> 4
+                        OnboardingStep.SAVINGS_GOAL -> 1
+                        OnboardingStep.STEP_2_DEALS -> 2
+                        OnboardingStep.STEP_3_DIETARY -> 3
+                        OnboardingStep.STORES -> 4
+                        OnboardingStep.CREATE_LIST -> 5
                         else -> -1
                 }
                 
@@ -229,7 +237,7 @@ fun OnboardingScreen(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.sm),
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        repeat(5) { index ->
+                        repeat(6) { index ->
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
@@ -255,7 +263,13 @@ fun OnboardingScreen(
                          
                         // Determine button state and action
                         val (isEnabled, buttonText, onAction) = when(currentStep) {
-                             OnboardingStep.STEP_1_GOALS -> Triple(true, "Continue") { currentStep = OnboardingStep.STEP_2_DEALS }
+                             OnboardingStep.STEP_1_GOALS -> Triple(true, "Continue") { currentStep = OnboardingStep.SAVINGS_GOAL }
+                             OnboardingStep.SAVINGS_GOAL -> {
+                                 Triple(savingsGoal.isNotBlank(), "Continue") { 
+                                     scope.launch { userPreferences.saveMonthlySavingsGoal(savingsGoal) }
+                                     currentStep = OnboardingStep.STEP_2_DEALS 
+                                 }
+                             }
                              OnboardingStep.STEP_2_DEALS -> Triple(true, "Continue") { currentStep = OnboardingStep.STEP_3_DIETARY }
                              OnboardingStep.STEP_3_DIETARY -> Triple(true, "Continue") { 
                                  storesViewModel.loadStores()
@@ -303,6 +317,10 @@ fun OnboardingScreen(
                     categories = categories,
                     selectedOptions = selectedOptions,
                     onOptionToggle = ::updateSelection
+                )
+                OnboardingStep.SAVINGS_GOAL -> SavingsGoalContent(
+                    savingsGoal = savingsGoal,
+                    onGoalChange = { savingsGoal = it }
                 )
                 OnboardingStep.STEP_2_DEALS -> OnboardingStep2(
                     categories = categories,
@@ -458,8 +476,8 @@ fun OnboardingStep1(
         
         // Shopping Goals
         shoppingGoals?.let { category ->
-            SettingsGroup(title = "What are you shopping for?") {
-                 Column(modifier = Modifier.padding(Spacing.md)) {
+            OnboardingCard(title = "What are you shopping for?") {
+                 Column(modifier = Modifier.fillMaxWidth()) {
                      Text("Choose up to 3 -- we'll optimize your feed.", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
                      Spacer(Modifier.height(Spacing.md))
                      FlowRow(
@@ -487,8 +505,8 @@ fun OnboardingStep1(
         
         // Shopping Mode
         shoppingMode?.let { category ->
-            SettingsGroup(title = "How do you shop?") {
-                 Column(modifier = Modifier.padding(Spacing.md)) {
+            OnboardingCard(title = "How do you shop?") {
+                 Column(modifier = Modifier.fillMaxWidth()) {
                      Text("So we can show the right deals at the right time.", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
                      
                      Spacer(Modifier.height(Spacing.md))
@@ -593,8 +611,8 @@ fun OnboardingStep2(
     ) {
          // Deal Types
         dealTypes?.let { category ->
-            SettingsGroup(title = "What kinds of deals do you want?") {
-                Column(modifier = Modifier.padding(Spacing.md)) {
+            OnboardingCard(title = "What kinds of deals do you want?") {
+                Column(modifier = Modifier.fillMaxWidth()) {
                      Text("Pick what you actually use.", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
                      Spacer(Modifier.height(Spacing.md))
                      FlowRow(
@@ -621,8 +639,8 @@ fun OnboardingStep2(
         Spacer(Modifier.height(Spacing.md))
         
         // Deal Alerts
-        SettingsGroup(title = "Deal alerts") {
-             Column(modifier = Modifier.padding(Spacing.md)) {
+        OnboardingCard(title = "Deal alerts") {
+             Column(modifier = Modifier.fillMaxWidth()) {
                 Text("Only what's useful — no spam.", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
                 
                 // Switches
@@ -719,8 +737,8 @@ fun OnboardingStep3(
         
         // Dietary Preferences
         dietary?.let { category ->
-            SettingsGroup(title = "Food preferences (optional)") {
-                 Column(modifier = Modifier.padding(Spacing.md)) {
+            OnboardingCard(title = "Food preferences (optional)") {
+                 Column(modifier = Modifier.fillMaxWidth()) {
                      Text("Helps recipes + grocery matches.", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
                      Spacer(Modifier.height(Spacing.md))
                      FlowRow(
@@ -747,8 +765,8 @@ fun OnboardingStep3(
         Spacer(Modifier.height(Spacing.md))
 
         // Demographics Section
-        SettingsGroup(title = "About you (optional)") {
-            Column(modifier = Modifier.padding(Spacing.md)) {
+        OnboardingCard(title = "About you (optional)") {
+            Column(modifier = Modifier.fillMaxWidth()) {
                 
                 // Weekly Budget
                 budget?.let { category ->
@@ -1016,6 +1034,123 @@ fun CreateListContent(
 }
 
 @Composable
+fun SavingsGoalContent(
+    savingsGoal: String,
+    onGoalChange: (String) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(Spacing.md)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(Modifier.height(Spacing.xl))
+        
+        // Icon
+        Box(
+            modifier = Modifier
+                .size(80.dp)
+                .clip(CircleShape)
+                .background(Color(0xFFFFF7ED)), // Light Orange
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.AccountBalanceWallet,
+                contentDescription = null,
+                tint = Color(0xFFFE8357),
+                modifier = Modifier.size(40.dp)
+            )
+        }
+        
+        Spacer(Modifier.height(Spacing.lg))
+        
+        Text(
+            text = "Set a monthly savings goal",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            color = Color(0xFF111827)
+        )
+        
+        Spacer(Modifier.height(Spacing.sm))
+        
+        Text(
+            text = "We'll help you track your savings on every trip.",
+            style = MaterialTheme.typography.bodyLarge,
+            color = Color(0xFF6B7280),
+            textAlign = TextAlign.Center
+        )
+        
+        Spacer(Modifier.height(Spacing.xxl))
+        
+        // Input
+        OutlinedTextField(
+            value = savingsGoal,
+            onValueChange = { 
+                if (it.all { char -> char.isDigit() }) onGoalChange(it) 
+            },
+            label = { Text("Monthly Goal") },
+            leadingIcon = { Text("€", fontWeight = FontWeight.Bold, color = Color(0xFF374151)) },
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFFFE8357),
+                focusedLabelColor = Color(0xFFFE8357),
+                cursorColor = Color(0xFFFE8357)
+            ),
+            singleLine = true,
+            textStyle = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+        )
+        
+        Spacer(Modifier.height(Spacing.lg))
+        
+        // Presets
+        Text(
+            "Quick suggestions", 
+            style = MaterialTheme.typography.labelMedium, 
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF374151),
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(Modifier.height(Spacing.sm))
+        
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            val presets = listOf("20", "50", "100", "200")
+            presets.forEach { preset ->
+                val isSelected = savingsGoal == preset
+                FilterChip(
+                    selected = isSelected,
+                    onClick = { onGoalChange(preset) },
+                    label = { 
+                        Text(
+                            "€$preset", 
+                            fontWeight = if(isSelected) FontWeight.Bold else FontWeight.Normal,
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
+                        ) 
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = Color(0xFFFE8357),
+                        selectedLabelColor = Color.White,
+                        containerColor = Color.White
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                         borderColor = if(isSelected) Color.Transparent else Color(0xFFD1D5DB),
+                         enabled = true,
+                         selected = isSelected
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun CompletedContent(onFinish: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -1069,6 +1204,30 @@ fun CompletedContent(onFinish: () -> Unit) {
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
+        }
+    }
+}
+
+@Composable
+fun OnboardingCard(
+    title: String,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, Color(0xFFE5E7EB))
+    ) {
+        Column(modifier = Modifier.padding(Spacing.lg)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF111827)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            content()
         }
     }
 }
