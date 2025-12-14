@@ -46,7 +46,7 @@ data class BottomNavItem(
 )
 
 @Composable
-fun PennyBottomNav(
+fun BottomNav(
     navController: NavController,
     viewModel: com.example.omiri.viewmodels.ShoppingListViewModel,
     modifier: Modifier = Modifier

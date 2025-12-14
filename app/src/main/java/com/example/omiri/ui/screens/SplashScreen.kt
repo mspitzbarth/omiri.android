@@ -69,17 +69,11 @@ fun SplashScreen(progress: Float = 0f) {
             
             // PennyPal Text
             Text(
-                text = buildAnnotatedString {
-                    withStyle(style = SpanStyle(color = Color(0xFF1E293B), fontWeight = FontWeight.Bold)) {
-                        append("Penny")
-                    }
-                    withStyle(style = SpanStyle(color = Color(0xFFFF7D29), fontWeight = FontWeight.Bold)) {
-                        append("Pal")
-                    }
-                },
+                text = "Omiri",
+                color = Color(0xFF1E293B),
+                fontWeight = FontWeight.Bold,
                 fontSize = 32.sp
             )
-            
             Spacer(modifier = Modifier.height(8.dp))
             
             // Tagline or Status Message

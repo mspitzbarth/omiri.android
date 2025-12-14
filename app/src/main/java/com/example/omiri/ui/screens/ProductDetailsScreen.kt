@@ -36,6 +36,13 @@ import com.example.omiri.ui.theme.Spacing
 import com.example.omiri.util.DateUtils
 import java.text.SimpleDateFormat
 import java.util.Locale
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.interaction.MutableInteractionSource
 
 @Composable
 fun ProductDetailsScreen(
@@ -49,6 +56,7 @@ fun ProductDetailsScreen(
 ) {
     var deal by remember { mutableStateOf<Deal?>(null) }
     var isLoading by remember { mutableStateOf(true) }
+    var showImageModal by remember { mutableStateOf(false) }
     
     val favorites by viewModel.favoriteDealIds.collectAsState()
     val shoppingListDeals by viewModel.shoppingListDeals.collectAsState()
@@ -140,8 +148,8 @@ fun ProductDetailsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(340.dp)
-                        .height(340.dp)
                         .background(com.example.omiri.util.EmojiHelper.getCategoryColor(currentDeal.category))
+                        .clickable { if (!currentDeal.imageUrl.isNullOrBlank()) showImageModal = true }
                 ) {
                     if (!currentDeal.imageUrl.isNullOrBlank()) {
                         AsyncImage(
@@ -507,6 +515,75 @@ fun ProductDetailsScreen(
                     Spacer(Modifier.height(32.dp))
                 }
 
+            }
+        }
+    }
+
+    if (showImageModal && currentDeal?.imageUrl != null) {
+        Dialog(
+            onDismissRequest = { showImageModal = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            var scale by remember { mutableStateOf(1f) }
+            var offset by remember { mutableStateOf(Offset.Zero) }
+            
+            val state = rememberTransformableState { zoomChange, offsetChange, _ ->
+                scale = (scale * zoomChange).coerceIn(1f, 5f)
+                if (scale > 1f) {
+                    val maxOffset = (scale - 1f) * 1000f // Approximate bounds check
+                    // Simple panning logic
+                    val newOffset = offset + offsetChange
+                    offset = Offset(
+                        x = newOffset.x, //.coerceIn(-maxOffset, maxOffset), // detailed bounds need view size
+                        y = newOffset.y
+                    )
+                } else {
+                    offset = Offset.Zero
+                }
+            }
+            
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+                    .clickable { showImageModal = false }, // Tap background to close
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = currentDeal.imageUrl,
+                    contentDescription = currentDeal.title,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer(
+                            scaleX = scale,
+                            scaleY = scale,
+                            translationX = offset.x,
+                            translationY = offset.y
+                        )
+                        .transformable(state = state)
+                        .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
+                             // Consume click so it doesn't close the modal when tapping the image itself,
+                             // unless user wants that. Usually we don't close on image tap if likely to zoom.
+                             // But let's leave default propagation (closes modal) OR block it.
+                             // Better UX: Tap image usually toggles UI or does nothing. 
+                             // Clicking background closes.
+                        }
+                )
+
+                IconButton(
+                    onClick = { showImageModal = false },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
+                        .padding(top = 24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Close,
+                        contentDescription = "Close",
+                        tint = Color.White
+                    )
+                }
             }
         }
     }

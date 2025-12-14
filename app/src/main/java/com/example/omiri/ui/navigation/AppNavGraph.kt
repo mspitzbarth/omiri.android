@@ -13,7 +13,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.compose.runtime.getValue
 import androidx.navigation.navArgument
-import com.example.omiri.ui.components.PennyBottomNav
+import com.example.omiri.ui.components.BottomNav
 import com.example.omiri.ui.screens.*
 
 @Composable
@@ -44,7 +44,7 @@ fun AppNavGraph(
     Scaffold(
         bottomBar = {
             if (currentRoute != "onboarding") {
-                PennyBottomNav(
+                BottomNav(
                     navController = navController,
                     viewModel = shoppingListViewModel
                 )
