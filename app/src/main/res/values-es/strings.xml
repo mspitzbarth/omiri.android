@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">Omiri</string>
+    <string name="nav_home">Inicio</string>
+    <string name="nav_deals">Ofertas</string>
+    <string name="nav_list">Lista</string>
+    <string name="nav_ai">IA</string>
+    <string name="nav_recipes">Recetas</string>
+    <string name="top_deals">Ofertas destacadas</string>
+    <string name="deals_for_you">Ofertas para ti</string>
+    <string name="expiring_soon">Expira pronto</string>
+    <string name="view_all">Ver todo</string>
+    <string name="shopping_lists_title">Listas de la compra</string>
+    <string name="monthly_goal">Objetivo mensual</string>
+    <string name="saved_so_far">Ahorrado hasta ahora</string>
+    <string name="settings_title">Ajustes</string>
+    <string name="general_section">General</string>
+    <string name="appearance_section">Apariencia</string>
+    <string name="dark_mode">Modo Oscuro</string>
+    <string name="language">Idioma</string>
+    <string name="select_language">Seleccionar idioma</string>
+    <string name="save">Guardar</string>
+    <string name="app_rebooting">Reiniciando app...</string>
+    <string name="rebooting_message">Reiniciando en 3 segundos para aplicar el idioma.</string>
+</resources>

@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">Omiri</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_deals">Aanbiedingen</string>
+    <string name="nav_list">Lijst</string>
+    <string name="nav_ai">AI</string>
+    <string name="nav_recipes">Recepten</string>
+    <string name="top_deals">Topaanbiedingen</string>
+    <string name="deals_for_you">Aanbiedingen voor jou</string>
+    <string name="expiring_soon">Verloopt binnenkort</string>
+    <string name="view_all">Alles bekijken</string>
+    <string name="shopping_lists_title">Boodschappenlijstjes</string>
+    <string name="monthly_goal">Maanddoel</string>
+    <string name="saved_so_far">Bespaard tot nu toe</string>
+    <string name="settings_title">Instellingen</string>
+    <string name="general_section">Algemeen</string>
+    <string name="appearance_section">Uiterlijk</string>
+    <string name="dark_mode">Donkere modus</string>
+    <string name="language">Taal</string>
+    <string name="select_language">Kies taal</string>
+    <string name="save">Opslaan</string>
+    <string name="app_rebooting">App herstarten...</string>
+    <string name="rebooting_message">Herstart over 3 seconden om taal toe te passen.</string>
+</resources>

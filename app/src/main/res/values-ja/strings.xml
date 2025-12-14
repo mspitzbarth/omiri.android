@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">Omiri</string>
+    <string name="nav_home">ホーム</string>
+    <string name="nav_deals">お得情報</string>
+    <string name="nav_list">リスト</string>
+    <string name="nav_ai">AI</string>
+    <string name="nav_recipes">レシピ</string>
+    <string name="top_deals">トップセール</string>
+    <string name="deals_for_you">あなたへのおすすめ</string>
+    <string name="expiring_soon">まもなく終了</string>
+    <string name="view_all">すべて見る</string>
+    <string name="shopping_lists_title">お買い物リスト</string>
+    <string name="monthly_goal">今月の目標</string>
+    <string name="saved_so_far">これまでの節約</string>
+    <string name="settings_title">設定</string>
+    <string name="general_section">一般</string>
+    <string name="appearance_section">外観</string>
+    <string name="dark_mode">ダークモード</string>
+    <string name="language">言語</string>
+    <string name="select_language">言語を選択</string>
+    <string name="save">保存</string>
+    <string name="app_rebooting">再起動中...</string>
+    <string name="rebooting_message">言語を適用するため、3秒後に再起動します。</string>
+</resources>
