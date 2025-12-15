@@ -148,8 +148,8 @@ fun AppNavGraph(
                          shoppingListViewModel.setDealListed(deal, isListed)
                          productViewModel.toggleShoppingList(deal)
                     },
-                    onViewFlyer = { url ->
-                        navController.navigate(Routes.webView(url, "Product Flyer"))
+                    onViewFlyer = { url, store, page ->
+                        navController.navigate(Routes.flyerViewer(url, store, page))
                     },
                     viewModel = productViewModel
                 )
@@ -167,6 +167,26 @@ fun AppNavGraph(
                 WebViewScreen(
                     url = url,
                     title = title,
+                    onBackClick = { navController.navigateUp() }
+                )
+            }
+            
+            composable(
+                route = Routes.FlyerViewer,
+                arguments = listOf(
+                    navArgument(Routes.FlyerArgUrl) { type = NavType.StringType },
+                    navArgument(Routes.FlyerArgStore) { type = NavType.StringType },
+                    navArgument(Routes.FlyerArgPage) { type = NavType.IntType; defaultValue = -1 } // Default -1 meant unused/0
+                )
+            ) { backStackEntry ->
+                val url = backStackEntry.arguments?.getString(Routes.FlyerArgUrl) ?: ""
+                val store = backStackEntry.arguments?.getString(Routes.FlyerArgStore) ?: "Store"
+                val page = backStackEntry.arguments?.getInt(Routes.FlyerArgPage)?.takeIf { it >= 0 }
+                
+                FlyerViewerScreen(
+                    pdfUrl = url,
+                    storeName = store,
+                    initialPage = page ?: 0,
                     onBackClick = { navController.navigateUp() }
                 )
             }

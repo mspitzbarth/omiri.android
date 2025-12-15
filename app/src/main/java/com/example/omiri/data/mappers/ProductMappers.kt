@@ -54,7 +54,8 @@ fun ProductResponse.toDeal(): Deal {
         isOnShoppingList = false, // Default, updated by ViewModel if needed
         searchTerm = searchTerm, // Map search term
         pdfSourceUrl = pdfSourceUrl,
-        imageUrl = productImageUrl
+        imageUrl = productImageUrl,
+        pageNumber = pageNumber
     )
 }
 

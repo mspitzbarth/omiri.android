@@ -24,5 +24,6 @@ data class Deal(
     val discountPercentage: Int = 0,
     val hasDiscount: Boolean = false,
     val isOnShoppingList: Boolean = false,
-    val pdfSourceUrl: String? = null
+    val pdfSourceUrl: String? = null,
+    val pageNumber: Int? = null
 )

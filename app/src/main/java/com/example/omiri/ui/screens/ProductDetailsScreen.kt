@@ -50,14 +50,14 @@ fun ProductDetailsScreen(
     onBackClick: () -> Unit = {},
     onShareClick: (() -> Unit)? = null,
     onAddToList: (Deal, Boolean) -> Unit = { _, _ -> },
-    onViewFlyer: (String) -> Unit = {},
+    onViewFlyer: (String, String, Int?) -> Unit = { _, _, _ -> },
     onDealClick: (String) -> Unit = {},
     viewModel: com.example.omiri.viewmodels.ProductViewModel
 ) {
     var deal by remember { mutableStateOf<Deal?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var showImageModal by remember { mutableStateOf(false) }
-    
+
     val favorites by viewModel.favoriteDealIds.collectAsState()
     val shoppingListDeals by viewModel.shoppingListDeals.collectAsState()
     val allDeals by viewModel.allDeals.collectAsState()
@@ -314,7 +314,7 @@ fun ProductDetailsScreen(
                                 if (!currentDeal.pdfSourceUrl.isNullOrBlank()) {
                                     Spacer(Modifier.width(12.dp))
                                     Surface(
-                                        onClick = { onViewFlyer(currentDeal.pdfSourceUrl) },
+                                        onClick = { onViewFlyer(currentDeal.pdfSourceUrl, currentDeal.store, currentDeal.pageNumber) },
                                         modifier = Modifier.size(56.dp),
                                         shape = RoundedCornerShape(16.dp),
                                         color = AppColors.Bg, 

@@ -29,6 +29,18 @@ object Routes {
         return "webview?url=$encodedUrl&title=$encodedTitle"
     }
 
+    const val FlyerArgUrl = "url"
+    const val FlyerArgStore = "store"
+    const val FlyerArgPage = "page"
+    const val FlyerViewer = "flyer_viewer?url={$FlyerArgUrl}&store={$FlyerArgStore}&page={$FlyerArgPage}"
+
+    fun flyerViewer(url: String, store: String, page: Int? = null): String {
+        val encodedUrl = java.net.URLEncoder.encode(url, "UTF-8")
+        val encodedStore = java.net.URLEncoder.encode(store, "UTF-8")
+        val base = "flyer_viewer?url=$encodedUrl&store=$encodedStore"
+        return if (page != null) "$base&page=$page" else base
+    }
+
     // Legacy route alias for backward compatibility
     @Deprecated("Use Settings instead", ReplaceWith("Settings"))
     const val Profile = "settings"
