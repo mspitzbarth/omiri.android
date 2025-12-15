@@ -13,6 +13,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -107,56 +108,61 @@ fun ProductDetailsScreen(
     Scaffold(
         topBar = {
              com.example.omiri.ui.components.ScreenHeader(
-                title = "Product Details",
+                title = "Deal Details",
                 onBackClick = onBackClick,
                 action = {
-                   IconButton(onClick = { shareDeal() }) {
-                       Icon(
-                           imageVector = Icons.Outlined.Share,
-                           contentDescription = "Share",
-                           tint = AppColors.BrandInk
-                       )
-                   }
+                    Row {
+                        IconButton(onClick = { shareDeal() }) {
+                            Icon(
+                                imageVector = Icons.Outlined.Share,
+                                contentDescription = "Share",
+                                tint = AppColors.BrandInk
+                            )
+                        }
+                        IconButton(onClick = { /* Toggle Favorite - Logic needed in VM but icon state is enough for UI */ }) {
+                            Icon(
+                                imageVector = if(isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                                contentDescription = "Favorite",
+                                tint = if(isFavorite) AppColors.BrandOrange else AppColors.BrandInk
+                            )
+                        }
+                    }
                 }
             )
         },
-        containerColor = AppColors.Bg
+        containerColor = AppColors.Bg // Cards will stand out on this grey background
     ) { padding ->
         if (isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = AppColors.BrandOrange)
             }
         } else if (currentDeal == null) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 Text("Product not found")
             }
         } else {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = padding.calculateBottomPadding())
+                    .padding(padding) // Apply padding from Scaffold
                     .verticalScroll(rememberScrollState())
             ) {
-                // 1. Image Header Area (Overlaid)
+                // 1. Image Section
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(340.dp)
-                        .background(com.example.omiri.util.EmojiHelper.getCategoryColor(currentDeal.category))
+                        .height(300.dp) // Large image area
+                        .background(Color.White)
                         .clickable { if (!currentDeal.imageUrl.isNullOrBlank()) showImageModal = true }
                 ) {
                     if (!currentDeal.imageUrl.isNullOrBlank()) {
                         AsyncImage(
                             model = currentDeal.imageUrl,
                             contentDescription = currentDeal.title,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
+                            contentScale = ContentScale.Fit, // Contain image as per design
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(24.dp)
                         )
                     } else {
                          Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -165,356 +171,295 @@ fun ProductDetailsScreen(
                          }
                     }
                     
-                    // Actions Overlay Removed
+                    // Badges (Overlaid)
+                    // Save Badge (Top Left)
+                    val saved = calculateSavings(currentDeal.price, currentDeal.originalPrice)
+                    if (saved != null) {
+                        Surface(
+                            color = AppColors.Danger,
+                            shape = RoundedCornerShape(50.dp), // Pill shape
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .align(Alignment.TopStart)
+                        ) {
+                            Text(
+                                text = "Save $saved",
+                                color = Color.White,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                            )
+                        }
+                    }
                     
-                    // Share Button Floating (Optional: add back if needed, but Header handles navigation. 
-                    // Let's keep a floating Share button at top right since it wasn't in the Header action I just added? 
-                    // No, cleaner UI -> usually Share is in top bar too.
-                    // But I strictly followed instruction "give me back the header".
-                    // I will add Share to the header if there is space, but ScreenHeader action handles one composable.
-                    // I'll stick to just Favorite in Header for now or add a Row there.
-                    // Let's add Share to the Header action too.
-                    
-                    // Actually, I can't effectively edit the previous chunk to add Share easily without complex nesting. 
-                    // I'll leave Share out for a moment or rely on user asking for it, OR
-                    // I'll put a floating share FAB? No.
-                    // The standard Android pattern is Share in Top Bar.
-                    // I'll edit the first chunk to include Share next.
-                    
-                    // For now, removing the overlay buttons.
-
-                    
-                    // Time Left Badge
+                    // Time Left Badge (Top Right)
                     val timeLeft = DateUtils.getDaysRemaining(currentDeal.availableUntil)
                     if (timeLeft != null && timeLeft > 0) {
-                         Surface(
+                        Surface(
                             color = AppColors.BrandOrange,
-                            shape = RoundedCornerShape(topEnd = 8.dp, bottomEnd = 8.dp),
+                            shape = RoundedCornerShape(50.dp),
                             modifier = Modifier
-                                .align(Alignment.BottomStart)
-                                .padding(bottom = 56.dp)
-                         ) {
-                             Text(
-                                 text = if(timeLeft == 1L) "1 day left" else "$timeLeft days left",
-                                 color = AppColors.Surface,
-                                 style = MaterialTheme.typography.labelMedium,
-                                 fontWeight = FontWeight.Bold,
+                                .padding(16.dp)
+                                .align(Alignment.TopEnd)
+                        ) {
+                             Row(
+                                 verticalAlignment = Alignment.CenterVertically,
                                  modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                             )
-                         }
+                             ) {
+                                 Icon(Icons.Outlined.AccessTime, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                                 Spacer(Modifier.width(4.dp))
+                                 Text(
+                                     text = if(timeLeft == 1L) "1 day left" else "$timeLeft days left",
+                                     color = Color.White,
+                                     style = MaterialTheme.typography.labelMedium,
+                                     fontWeight = FontWeight.Bold
+                                 )
+                             }
+                        }
                     }
                 }
                 
-                // 2. Body Content (Cards) - Shifted up to overlap image
+                // 2. Main Content
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .offset(y = (-40).dp)
+                        .background(Color.White) // Lower part is white too? Or slight gray separation. Design looks like one long scroll.
+                        .padding(horizontal = 16.dp)
                 ) {
-                    // Main Info Card
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = Spacing.md),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = AppColors.Surface),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                        border = BorderStroke(1.dp, AppColors.Border)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp)
+                    // Store & Category
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Store Icon (Small rounded square)
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .background(AppColors.Red50, RoundedCornerShape(6.dp)), // Assuming Target-ish red
+                            contentAlignment = Alignment.Center
                         ) {
-                            // Store Info Header removed as requested ("already have more details")
-                            
-                            Text(
-                                text = currentDeal.title,
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = AppColors.BrandInk
-                            )
-                            
-                            Spacer(Modifier.height(16.dp))
-                            
-                            Row(verticalAlignment = Alignment.Bottom) {
-                                Text(
-                                    text = currentDeal.price,
-                                    style = MaterialTheme.typography.displaySmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = AppColors.BrandOrange,
-                                    modifier = Modifier.offset(y = 4.dp) // Optical alignment for large text
-                                )
-                                
-                                if (currentDeal.hasDiscount && !currentDeal.originalPrice.isNullOrBlank()) {
-                                    Spacer(Modifier.width(12.dp))
-                                    Column(modifier = Modifier.padding(bottom = 6.dp)) {
-                                         Text(
-                                            text = currentDeal.originalPrice,
-                                            style = MaterialTheme.typography.titleMedium,
-                                            textDecoration = TextDecoration.LineThrough,
-                                            color = AppColors.MutedText
-                                        )
-                                    }
-
-                                    Spacer(Modifier.width(12.dp))
-                                    
-                                    val saved = calculateSavings(currentDeal.price, currentDeal.originalPrice)
-                                    if (saved != null) {
-                                        Surface(
-                                            color = AppColors.Red50,
-                                            shape = RoundedCornerShape(4.dp),
-                                            modifier = Modifier.padding(bottom = 6.dp),
-                                            border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.Red200)
-                                        ) {
-                                            Text(
-                                                text = "Save $saved",
-                                                color = AppColors.Success,
-                                                style = MaterialTheme.typography.labelLarge, // Larger font
-                                                fontWeight = FontWeight.Bold,
-                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                            
-                            Spacer(Modifier.height(20.dp))
-                            
-                            // Action Row
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Button(
-                                    onClick = { onAddToList(currentDeal, !isOnList) },
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(56.dp),
-                                    shape = RoundedCornerShape(16.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = if(isOnList) AppColors.Success else AppColors.BrandOrange
-                                    ),
-                                    elevation = ButtonDefaults.buttonElevation(0.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = if(isOnList) Icons.Outlined.Check else Icons.Outlined.Add,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(
-                                        text = if(isOnList) "Added to Shopping List" else "Add to Shopping List",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 16.sp,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                                
-                                // "Calculator"/PDF Button
-                                if (!currentDeal.pdfSourceUrl.isNullOrBlank()) {
-                                    Spacer(Modifier.width(12.dp))
-                                    Surface(
-                                        onClick = { onViewFlyer(currentDeal.pdfSourceUrl, currentDeal.store, currentDeal.pageNumber) },
-                                        modifier = Modifier.size(56.dp),
-                                        shape = RoundedCornerShape(16.dp),
-                                        color = AppColors.Bg, 
-                                        border = BorderStroke(1.dp, Color.Transparent)
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Icon(
-                                                imageVector = Icons.Outlined.PictureAsPdf, 
-                                                contentDescription = "View Flyer",
-                                                tint = AppColors.SubTextGrey,
-                                                modifier = Modifier.size(24.dp)
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                            
-                            // Description
-                            if (!currentDeal.description.isNullOrBlank()) {
-                                Spacer(Modifier.height(16.dp))
-                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    val lines = currentDeal.description.split("\n", "•").filter { it.isNotBlank() }
-                                    if (lines.size > 1) {
-                                        lines.forEach { line ->
-                                            Row(verticalAlignment = Alignment.Top) {
-                                                Icon(
-                                                    imageVector = Icons.Outlined.CheckCircle, 
-                                                    contentDescription = null,
-                                                    tint = AppColors.Neutral500,
-                                                    modifier = Modifier.size(16.dp).offset(y = 2.dp)
-                                                )
-                                                Spacer(Modifier.width(8.dp))
-                                                Text(
-                                                    text = line.trim(),
-                                                    style = MaterialTheme.typography.bodyMedium,
-                                                    color = AppColors.SubTextGrey
-                                                )
-                                            }
-                                        }
-                                    } else {
-                                        Row(verticalAlignment = Alignment.Top) {
-                                            Text(
-                                                text = currentDeal.description.trim(),
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                color = AppColors.SubTextGrey,
-                                                lineHeight = 20.sp
-                                            )
-                                        }
-                                    }
-                                }
-                            }
+                            Icon(Icons.Outlined.Storefront, null, tint = AppColors.Danger, modifier = Modifier.size(16.dp))
                         }
-                    }
-                    
-                    // 3. Store Info Card
-                    Spacer(Modifier.height(16.dp)) // Restored gap (but layout gap is gone due to wrapper)
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = Spacing.md),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = AppColors.Surface),
-                        elevation = CardDefaults.cardElevation(0.dp),
-                        border = BorderStroke(1.dp, AppColors.Border)
-                    ) {
-                        Column(Modifier.padding(16.dp)) {
-                            Text(
-                                text = "Store Information",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = AppColors.BrandInk
-                            )
-                            Spacer(Modifier.height(16.dp))
-                            Row(verticalAlignment = Alignment.Top) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(48.dp)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(AppColors.Info),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = currentDeal.store.take(1),
-                                        color = AppColors.Surface,
-                                        fontSize = 24.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                                Spacer(Modifier.width(16.dp))
-                                Column {
-                                    Text(
-                                        text = currentDeal.store,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = AppColors.BrandInk
-                                    )
-                                    Spacer(Modifier.height(4.dp))
-                                    
-                                    val locationParts = listOfNotNull(
-                                        currentDeal.country?.ifBlank { null },
-                                        currentDeal.zipcode?.ifBlank { null }
-                                    )
-                                    if (locationParts.isNotEmpty()) {
-                                        Text(
-                                            text = locationParts.joinToString(" • "),
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = AppColors.MutedText
-                                        )
-                                    }
-                                    
-                                    Spacer(Modifier.height(8.dp))
-                                    Text(
-                                        text = "View Store Details", 
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = AppColors.BrandOrange,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.clickable { /* TODO */ }
-                                    )
-                                }
-                            }
-                            
-                            if (currentDeal.hasDiscount) {
-                                Spacer(Modifier.height(20.dp))
-                                HorizontalDivider(color = AppColors.Bg, modifier = Modifier.padding(bottom = 12.dp))
-                                AvailabilityRow("Availability", "In Stock", isGreen = true)
-                                AvailabilityRow("Delivery", "Check App")
-                                AvailabilityRow("Pickup", "Available today")
-                            }
-                        }
-                    }
-                    
-                    // 4. Details Card
-                    Spacer(Modifier.height(16.dp))
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = Spacing.md),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = AppColors.Surface),
-                        elevation = CardDefaults.cardElevation(0.dp),
-                        border = BorderStroke(1.dp, AppColors.Border)
-                    ) {
-                        Column(Modifier.padding(16.dp)) {
-                            Text(
-                                text = "Deal Details",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = AppColors.BrandInk
-                            )
-                            Spacer(Modifier.height(16.dp))
-                            
-                            val originalPriceDisplay = if (currentDeal.hasDiscount) (currentDeal.originalPrice ?: "-") else currentDeal.price
-                            val discountDisplay = if (currentDeal.hasDiscount && currentDeal.discountPercentage > 0) "-${currentDeal.discountPercentage}%" else "-"
-                            val dealPriceDisplay = if (currentDeal.hasDiscount) currentDeal.price else "-"
-                            
-                            DealDetailRow("Original Price", originalPriceDisplay)
-                            DealDetailRow("Discount", discountDisplay, isRed = currentDeal.hasDiscount)
-                            DealDetailRow("Deal Price", dealPriceDisplay, isBold = true, isOrange = currentDeal.hasDiscount)
-                            
-                            HorizontalDivider(Modifier.padding(vertical = 12.dp), color = AppColors.Bg)
-                            
-                            val from = formatIsoDate(currentDeal.availableFrom)
-                            val to = formatIsoDate(currentDeal.availableUntil)
-                            val dateRange = if (from != null && to != null) "$from - $to" else (to ?: from ?: "-")
-                            DealDetailRow("Valid", dateRange)
-                        }
-                    }
-                    
-                    // 5. Similar Deals
-                    if (similarDeals.isNotEmpty()) {
-                        Spacer(Modifier.height(24.dp))
+                        Spacer(Modifier.width(8.dp))
                         Text(
-                            text = "Similar Deals",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = AppColors.BrandInk,
-                            modifier = Modifier.padding(horizontal = Spacing.md)
+                            text = "${currentDeal.store}  •  ${currentDeal.category}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = AppColors.MutedText
                         )
-                        Spacer(Modifier.height(12.dp))
+                    }
+                    
+                    Spacer(Modifier.height(8.dp))
+                    
+                    // Title
+                    Text(
+                        text = currentDeal.title,
+                        style = MaterialTheme.typography.headlineSmall, // Larger title
+                        fontWeight = FontWeight.Bold,
+                        color = AppColors.BrandInk
+                    )
+                    
+                    // Optional Description/Subtitle
+                    if (!currentDeal.description.isNullOrBlank()) {
+                         Spacer(Modifier.height(4.dp))
+                         Text(
+                             text = currentDeal.description.take(60) + if(currentDeal.description.length > 60) "..." else "", // Show short snippet or variant
+                             style = MaterialTheme.typography.bodyMedium,
+                             color = AppColors.SubTextGrey
+                         )
+                    }
+                    
+                    Spacer(Modifier.height(16.dp))
+                    
+                    // Price Row
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = currentDeal.price,
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = AppColors.BrandOrange
+                        )
                         
-                        androidx.compose.foundation.lazy.LazyRow(
-                            contentPadding = PaddingValues(horizontal = Spacing.md),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            items(similarDeals.size) { index ->
-                                val item = similarDeals[index]
-                                Box(modifier = Modifier.width(160.dp)) {
-                                    DealCard(
-                                        deal = item,
-                                        modifier = Modifier.width(160.dp),
-                                        onClick = { onDealClick(item.id) },
+                        if (currentDeal.hasDiscount && !currentDeal.originalPrice.isNullOrBlank()) {
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                text = currentDeal.originalPrice,
+                                style = MaterialTheme.typography.titleMedium,
+                                textDecoration = TextDecoration.LineThrough,
+                                color = AppColors.MutedText
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            if (currentDeal.discountPercentage > 0) {
+                                Surface(
+                                    color = Color(0xFFE8F5E9), // Light Green
+                                    shape = RoundedCornerShape(4.dp)
+                                ) {
+                                    Text(
+                                        text = "${currentDeal.discountPercentage}% OFF",
+                                        color = Color(0xFF2E7D32), // Green
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                     )
                                 }
                             }
                         }
                     }
                     
-                    Spacer(Modifier.height(32.dp))
+                    Spacer(Modifier.height(24.dp))
+                    
+                    // Buttons Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Button(
+                            onClick = { onAddToList(currentDeal, !isOnList) },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(56.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = AppColors.BrandOrange)
+                        ) {
+                            Icon(Icons.Filled.Add, null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Add to List", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        }
+                        
+                        // Flyer Button
+                        if (!currentDeal.pdfSourceUrl.isNullOrBlank()) {
+                            Surface(
+                                onClick = { onViewFlyer(currentDeal.pdfSourceUrl, currentDeal.store, currentDeal.pageNumber) },
+                                modifier = Modifier.size(56.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                color = AppColors.Bg,
+                                border = BorderStroke(1.dp, AppColors.Border) // Or none
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.PictureAsPdf,
+                                        contentDescription = "PDF",
+                                        tint = AppColors.BrandInk
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
+                
+                Spacer(Modifier.height(16.dp))
+                
+                // 3. Deal Validity Card
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, AppColors.Border),
+                    elevation = CardDefaults.cardElevation(0.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .background(Color.White)
+                            .padding(16.dp)
+                    ) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Deal Validity", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text("Active", color = AppColors.BrandOrange, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                        }
+                        Spacer(Modifier.height(16.dp))
+                        
+                        DealDetailRow("Valid from", formatIsoDate(currentDeal.availableFrom) ?: "-")
+                        DealDetailRow("Valid until", formatIsoDate(currentDeal.availableUntil) ?: "-")
+                        
+                        val daysTotal = DateUtils.daysBetween(currentDeal.availableFrom, currentDeal.availableUntil).coerceAtLeast(1)
+                        val daysLeft = DateUtils.getDaysRemaining(currentDeal.availableUntil) ?: 0
+                        val progress = (daysLeft.toFloat() / daysTotal.toFloat()).coerceIn(0f, 1f)
+                        
+                        DealDetailRow("Time remaining", if(daysLeft > 0) "$daysLeft days ${24 - java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)} hours" else "Expired", isRed = daysLeft <= 3)
 
+                        Spacer(Modifier.height(8.dp))
+                        LinearProgressIndicator(
+                            progress = { progress },
+                            modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
+                            color = AppColors.BrandOrange,
+                            trackColor = AppColors.Bg,
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text("Deal expires soon", style = MaterialTheme.typography.bodySmall, color = AppColors.MutedText)
+                    }
+                }
+                
+                Spacer(Modifier.height(16.dp))
+
+                // 4. Product Details Card
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = BorderStroke(1.dp, AppColors.Border),
+                    elevation = CardDefaults.cardElevation(0.dp)
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text("Product Details", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(16.dp))
+                        // Fake data for fields not in Deal model
+                        DealDetailRow("Brand", currentDeal.store) // Placeholder
+                        DealDetailRow("Category", currentDeal.category)
+                        DealDetailRow("Deal ID", "#${currentDeal.id.take(8)}")
+                    }
+                }
+                
+                Spacer(Modifier.height(16.dp))
+
+                // 5. Store Information Card
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = BorderStroke(1.dp, AppColors.Border),
+                    elevation = CardDefaults.cardElevation(0.dp)
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text("Store Information", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(16.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier.size(48.dp).background(AppColors.Red50, RoundedCornerShape(12.dp)), // Store Icon
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Outlined.Storefront, null, tint = AppColors.Danger)
+                            }
+                            Spacer(Modifier.width(16.dp))
+                            Column {
+                                Text(currentDeal.store, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                                Text("Department Store", color = AppColors.MutedText, style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
+                        Spacer(Modifier.height(20.dp))
+                        
+                        // Fake Store rows based on design
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                            Icon(Icons.Outlined.LocationOn, null, tint = AppColors.MutedText, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(12.dp))
+                            Text("Find nearest store", modifier = Modifier.weight(1f), color = AppColors.BrandInk)
+                            Text("Locate", color = AppColors.BrandOrange, fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(Modifier.height(12.dp))
+                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                            Icon(Icons.Outlined.AccessTime, null, tint = AppColors.MutedText, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(12.dp))
+                            Text("Store hours: 8AM - 10PM", modifier = Modifier.weight(1f), color = AppColors.BrandInk)
+                        }
+                        Spacer(Modifier.height(12.dp))
+                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                            Icon(Icons.Outlined.Phone, null, tint = AppColors.MutedText, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(12.dp))
+                            Text("Customer service", modifier = Modifier.weight(1f), color = AppColors.BrandInk)
+                            Text("Call", color = AppColors.BrandOrange, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+                
+                Spacer(Modifier.height(32.dp))
             }
         }
     }

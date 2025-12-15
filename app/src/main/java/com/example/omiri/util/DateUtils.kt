@@ -27,4 +27,17 @@ object DateUtils {
             null
         }
     }
+
+    fun daysBetween(start: String?, end: String?): Long {
+        if (start == null || end == null) return 0L
+        return try {
+            val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+            val d1 = format.parse(start) ?: return 0L
+            val d2 = format.parse(end) ?: return 0L
+            val diff = d2.time - d1.time
+            if (diff < 0) 0L else TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS)
+        } catch (e: Exception) {
+            0L
+        }
+    }
 }

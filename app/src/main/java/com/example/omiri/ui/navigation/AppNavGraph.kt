@@ -43,7 +43,14 @@ fun AppNavGraph(
 
     Scaffold(
         bottomBar = {
-            if (currentRoute != "onboarding") {
+            val bottomNavRoutes = setOf(
+                Routes.Home,
+                Routes.AllDeals,
+                Routes.Recipes,
+                Routes.AiChat,
+                Routes.ShoppingList
+            )
+            if (currentRoute in bottomNavRoutes) {
                 BottomNav(
                     navController = navController,
                     viewModel = shoppingListViewModel
