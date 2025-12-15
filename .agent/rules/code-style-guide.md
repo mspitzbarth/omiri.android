@@ -2,176 +2,200 @@
 trigger: always_on
 ---
 
-Omiri Compose UI Code Style Guide
-0) Golden rules
+Omiri Compose UI Style Guide (Component-Only Additions)
+1) Hard rule: “No new UI in screens”
 
-Component-first: use existing composables before creating anything new.
+If we add anything new visually (a row, card, badge, section, dialog layout, etc.), it must be created as a reusable component under ui/components.
 
-Design-locked: do not change spacing, colors, shapes, typography, elevation unless explicitly requested.
+Screens should only:
 
-No hex in screens: don’t write Color(0x...) in feature code. Add tokens to AppColors (or use MaterialTheme.colorScheme).
+compose existing components
 
-You run, I fix: I won’t run code. You paste errors/logcat/stack trace, I reply with minimal diffs.
+wire state/events
 
-1) Theme usage (mandatory)
-Always wrap app UI with:
-OmiriTheme {
-  // NavHost / Screen
-}
+do minimal layout scaffolding (screen padding, scroll container)
 
-In composables, prefer Material tokens:
+Screens must NOT:
 
-Colors: MaterialTheme.colorScheme.*
+create new “one-off” card layouts inline
 
-Typography: MaterialTheme.typography.*
+hardcode colors/typography/styles inline
 
-Shapes: MaterialTheme.shapes.* (your AppShapes)
+duplicate component styling that already exists elsewhere
 
-Never “invent” new sizes/styles in a screen.
+2) Naming rules (match your repo)
 
-Allowed direct usage of AppColors:
+Your folder mixes feature names (DealCard.kt) and “Omiri” prefixed base components (OmiriHeader.kt, OmiriEmptyState.kt). Keep that pattern:
 
-Extended palette / semantic tokens you already defined (e.g. AppColors.Green600, AppColors.Red600, hero colors).
+Use these naming conventions
 
-But default UI should still follow MaterialTheme.colorScheme first.
+Generic reusable base components: OmiriXyz…
 
-2) Color rules (based on your setup)
-Primary brand actions
+Example: OmiriSectionHeader.kt, OmiriTag.kt, OmiriSurfaceCard.kt
 
-Use MaterialTheme.colorScheme.primary (maps to AppColors.BrandOrange)
+Feature reusable components: descriptive without prefix
 
-Text on primary: MaterialTheme.colorScheme.onPrimary
+Example: BiggestSaversSection.kt, SavingsBreakdownCard.kt
 
-Surfaces & backgrounds
+File rule
 
-Screen background: MaterialTheme.colorScheme.background (your AppColors.Bg)
+1 main composable per file once it grows past ~120 lines.
 
-Cards: MaterialTheme.colorScheme.surface (your AppColors.Surface)
+Split helpers into private functions inside the same file unless reused elsewhere.
 
-Secondary surfaces: MaterialTheme.colorScheme.surfaceVariant
+3) Reuse ladder (what to use first, based on your files)
+Header / top bars
 
-Borders
+Fixed header: OmiriHeader.kt (preferred global)
 
-Use MaterialTheme.colorScheme.outline (your AppColors.Border)
+Home-specific: HomeHeader.kt
 
-Discounts / success / danger
+Context selection mode: ContextualSelectionTopBar.kt
 
-Prefer your semantic tokens:
+Generic header: ScreenHeader.kt, SectionHeader.kt
 
-Savings: AppColors.Green600 / AppColors.GreenTextDark
+Search
 
-Discount: AppColors.Red600
+Home: HomeSearchBar.kt
 
-Error: AppColors.Danger
+Generic: SearchBar.kt
 
-✅ If you need a new semantic color, add it to AppColors as val, with a clear name.
-❌ Don’t add var tokens (see note below).
+Chips / filters
 
-3) Typography rules (your Poppins + AppTypography)
+Core: FilterChipsRow.kt
 
-Use only:
+Mixed: MixedFilterChipsRow.kt
 
-MaterialTheme.typography.displaySmall
+Categories: CategoryPillsRow.kt
 
-headlineSmall
+Stores row: StoresSwipeFilterRow.kt
 
-titleLarge, titleMedium
+Modal: FilterModal.kt
 
-bodyLarge, bodyMedium
+Cards / content blocks
 
-labelLarge
+Deals: DealCard.kt, DealOfTheDay.kt, DealsCarousel.kt, DealsGrid.kt, TrendingDealsSection.kt, FeaturedDealsRow.kt
 
-✅ If you need a new style, add it to AppTypography and reuse everywhere.
-❌ Don’t use TextStyle(fontSize = …) inline in random screens.
+Summaries: OmiriSummaryCard.kt, StatsCards.kt, SavingsDashboard.kt
 
-4) Component reuse ladder (do this in order)
+Tips/empty/loading: OmiriTipCard.kt, OmiriEmptyState.kt, OmiriSmartEmptyState.kt, OmiriLoader.kt, Shimmer.kt, DealCardSkeleton.kt
 
-Existing Omiri components (your ui/components/*)
+Alerts/AI: NotificationCard.kt, SmartAlertsCard.kt, AiChatFunctionCards.kt, ShoppingListChatCard.kt
 
-Existing screen section patterns (copy structure, not styling code)
+Lists / shopping
 
-Material3 primitives (Button, Card, AssistChip, etc.) wrapped in Omiri components
+List section: ShoppingListsSection.kt
 
-Only then create new component(s)
+Item row: ShoppingListItem.kt
 
-If a component is “almost right”:
+Create/manage: CreateListBottomSheet.kt, ManageListsDialog.kt, ListSelectionBottomSheet.kt, AddItemDialog.kt, AddItemBottomSheet.kt
 
-Add a param (variant, tone, leadingIcon, isSelected) instead of duplicating.
+Membership cards
 
-5) How to write composables (consistency rules)
-Function signature order
+Add: AddMembershipCardBottomSheet.kt
 
-Use this order (unless your repo already has another standard):
+Details: MembershipCardDetailsBottomSheet.kt
 
+Store selection / location
+
+StoreComponents.kt, StoreSelectionComponents.kt, StoreLocationModal.kt
+
+✅ Rule: if your new UI resembles anything above, extend that component via params instead of creating a duplicate.
+
+4) “New element = new reusable component” definition
+
+A “new element” includes (examples):
+
+a new section (“Biggest Savers”)
+
+a new card layout
+
+a new badge/tag style
+
+a new row layout (e.g., store plan row)
+
+a new empty state variant
+
+a new bottom sheet layout
+
+a new skeleton/loading pattern
+
+All of these must be components in ui/components.
+
+5) Component API rules (so they stay reusable)
+
+Every new component must:
+
+accept modifier: Modifier = Modifier
+
+accept data in via params (immutable)
+
+expose events out via lambdas (onClick, onDismiss, onSelect, etc.)
+
+rely on MaterialTheme + your AppColors tokens (no new hex in feature code)
+
+Preferred param order
 @Composable
-fun ComponentName(
+fun BiggestSaversSection(
     modifier: Modifier = Modifier,
-    // required data
     title: String,
-    // optional config
-    enabled: Boolean = true,
-    // events last
-    onClick: () -> Unit = {}
+    items: List<BiggestSaverUi>,
+    onItemClick: (BiggestSaverUi) -> Unit,
+    onSeeAllClick: () -> Unit,
 )
 
-Modifier rules
+6) How we add something like “Biggest Savers” correctly
 
-Screens: apply background → padding at the top-level container.
+If you want a new “Biggest Savers” block on Home:
 
-Avoid “modifier soup” in deeply nested children; extract a small section composable.
+✅ Create:
 
-State rules
+BiggestSaversSection.kt (reusable section)
 
-Prefer state hoisting:
+optionally BiggestSaverCard.kt if a new card layout is needed
+(if it can reuse DealCard/OmiriSummaryCard, don’t create a new card)
 
-Screen gets uiState + events from ViewModel
+✅ In the screen:
 
-Components get immutable props + callbacks
+only call BiggestSaversSection(...) and wire state
 
-Don’t introduce a new architecture style if you already have one.
+7) Implementation constraints (design-locked)
 
-6) Adding new UI tokens (only if missing)
+Do not change existing paddings/radius/elevation unless asked.
 
-If you notice repeated padding(16.dp) / 12.dp / etc and you don’t already have a spacing system:
+Use MaterialTheme.typography.* (your Poppins setup) — no inline TextStyle(...) unless adding a shared token.
 
-Add one file like ui/theme/Dimens.kt (or Spacing.kt) and reuse it.
+Don’t introduce new colors in screens. Add to AppColors if truly needed (as val, not var).
 
-Same for elevations if needed.
+8) “You run / I fix” rule
 
-(Only do this if the codebase doesn’t already have an established spacing approach.)
+I will never ask you to trust that it compiles. You run it and paste:
 
-7) File hygiene rules (important for Kotlin)
+the full error
 
-What you pasted looks like multiple files merged—just keep these rules:
+file + line
 
-One package … per file
+the command you ran
 
-Imports must be at the top (no mid-file imports)
-
-AppColors tokens should be val, not var
-
-Specific note: you currently have:
-
-var SubTextGrey = Color(0xFF6C7280)
+I respond with the smallest possible patch.
 
 
-Make it:
+8) Build & run command rule (mandatory)
 
-val SubTextGrey = Color(0xFF6C7280)
+Always use Gradle Wrapper and assume it exists.
 
+Never ask which command to run. Default to wrapper commands.
 
-(Theme tokens should not be mutable.)
+Default commands to suggest
 
-8) “You run / I fix” debug protocol
+Build: ./gradlew build
 
-When something fails, paste:
+Debug install: ./gradlew :app:installDebug
 
-The full Gradle error (first occurrence + stack trace)
+Unit tests: ./gradlew test
 
-File + line number
+Instrumented tests: ./gradlew connectedDebugAndroidTest
 
-The composable you edited
+Lint: ./gradlew lint
 
-Command you ran (./gradlew assembleDebug, :app:installDebug, etc.)
-
-I’ll respond with minimal changes that preserve your layout/design system.
+Clean rebuild (only if needed): ./gradlew clean build

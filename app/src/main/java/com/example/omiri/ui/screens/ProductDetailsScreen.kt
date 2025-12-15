@@ -288,12 +288,12 @@ fun ProductDetailsScreen(
                             Spacer(Modifier.width(12.dp))
                             if (currentDeal.discountPercentage > 0) {
                                 Surface(
-                                    color = Color(0xFFE8F5E9), // Light Green
-                                    shape = RoundedCornerShape(4.dp)
+                                    color = AppColors.Green100,
+                                    shape = RoundedCornerShape(50.dp)
                                 ) {
                                     Text(
                                         text = "${currentDeal.discountPercentage}% OFF",
-                                        color = Color(0xFF2E7D32), // Green
+                                        color = AppColors.GreenTextDark,
                                         style = MaterialTheme.typography.labelLarge,
                                         fontWeight = FontWeight.Bold,
                                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -314,8 +314,9 @@ fun ProductDetailsScreen(
                             onClick = { onAddToList(currentDeal, !isOnList) },
                             modifier = Modifier
                                 .weight(1f)
-                                .height(48.dp),
-                            shape = RoundedCornerShape(10.dp),
+                                .weight(1f)
+                                .height(40.dp),
+                            shape = RoundedCornerShape(8.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = AppColors.BrandOrange)
                         ) {
                             Icon(Icons.Filled.Add, null)
@@ -327,8 +328,8 @@ fun ProductDetailsScreen(
                         if (!currentDeal.pdfSourceUrl.isNullOrBlank()) {
                             Surface(
                                 onClick = { onViewFlyer(currentDeal.pdfSourceUrl, currentDeal.store, currentDeal.pageNumber) },
-                                modifier = Modifier.size(48.dp),
-                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.size(40.dp),
+                                shape = RoundedCornerShape(8.dp),
                                 color = AppColors.Bg,
                                 border = BorderStroke(1.dp, AppColors.Border) // Or none
                             ) {
