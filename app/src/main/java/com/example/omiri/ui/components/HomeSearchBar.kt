@@ -24,14 +24,14 @@ fun HomeSearchBar(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .height(56.dp)
+            .height(48.dp)
             .border(
                 width = 1.dp,
                 color = Color(0xFFE5E7EB),
-                shape = RoundedCornerShape(28.dp)
+                shape = RoundedCornerShape(24.dp)
             )
             .clickable(onClick = onSearchClick),
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(24.dp),
         color = Color(0xFFF3F4F6) // Light gray background like input field
     ) {
         Row(

@@ -314,8 +314,8 @@ fun ProductDetailsScreen(
                             onClick = { onAddToList(currentDeal, !isOnList) },
                             modifier = Modifier
                                 .weight(1f)
-                                .height(56.dp),
-                            shape = RoundedCornerShape(12.dp),
+                                .height(48.dp),
+                            shape = RoundedCornerShape(10.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = AppColors.BrandOrange)
                         ) {
                             Icon(Icons.Filled.Add, null)
@@ -327,8 +327,8 @@ fun ProductDetailsScreen(
                         if (!currentDeal.pdfSourceUrl.isNullOrBlank()) {
                             Surface(
                                 onClick = { onViewFlyer(currentDeal.pdfSourceUrl, currentDeal.store, currentDeal.pageNumber) },
-                                modifier = Modifier.size(56.dp),
-                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.size(48.dp),
+                                shape = RoundedCornerShape(10.dp),
                                 color = AppColors.Bg,
                                 border = BorderStroke(1.dp, AppColors.Border) // Or none
                             ) {

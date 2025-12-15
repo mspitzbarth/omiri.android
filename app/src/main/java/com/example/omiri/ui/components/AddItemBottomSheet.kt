@@ -255,12 +255,12 @@ fun AddItemBottomSheet(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(50.dp),
+                            .height(40.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFFFE8357),
                             contentColor = Color.White
                         ),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(10.dp),
                         enabled = itemName.isNotBlank()
                     ) {
                         Text(

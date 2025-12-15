@@ -291,8 +291,8 @@ fun OnboardingScreen(
                         Button(
                             onClick = onAction,
                             enabled = isEnabled,
-                            modifier = Modifier.fillMaxWidth().height(56.dp),
-                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth().height(48.dp),
+   shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFFFE8357),
                                 disabledContainerColor = Color(0xFFE5E7EB)

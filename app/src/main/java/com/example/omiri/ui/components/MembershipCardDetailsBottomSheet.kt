@@ -183,12 +183,12 @@ fun MembershipCardDetailsBottomSheet(
                         // Delete Button
                         Button(
                             onClick = onDelete,
-                            modifier = Modifier.fillMaxWidth().height(50.dp),
+                            modifier = Modifier.fillMaxWidth().height(40.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFFFEE2E2),
                                 contentColor = Color(0xFFEF4444)
                             ),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(10.dp)
                         ) {
                             Icon(Icons.Outlined.Delete, contentDescription = null)
                             Spacer(Modifier.width(Spacing.sm))
