@@ -139,6 +139,25 @@ fun AllDealsScreen(
     var filterBarHeightPx by remember { mutableFloatStateOf(0f) }
     var filterBarOffsetPx by remember { mutableFloatStateOf(0f) }
 
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+
+    // Smooth Pagination Trigger
+    val shouldPaginate = remember {
+        derivedStateOf {
+            val layoutInfo = listState.layoutInfo
+            val totalItemsNumber = layoutInfo.totalItemsCount
+            val lastVisibleItemIndex = (layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0) + 1
+            // Trigger earlier (20 items before end) to load before user sees bottom
+            lastVisibleItemIndex > (totalItemsNumber - 20)
+        }
+    }
+
+    LaunchedEffect(shouldPaginate.value) {
+        if (shouldPaginate.value && hasMore && !isLoading && !isPaging) {
+            viewModel.loadMoreDeals()
+        }
+    }
+
     val nestedScrollConnection = remember {
         object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
             override fun onPreScroll(available: androidx.compose.ui.geometry.Offset, source: androidx.compose.ui.input.nestedscroll.NestedScrollSource): androidx.compose.ui.geometry.Offset {
@@ -178,7 +197,7 @@ fun AllDealsScreen(
             val filterBarHeightDp = with(density) { filterBarHeightPx.toDp() }
             val totalHeaderHeightDp = topBarHeightDp + filterBarHeightDp
             
-            if (isLoading && !isPaging) {
+            if (isLoading && !isPaging && !isRefreshing) {
                 // Skeleton Grid State
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
@@ -196,6 +215,7 @@ fun AllDealsScreen(
                 }
             } else {
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(top = totalHeaderHeightDp, bottom = 0.dp) // Header space + no bottom padding (handled by items)
                 ) {
@@ -256,18 +276,22 @@ fun AllDealsScreen(
                     cumulativeItemCount += rowDeals.size
                     justInsertedAd = false
                     
-                    // Insert ad every 12 items (whenever we cross a multiple of 12 boundary)
+                    // Insert ad every 12 items
                     if (cumulativeItemCount / 12 > previousCount / 12) {
+                        // Alternate Ad Sizes: Even insertions = MEDIUM_RECTANGLE, Odd insertions = BANNER
+                        val insertionIndex = cumulativeItemCount / 12
+                        val adSize = if (insertionIndex % 2 == 0) com.google.android.gms.ads.AdSize.MEDIUM_RECTANGLE else com.google.android.gms.ads.AdSize.LARGE_BANNER
+                        
+                        // Pre-allocate height to prevent jumps when ad loads
+                        val adHeight = if (adSize == com.google.android.gms.ads.AdSize.MEDIUM_RECTANGLE) 250.dp else 100.dp
+
                         item(key = "ad_banner_${category}_${rowDeals.first().id}") {
-                            Box(
+                            com.example.omiri.ui.components.AdCard(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = Spacing.md)
-                                    .heightIn(min = 60.dp), // Ensure minimal height
-                                contentAlignment = Alignment.Center
-                            ) {
-                                AdMobBanner()
-                            }
+                                    .padding(horizontal = Spacing.lg)
+                                    .height(adHeight), // Fix height to reserve space
+                                adSize = adSize
+                            )
                         }
                         justInsertedAd = true
                     }
@@ -309,60 +333,16 @@ fun AllDealsScreen(
                 }
             }
             
-            // Ad Gatekeeper for Infinite Scroll
-            if (hasMore) {
-                if (justInsertedAd) {
-                    // We just showed an ad, so don't show another gatekeeper ad immediately.
-                    // Just trigger the load with a small indicator/spacer.
-                    item(key = "ad_gatekeeper_loader") {
-                         LaunchedEffect(Unit) {
-                             if (!isLoading) {
-                                 viewModel.loadMoreDeals()
-                             }
-                         }
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = Spacing.md),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            com.example.omiri.ui.components.OmiriLoader(size = 24.dp)
-                        }
-                    }
-                } else {
-                    // Show Gatekeeper Ad which triggers load
-                    item(key = "ad_gatekeeper") {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = Spacing.md),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            AdMobBanner(
-                                 onAdLoaded = {
-                                     if (!isLoading) {
-                                         scope.launch {
-                                             delay(1000) 
-                                             viewModel.loadMoreDeals()
-                                         }
-                                     }
-                                 }
-                            )
-                        }
-                    }
-                }
-                
-                 if (isLoading && !justInsertedAd) {
-                    item(key = "loading_skeleton_row") {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = Spacing.lg, vertical = Spacing.md),
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.md)
-                        ) {
-                            com.example.omiri.ui.components.DealCardSkeleton(modifier = Modifier.weight(1f))
-                            com.example.omiri.ui.components.DealCardSkeleton(modifier = Modifier.weight(1f))
-                        }
+            // Loading Indicator at bottom if paging
+            if (isPaging) {
+                item(key = "loading_indicator_bottom") {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = Spacing.md),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        com.example.omiri.ui.components.OmiriLoader(size = 24.dp)
                     }
                 }
             }

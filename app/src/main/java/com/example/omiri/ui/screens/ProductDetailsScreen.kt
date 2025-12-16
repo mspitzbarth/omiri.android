@@ -134,7 +134,7 @@ fun ProductDetailsScreen(
     ) { padding ->
         if (isLoading) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = AppColors.BrandOrange)
+                com.example.omiri.ui.components.OmiriLoader(size = 48.dp)
             }
         } else if (currentDeal == null) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
@@ -460,6 +460,14 @@ fun ProductDetailsScreen(
                     }
                 }
                 
+                // Ad Banner
+                Box(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    com.example.omiri.ui.components.AdMobBanner()
+                }
+
                 Spacer(Modifier.height(32.dp))
             }
         }

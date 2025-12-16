@@ -524,9 +524,14 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
          if (!_isMockMode.value && !response.expiringSoon.isNullOrEmpty()) userPreferences.saveCachedProducts("expiring_soon", response.expiringSoon)
          
          // 2. Categories
+         // 2. Categories
          if (!response.categories.isNullOrEmpty()) {
-             _categories.value = response.categories
-             if (!_isMockMode.value) userPreferences.saveCachedCategories(response.categories)
+             // Map CategoryResponse to String using "en" translation
+             val categoryNames = response.categories.map { 
+                 it.translations?.get("en") ?: it.category 
+             }
+             _categories.value = categoryNames
+             if (!_isMockMode.value) userPreferences.saveCachedCategories(categoryNames)
          }
          
          // 3. Stores
@@ -572,17 +577,19 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
             val storesJson = assets.open("mock_stores.json").bufferedReader().use { it.readText() }
             val storesType = object : com.google.gson.reflect.TypeToken<List<com.example.omiri.data.api.models.StoreListResponse>>() {}.type
             val stores: List<com.example.omiri.data.api.models.StoreListResponse> = gson.fromJson(storesJson, storesType)
-            
-            val categories = products.flatMap { it.categories ?: emptyList() }.distinct()
-            
-            com.example.omiri.data.api.models.AppSyncResponse(
-                featuredDeals = products.filter { it.featured == true },
-                topDeals = products.take(5),
-                expiringSoon = emptyList(),
-                stores = stores,
-                categories = categories,
-                config = emptyMap()
-            )
+                        val categoryStrings = products.flatMap { it.categories ?: emptyList() }.distinct()
+             val categories = categoryStrings.map { 
+                 com.example.omiri.data.api.models.CategoryResponse(it, 0, mapOf("en" to it)) 
+             }
+             
+             com.example.omiri.data.api.models.AppSyncResponse(
+                 featuredDeals = products.filter { it.featured == true },
+                 topDeals = products.take(5),
+                 expiringSoon = emptyList(),
+                 stores = stores,
+                 categories = categories,
+                 config = emptyMap()
+             )
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load mock data", e)
              com.example.omiri.data.api.models.AppSyncResponse(emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyMap())

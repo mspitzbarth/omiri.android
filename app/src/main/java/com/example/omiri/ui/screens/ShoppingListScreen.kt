@@ -264,6 +264,18 @@ fun ShoppingListScreen(
                         )
                     }
                 }
+                
+                // Bottom Ad
+                item(key = "shopping_list_ad_banner") {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = Spacing.lg),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        com.example.omiri.ui.components.AdMobBanner()
+                    }
+                }
             }
         }
 

@@ -87,11 +87,7 @@ fun SplashScreen(progress: Float = 0f) {
             Spacer(modifier = Modifier.height(48.dp))
             
             // Spinner
-            androidx.compose.material3.CircularProgressIndicator(
-                color = Color(0xFFFF7D29),
-                modifier = Modifier.size(32.dp),
-                strokeWidth = 3.dp
-            )
+            com.example.omiri.ui.components.OmiriLoader(size = 32.dp)
         }
         
     }

@@ -11,6 +11,7 @@ import com.google.android.gms.ads.AdView
 @Composable
 fun AdMobBanner(
     modifier: Modifier = Modifier,
+    adSize: AdSize = AdSize.BANNER,
     adUnitId: String = "ca-app-pub-3940256099942544/6300978111", // Test ad unit ID
     onAdLoaded: () -> Unit = {}
 ) {
@@ -18,7 +19,7 @@ fun AdMobBanner(
         modifier = modifier.fillMaxWidth(),
         factory = { context ->
             AdView(context).apply {
-                setAdSize(AdSize.BANNER)
+                setAdSize(adSize)
                 setAdUnitId(adUnitId)
                 adListener = object : com.google.android.gms.ads.AdListener() {
                     override fun onAdLoaded() {

@@ -44,12 +44,12 @@ import com.example.omiri.R
 import com.example.omiri.data.api.models.ProductResponse
 import com.example.omiri.data.api.models.StoreListResponse
 import com.example.omiri.ui.components.DealsCarousel
+import com.example.omiri.ui.components.OmiriEmptyState
 import com.example.omiri.ui.components.OmiriHeader
 import com.example.omiri.ui.components.SectionHeader
 
 import com.example.omiri.ui.theme.Spacing
 import com.example.omiri.viewmodels.ProductViewModel
-
 
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
@@ -77,11 +77,11 @@ fun HomeScreen(
     val smartPlan by viewModel.smartPlan.collectAsState()
     val smartAlerts by viewModel.smartAlerts.collectAsState()
     val monthlySavingsGoal by viewModel.monthlySavingsGoal.collectAsState(initial = "")
-    
+
     // AdMob Interstitial
     val context = androidx.compose.ui.platform.LocalContext.current
     val adManager = remember { com.example.omiri.ui.components.InterstitialAdManager(context) }
-    
+
     LaunchedEffect(Unit) {
         viewModel.initialLoad()
         viewModel.loadCategoriesIfNeeded()
@@ -92,7 +92,7 @@ fun HomeScreen(
     @OptIn(ExperimentalMaterial3Api::class)
     val pullRefreshState = rememberPullToRefreshState()
     var isRefreshing by remember { mutableStateOf(false) }
-    
+
     if (isRefreshing) {
         LaunchedEffect(Unit) {
             adManager.showAd {
@@ -102,7 +102,7 @@ fun HomeScreen(
             }
         }
     }
-    
+
     PullToRefreshBox(
         isRefreshing = isRefreshing,
         state = pullRefreshState,
@@ -125,46 +125,45 @@ fun HomeScreen(
                     .verticalScroll(rememberScrollState())
             ) {
 
-
                 // Removed global error block as per user request
                 // We will handle errors inside sections (e.g. FeaturedDealsRow)
-                
+
                 Spacer(modifier = Modifier.height(Spacing.lg))
 
                 // 1. Savings Goal Card
                 if (monthlySavingsGoal.isNotEmpty()) {
                     SavingsGoalCard(
-                        monthlyGoal = monthlySavingsGoal, 
+                        monthlyGoal = monthlySavingsGoal,
                         currentSavings = potentialSavings
                     )
                     Spacer(Modifier.height(Spacing.lg))
                 }
 
                 // 2 & 3. Smart Plan / Alerts Carousel
-                
-                // Determine pages. 
+
+                // Determine pages.
                 val pages = mutableListOf<@Composable () -> Unit>()
-                
+
                 if (smartPlan != null && smartPlan!!.steps.isNotEmpty()) {
-                    pages.add { 
+                    pages.add {
                         com.example.omiri.ui.components.SmartPlanCard(
                             plan = smartPlan,
                             onStoreClick = { storeName, items ->
                                 shoppingListViewModel.setStoreFilter(storeName, items)
                                 onNavigateToShoppingListTab()
                             }
-                        ) 
+                        )
                     }
                 }
-                
+
                 // Smart Alerts removed as per request to merge/remove.
                 // if (smartAlerts.isNotEmpty()) {
                 //      pages.add { com.example.omiri.ui.components.SmartAlertsCard(alerts = smartAlerts) }
                 // }
-                
+
                 if (pages.isNotEmpty()) {
                     val pagerState = androidx.compose.foundation.pager.rememberPagerState(pageCount = { pages.size })
-                    
+
                     androidx.compose.foundation.pager.HorizontalPager(
                         state = pagerState,
                         contentPadding = PaddingValues(horizontal = 0.dp),
@@ -172,7 +171,7 @@ fun HomeScreen(
                     ) { page ->
                         pages.getOrNull(page)?.invoke()
                     }
-                    
+
                     // Indicators (only if > 1 page)
                     if (pagerState.pageCount > 1) {
                         Spacer(Modifier.height(Spacing.sm))
@@ -183,7 +182,8 @@ fun HomeScreen(
                             horizontalArrangement = Arrangement.Center
                         ) {
                             repeat(pagerState.pageCount) { iteration ->
-                                 val color = if (pagerState.currentPage == iteration) Color(0xFFFE8357) else Color(0xFFD1D5DB)
+                                val color =
+                                    if (pagerState.currentPage == iteration) Color(0xFFFE8357) else Color(0xFFD1D5DB)
                                 Box(
                                     modifier = Modifier
                                         .padding(2.dp)
@@ -193,11 +193,11 @@ fun HomeScreen(
                             }
                         }
                     }
-                    
+
                     // Spacing after smart section before next section
                     Spacer(Modifier.height(Spacing.lg))
                 }
-                
+
                 // 4. Shopping Lists
                 com.example.omiri.ui.components.ShoppingListsSection(
                     shoppingLists = shoppingLists,
@@ -210,10 +210,9 @@ fun HomeScreen(
 
                 // Collect extra state for Expiring Soon
                 val expiringSoonDeals by viewModel.leavingSoonDeals.collectAsState()
-                
+
                 // Local state for home filters
                 // "Top Deals", "Deals for you", "Expiring Soon"
-                // Using exact strings mapping to the view logic or IDs
                 var selectedHomeFilter by remember { mutableStateOf("Top Deals") }
 
                 Column(modifier = Modifier.fillMaxWidth()) {
@@ -224,12 +223,24 @@ fun HomeScreen(
                             .padding(horizontal = Spacing.lg),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                         com.example.omiri.ui.components.MixedFilterChipsRow(
+                        com.example.omiri.ui.components.MixedFilterChipsRow(
                             modifier = Modifier.weight(1f),
                             options = listOf(
-                                com.example.omiri.ui.components.MixedFilterOption("Top Deals", Icons.Outlined.EmojiEvents, isToggleable = false),
-                                com.example.omiri.ui.components.MixedFilterOption("Deals for you", Icons.Outlined.LocalOffer, isToggleable = false), // "For You" icon?
-                                com.example.omiri.ui.components.MixedFilterOption("Expiring Soon", Icons.Outlined.AccessTime, isToggleable = false)
+                                com.example.omiri.ui.components.MixedFilterOption(
+                                    "Top Deals",
+                                    Icons.Outlined.EmojiEvents,
+                                    isToggleable = false
+                                ),
+                                com.example.omiri.ui.components.MixedFilterOption(
+                                    "Deals for you",
+                                    Icons.Outlined.LocalOffer,
+                                    isToggleable = false
+                                ),
+                                com.example.omiri.ui.components.MixedFilterOption(
+                                    "Expiring Soon",
+                                    Icons.Outlined.AccessTime,
+                                    isToggleable = false
+                                )
                             ),
                             initialSelected = selectedHomeFilter,
                             initialToggled = emptySet(), // No multi-select
@@ -243,65 +254,69 @@ fun HomeScreen(
                     }
 
                     Spacer(Modifier.height(Spacing.md))
-                    
+
                     // Determine which list to show
-                    val currentDisplayDeals = when(selectedHomeFilter) {
+                    val currentDisplayDeals = when (selectedHomeFilter) {
                         "Deals for you" -> featuredDeals
                         "Expiring Soon" -> expiringSoonDeals
                         else -> topDeals // Top Deals default
                     }
-                    
-                    // Display Row (Reusing FeaturedDealsRow logic but just the list part? 
-                    // No, FeaturedDealsRow includes the title header which we might not want if pills serve as header.
-                    // But FeaturedDealsRow creates a Carousel.
-                    // If we want a vertical list like All Deals, we'd use LazyColumn items, but we are inside a Column in verticalScroll.
-                    // So we cannot use LazyColumn here easily without nested scroll issues (unless customized height).
-                    // Best pattern for Home is horizontal carousel (LazyRow).
-                    // Or if user wants "slide/update", maybe they want the Carousel to update its content?
-                    // Let's use DealsCarousel directly or FeaturedDealsRow with hidden title? 
-                    // FeaturedDealsRow has "View All" button which is useful.
-                    
-                    // Let's render the Content Row
-                    // We need to pass the 'title' to FeaturedDealsRow to keep "View All" context, 
-                    // OR we render a custom SectionHeader + DealsCarousel.
-                    
-                    // Actually, "View All" usually navigates to AllDealsScreen filtering by that type.
-                    // For now, simple redirection to AllDeals is fine.
-                    
+
                     // Pass error context
                     val networkErrorType by viewModel.networkErrorType.collectAsState()
-                    
+
+                    // ✅ Empty state config that matches the currently selected tab
+                    val (emptyIcon, emptyTitle, emptyMessage) = when (selectedHomeFilter) {
+                        "Deals for you" -> Triple(
+                            Icons.Outlined.LocalOffer,
+                            "No deals for you",
+                            "We couldn’t find personalized deals right now."
+                        )
+
+                        "Expiring Soon" -> Triple(
+                            Icons.Outlined.AccessTime,
+                            "Nothing expiring soon",
+                            "No deals are close to ending at the moment."
+                        )
+
+                        else -> Triple(
+                            Icons.Outlined.EmojiEvents,
+                            "No top deals",
+                            "No top deals available right now."
+                        )
+                    }
+
                     if (isLoading && currentDisplayDeals.isEmpty()) {
-                         Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                             com.example.omiri.ui.components.OmiriLoader(size = 32.dp)
-                         }
-                    } else if (currentDisplayDeals.isEmpty()) {
-                        // Empty State for specific section
-                        Box(modifier = Modifier.fillMaxWidth().padding(Spacing.lg), contentAlignment = Alignment.Center) {
-                            Text(
-                                text = "No deals found for $selectedHomeFilter",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = com.example.omiri.ui.theme.AppColors.Neutral500
-                            )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            com.example.omiri.ui.components.OmiriLoader(size = 32.dp)
                         }
+                    } else if (currentDisplayDeals.isEmpty()) {
+                        OmiriEmptyState(
+                            icon = emptyIcon,
+                            title = emptyTitle,
+                            message = emptyMessage
+                        )
                     } else {
-                        // We use DealsCarousel directly to avoid redundant title if pills act as title?
-                        // Or we keep "View All" row separate.
-                        // Let's keep "View All" aligned with the currently selected pill logic concept.
-                        
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.xs),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = Spacing.lg, vertical = Spacing.xs),
                             horizontalArrangement = Arrangement.End
                         ) {
-                             Text(
-                                 text = "View All",
-                                 style = MaterialTheme.typography.labelLarge,
-                                 color = com.example.omiri.ui.theme.AppColors.BrandOrange,
-                                 fontWeight = FontWeight.Bold,
-                                 modifier = Modifier.clickable { onNavigateAllDeals() }
-                             )
+                            Text(
+                                text = "View All",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = com.example.omiri.ui.theme.AppColors.BrandOrange,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.clickable { onNavigateAllDeals() }
+                            )
                         }
-                        
+
                         DealsCarousel(
                             deals = currentDisplayDeals,
                             onDealClick = { deal -> onDealClick(deal.id) }
@@ -322,7 +337,7 @@ fun SavingsGoalCard(
 ) {
     val goal = monthlyGoal.toDoubleOrNull() ?: return
     val progress = (currentSavings / goal).toFloat().coerceIn(0f, 1f)
-    
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -333,52 +348,52 @@ fun SavingsGoalCard(
         // No elevation as per design rules (flat)
     ) {
         Column(modifier = Modifier.padding(Spacing.lg)) {
-             Row(
-                 modifier = Modifier.fillMaxWidth(),
-                 horizontalArrangement = Arrangement.SpaceBetween,
-                 verticalAlignment = Alignment.CenterVertically
-             ) {
-                 Text(
-                     text = "Monthly goal: Save €$monthlyGoal",
-                     style = MaterialTheme.typography.titleMedium,
-                     fontWeight = FontWeight.Bold,
-                     color = Color(0xFF111827)
-                 )
-                 
-                 Text(
-                     text = "€${"%.0f".format(currentSavings)} / €$monthlyGoal",
-                     style = MaterialTheme.typography.bodyMedium,
-                     fontWeight = FontWeight.Bold,
-                     color = Color(0xFF9CA3AF)
-                 )
-             }
-             
-             Spacer(Modifier.height(Spacing.md))
-             
-             // Progress Bar
-             Box(
-                 modifier = Modifier
-                     .fillMaxWidth()
-                     .height(8.dp)
-                     .clip(RoundedCornerShape(4.dp))
-                     .background(Color(0xFFF3F4F6))
-             ) {
-                 Box(
-                     modifier = Modifier
-                         .fillMaxWidth(progress)
-                         .fillMaxHeight()
-                         .clip(RoundedCornerShape(4.dp))
-                         .background(Color(0xFFFE8357))
-                 )
-             }
-             
-             Spacer(Modifier.height(Spacing.sm))
-             
-             Text(
-                 text = "Saved so far: €${"%.0f".format(currentSavings)}", // Round to integer for cleaner look in card
-                 style = MaterialTheme.typography.bodyMedium,
-                 color = Color(0xFF6B7280)
-             )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Monthly goal: Save €$monthlyGoal",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF111827)
+                )
+
+                Text(
+                    text = "€${"%.0f".format(currentSavings)} / €$monthlyGoal",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF9CA3AF)
+                )
+            }
+
+            Spacer(Modifier.height(Spacing.md))
+
+            // Progress Bar
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(Color(0xFFF3F4F6))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(progress)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color(0xFFFE8357))
+                )
+            }
+
+            Spacer(Modifier.height(Spacing.sm))
+
+            Text(
+                text = "Saved so far: €${"%.0f".format(currentSavings)}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color(0xFF6B7280)
+            )
         }
     }
 }

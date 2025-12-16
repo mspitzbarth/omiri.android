@@ -95,7 +95,7 @@ data class AppSyncResponse(
     @SerializedName("top_deals") val topDeals: List<ProductResponse>?,
     @SerializedName("expiring_soon") val expiringSoon: List<ProductResponse>?,
     @SerializedName("stores") val stores: List<StoreListResponse>?, 
-    @SerializedName("categories") val categories: List<String>?,
+    @SerializedName("categories") val categories: List<CategoryResponse>?,
     @SerializedName("config") val config: Map<String, Any>?
 )
 
