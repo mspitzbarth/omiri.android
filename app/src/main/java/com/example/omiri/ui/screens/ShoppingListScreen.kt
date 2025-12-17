@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -13,6 +14,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.DragIndicator
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
@@ -26,25 +28,35 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.omiri.ui.components.RecommendedStoreRunCard
+import sh.calvin.reorderable.rememberReorderableLazyListState
+import sh.calvin.reorderable.ReorderableItem
+
+import com.example.omiri.ui.components.RecommendedRouteCard
+import com.example.omiri.ui.components.RouteStepUi
+import com.example.omiri.ui.components.ShoppingListHeader
+import com.example.omiri.ui.components.ShoppingListSummaryCard
+import com.example.omiri.ui.components.AddItemBar
 import com.example.omiri.ui.components.ShoppingListItem
 import com.example.omiri.ui.components.simpleVerticalScrollbar
 import com.example.omiri.ui.theme.Spacing
 import com.example.omiri.ui.theme.AppColors
 import com.example.omiri.viewmodels.ShoppingListViewModel
 import com.example.omiri.viewmodels.ProductViewModel
+import com.example.omiri.viewmodels.CategoryUiModel
 
 @Composable
 fun ShoppingListScreen(
     viewModel: ShoppingListViewModel = viewModel(),
     productViewModel: ProductViewModel? = null,
     onNotificationsClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    onProductClick: (String) -> Unit = {}
 ) {
     val shoppingLists by viewModel.shoppingLists.collectAsState()
     val currentListId by viewModel.currentListId.collectAsState()
     val currentList by viewModel.currentList.collectAsState()
     val filteredItems by viewModel.filteredItems.collectAsState()
+    val groupedItems by viewModel.groupedItems.collectAsState()
     val availableCategories by viewModel.availableCategories.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
     val filterStoreName by viewModel.filterStoreName.collectAsState()
@@ -54,7 +66,12 @@ fun ShoppingListScreen(
     val inSelectionMode by viewModel.inSelectionMode.collectAsState()
     
     // Smart Plan
-    val smartPlan by (productViewModel?.smartPlan ?: kotlinx.coroutines.flow.MutableStateFlow(null)).collectAsState()
+    val smartPlan by viewModel.smartPlan.collectAsState()
+    
+    // Find Deals State
+    val findingDealsFor by viewModel.findingDealsForItem.collectAsState()
+    val dealSearchResults by viewModel.dealSearchResults.collectAsState()
+    val isSearching by viewModel.isSearching.collectAsState()
     
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -65,11 +82,19 @@ fun ShoppingListScreen(
     var showMoveSelectionSheet by remember { mutableStateOf(false) }
     var showListSelectionSheet by remember { mutableStateOf(false) }
     var itemToEdit by remember { mutableStateOf<com.example.omiri.data.models.ShoppingItem?>(null) }
+    var newItemText by remember { mutableStateOf("") }
+    var showSortMenu by remember { mutableStateOf(false) }
     
-    // Header Stats (Mocked or calculated)
+    val currentSortOption by viewModel.currentSortOption.collectAsState()
+    
+    // Header Stats
     val totalItemsCount = currentList?.items?.size ?: 0
     val matchedDealsCount = filteredItems.count { it.isInDeals || it.discountPrice != null }
-    val savedAmount = 12.40 // Mocked per image, or calculate if data available
+    val savedAmount = filteredItems.sumOf { 
+        if (it.price != null && it.discountPrice != null && it.discountPrice < it.price) {
+            it.price - it.discountPrice
+        } else 0.0
+    } // Dynamic Calculation
 
     Box(
         modifier = Modifier.fillMaxSize().background(com.example.omiri.ui.theme.AppColors.Bg) // Ensure background is light gray so white items pop
@@ -84,7 +109,6 @@ fun ShoppingListScreen(
                     onClearSelection = { viewModel.clearSelection() },
                     onDelete = { viewModel.deleteSelectedItems() },
                     onDuplicate = { 
-                         // Duplicate items
                          val count = selectedItemIds.size
                          viewModel.duplicateSelectedItems()
                          scope.launch {
@@ -95,7 +119,6 @@ fun ShoppingListScreen(
                         showMoveSelectionSheet = true
                     },
                     onEdit = {
-                        // Only called if 1 item selected
                         val id = selectedItemIds.firstOrNull()
                         if (id != null) {
                             val item = filteredItems.find { it.id == id }
@@ -105,7 +128,24 @@ fun ShoppingListScreen(
                                 viewModel.clearSelection()
                             }
                         }
-                    }
+                    },
+                    onViewDeal = if (selectedItemIds.size == 1) {
+                         {
+                             val id = selectedItemIds.firstOrNull()
+                             if (id != null) {
+                                 val item = filteredItems.find { it.id == id }
+                                 if (item != null) {
+                                     if (item.dealId != null) {
+                                         onProductClick(item.dealId)
+                                         viewModel.clearSelection()
+                                     } else {
+                                         viewModel.startFindDeals(item)
+                                         viewModel.clearSelection()
+                                     }
+                                 }
+                             }
+                         }
+                    } else null
                 )
             } else {
                 com.example.omiri.ui.components.OmiriHeader(
@@ -118,138 +158,279 @@ fun ShoppingListScreen(
             // Content List
             val listState = rememberLazyListState()
             
+            // Reorderable State
+            val reorderableState = rememberReorderableLazyListState(listState) { from, to ->
+                val fromId = from.key as? String
+                val toId = to.key as? String
+                if (fromId != null && toId != null) {
+                    viewModel.reorderItemById(fromId, toId)
+                }
+            }
+            
+            // 0. Shopping List Title & Switcher (Fixed Top)
+            if (!inSelectionMode) {
+                 com.example.omiri.ui.components.ShoppingListHeader(
+                    listName = currentList?.name ?: "My List",
+                    onClick = { showListSelectionSheet = true }
+                )
+            }
+
             LazyColumn(
                 state = listState,
                 modifier = Modifier
-                    .fillMaxSize()
+                    .weight(1f)
+                    .fillMaxWidth()
                     .simpleVerticalScrollbar(listState),
-                contentPadding = PaddingValues(bottom = 180.dp)
+                contentPadding = PaddingValues(bottom = 32.dp)
             ) {
-                // Screen Header Section
-                item {
-                    Surface(
-                        color = AppColors.Surface,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = Spacing.lg)
-                                .padding(top = Spacing.md, bottom = Spacing.md)
-                        ) {
 
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth().clickable { showListSelectionSheet = true }
-                            ) {
-                                Text(
-                                    text = currentList?.name ?: "Weekly Groceries",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    color = AppColors.Neutral900
-                                )
-                                Spacer(Modifier.width(8.dp))
-                                Icon(
-                                    imageVector = Icons.Outlined.KeyboardArrowDown,
-                                    contentDescription = "Switch List",
-                                    tint = AppColors.Neutral500
-                                )
-                            }
-                            
-                            Spacer(Modifier.height(4.dp))
-                            
-                            // Stats Row
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = "$totalItemsCount items • $matchedDealsCount matched deals",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = AppColors.Neutral500
-                                )
-                                Spacer(Modifier.width(16.dp))
-                                Text(
-                                    text = "You saved €${String.format("%.2f", savedAmount)} this week",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = AppColors.Green600, // Green
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
+                 
+                // 1. Summary Card
+                item {
+                    Column(modifier = Modifier.padding(horizontal = Spacing.lg)) {
+                        if (matchedDealsCount > 0 && savedAmount > 0) {
+                            ShoppingListSummaryCard(
+                                itemCount = totalItemsCount,
+                                storeCount = smartPlan?.steps?.size ?: 1, 
+                                matchedDealsCount = matchedDealsCount,
+                                totalSavings = savedAmount,
+                                bestTime = "",
+                                modifier = Modifier.padding(vertical = 16.dp)
+                            )
                         }
+                        
+                        // Recommended Route (Real Data)
+                        val plan = smartPlan
+                        val steps = plan?.steps?.mapIndexed { index, step ->
+                            com.example.omiri.ui.components.RouteStepUi(
+                                index = index + 1,
+                                storeName = step.storeName,
+                                itemCount = step.itemsCount,
+                                savings = step.stepSavings,
+                                items = step.items,
+                                color = when(step.storeName) {
+                                    "Target" -> Color(0xFFE53935)
+                                    "Walmart" -> Color(0xFF1E88E5)
+                                    "Costco" -> Color(0xFF8E24AA)
+                                    "Lidl" -> Color(0xFF0050AA)
+                                    "Aldi" -> Color(0xFF0A2761)
+                                    else -> AppColors.Neutral500
+                                }
+                            )
+                        } ?: emptyList()
+
+                        if (steps.isNotEmpty()) {
+                            com.example.omiri.ui.components.RecommendedRouteCard(
+                                steps = steps,
+                                onViewMapClick = { /* Map View */ }
+                            )
+                        }
+                        Spacer(Modifier.height(16.dp))
+                        
+                        // Category Filters (Moved Here)
+                        LazyRow(
+                             contentPadding = PaddingValues(horizontal = 0.dp), // Zero because parent has padding
+                             horizontalArrangement = Arrangement.spacedBy(8.dp),
+                             modifier = Modifier.fillMaxWidth()
+                        ) {
+                             // All
+                             item {
+                                 Surface(
+                                    shape = RoundedCornerShape(20.dp),
+                                    color = if (selectedCategory == null) AppColors.BrandOrange else AppColors.Neutral100,
+                                    border = if (selectedCategory != null) androidx.compose.foundation.BorderStroke(1.dp, AppColors.Neutral200) else null,
+                                    modifier = Modifier.height(32.dp).clickable { viewModel.selectCategory(null) }
+                                 ) {
+                                     Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 16.dp)) {
+                                         Text(
+                                             text = "All",
+                                             style = MaterialTheme.typography.labelSmall,
+                                             fontWeight = FontWeight.Medium,
+                                             color = if (selectedCategory == null) AppColors.Surface else AppColors.Neutral700
+                                         )
+                                     }
+                                 }
+                             }
+                             
+                             items(availableCategories) { cat ->
+                                 val isSelected = selectedCategory == cat.id
+                                 Surface(
+                                    shape = RoundedCornerShape(20.dp),
+                                    color = if (isSelected) AppColors.BrandOrange else AppColors.Neutral100,
+                                    border = if (!isSelected) androidx.compose.foundation.BorderStroke(1.dp, AppColors.Neutral200) else null,
+                                    modifier = Modifier.height(32.dp).clickable { viewModel.selectCategory(cat.id) }
+                                 ) {
+                                     Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 16.dp)) {
+                                         Text(
+                                             text = "${cat.name} (${cat.count})",
+                                             style = MaterialTheme.typography.labelSmall,
+                                             fontWeight = FontWeight.Medium,
+                                             color = if (isSelected) AppColors.Surface else AppColors.Neutral700
+                                         )
+                                     }
+                                 }
+                             }
+                        }
+
+                        Spacer(Modifier.height(24.dp))
                     }
                 }
                 
-                // Filter Chips
+
+
+                // 4. Items List Header
                 item {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState())
                             .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Store Filter Chip removed as per request - handled inside RecommendedStoreRunCard visual state
-
-                        // All Chip (Active if selectedCategory is null AND filterStore is null)
-                        val isAllSelected = selectedCategory == null && filterStoreName == null
-                        Box(modifier = Modifier.clickable { viewModel.selectCategory(null) }) {
-                            FilterChipStub(
-                                text = "All ($totalItemsCount)", 
-                                selected = isAllSelected, 
-                                color = AppColors.BrandOrange
-                            )
-                        }
+                        Text(
+                            text = "Items ($totalItemsCount)",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = AppColors.Neutral900
+                        )
                         
-                        // Dynamic Categories
-                        availableCategories.forEach { category ->
-                            val isSelected = selectedCategory == category.id
-                            Box(modifier = Modifier.clickable { viewModel.selectCategory(if (isSelected) null else category.id) }) {
-                                FilterChipStub(
-                                    text = "${category.name} (${category.count})", 
-                                    selected = isSelected,
-                                    color = AppColors.BrandOrange
+                        Box {
+                            Row(
+                                modifier = Modifier
+                                    .clickable { showSortMenu = true }
+                                    .padding(4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = when(currentSortOption) {
+                                        com.example.omiri.viewmodels.ShoppingListViewModel.SortOption.STORE -> "Sort: Store"
+                                        com.example.omiri.viewmodels.ShoppingListViewModel.SortOption.CATEGORY -> "Sort: Category"
+                                        com.example.omiri.viewmodels.ShoppingListViewModel.SortOption.CUSTOM -> "Sort: Custom"
+                                    },
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = AppColors.BrandOrange,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Icon(
+                                    imageVector = Icons.Outlined.KeyboardArrowDown,
+                                    contentDescription = null,
+                                    tint = AppColors.BrandOrange,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                            
+                            DropdownMenu(
+                                expanded = showSortMenu,
+                                onDismissRequest = { showSortMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Custom Order (Drag & Drop)") },
+                                    onClick = { 
+                                        viewModel.setSortOption(com.example.omiri.viewmodels.ShoppingListViewModel.SortOption.CUSTOM)
+                                        showSortMenu = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Sort by Store") },
+                                    onClick = { 
+                                        viewModel.setSortOption(com.example.omiri.viewmodels.ShoppingListViewModel.SortOption.STORE)
+                                        showSortMenu = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Sort by Category") },
+                                    onClick = { 
+                                        viewModel.setSortOption(com.example.omiri.viewmodels.ShoppingListViewModel.SortOption.CATEGORY)
+                                        showSortMenu = false
+                                    }
                                 )
                             }
                         }
                     }
                 }
                 
-                // Recommended Store Run
-                item {
-                    if (smartPlan != null) {
-                        RecommendedStoreRunCard(
-                            plan = smartPlan!!,
-                            selectedStore = filterStoreName,
-                            containerColor = AppColors.Blue50, // Blue 50
-                            modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md),
-                            onStoreClick = { storeName, items ->
-                                if (filterStoreName == storeName) {
-                                    viewModel.clearStoreFilter()
-                                } else {
-                                    viewModel.setStoreFilter(storeName, items)
-                                }
-                            }
-                        )
+                // 5. Items (Grouped)
+                groupedItems.forEach { (header, itemsInGroup) ->
+                    // Show Header
+                    // Show Header
+                    if (header.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = header,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = AppColors.Neutral500,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                                    .padding(horizontal = Spacing.lg)
+                                    .padding(top = 16.dp, bottom = 8.dp)
+                            )
+                        }
                     }
-                }
-                
-                // Items
-                items(filteredItems, key = { it.id }) { item ->
-                    ShoppingListItem(
-                        item = item,
-                        isSelected = selectedItemIds.contains(item.id),
-                        inSelectionMode = inSelectionMode,
-                        onToggleDone = { viewModel.toggleItemDone(item.id) },
-                        onToggleSelection = { viewModel.toggleSelection(item.id) },
-                        onEdit = { 
-                            if (inSelectionMode) {
-                                // If in selection mode, long press just toggles selection again (or does nothing)
-                                viewModel.toggleSelection(item.id)
-                            } else {
-                                // Enter selection mode on long press
-                                viewModel.toggleSelection(item.id)
-                            }
-                        },
-                        modifier = Modifier.padding(horizontal = Spacing.lg, vertical = 2.dp)
-                    )
+
+                    items(itemsInGroup, key = { it.id }) { item ->
+                        val isCustomSort = currentSortOption == com.example.omiri.viewmodels.ShoppingListViewModel.SortOption.CUSTOM
+                        
+
+                        if (isCustomSort) {
+                           ReorderableItem(state = reorderableState, key = item.id) { isDragging ->
+                                val elevation = if (isDragging) 8.dp else 0.dp
+                                
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = Spacing.lg, vertical = 6.dp)
+                                        // .shadow(elevation) // Optional visual
+                                        .background(if (isDragging) AppColors.Bg else Color.Transparent), // clear background if dragging?
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    // External Drag Handle
+                                    Icon(
+                                        imageVector = Icons.Default.DragIndicator,
+                                        contentDescription = "Drag to reorder",
+                                        tint = AppColors.Neutral400,
+                                        modifier = Modifier
+                                            .size(24.dp)
+                                            .padding(end = 8.dp)
+                                            .draggableHandle() // From sh.calvin scope
+                                    )
+                                    
+                                    ShoppingListItem(
+                                        item = item,
+                                        isSelected = selectedItemIds.contains(item.id),
+                                        inSelectionMode = inSelectionMode,
+                                        onToggleDone = { viewModel.toggleItemDone(item.id) },
+                                        onToggleSelection = { viewModel.toggleSelection(item.id) },
+                                        onEdit = { 
+                                            if (inSelectionMode) {
+                                                viewModel.toggleSelection(item.id)
+                                            } else {
+                                                viewModel.toggleSelection(item.id)
+                                            }
+                                        },
+                                        onFindDeals = { viewModel.startFindDeals(item) },
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+                           }
+                        } else {
+                            ShoppingListItem(
+                                item = item,
+                                isSelected = selectedItemIds.contains(item.id),
+                                inSelectionMode = inSelectionMode,
+                                onToggleDone = { viewModel.toggleItemDone(item.id) },
+                                onToggleSelection = { viewModel.toggleSelection(item.id) },
+                                onEdit = { 
+                                    if (inSelectionMode) {
+                                        viewModel.toggleSelection(item.id)
+                                    } else {
+                                        viewModel.toggleSelection(item.id)
+                                    }
+                                },
+                                onFindDeals = { viewModel.startFindDeals(item) },
+                                modifier = Modifier.padding(horizontal = Spacing.lg, vertical = 6.dp)
+                            )
+                        }
+                    }
                 }
 
                 if (filteredItems.isEmpty()) {
@@ -258,8 +439,8 @@ fun ShoppingListScreen(
                             icon = Icons.Outlined.ShoppingCart,
                             title = "Your list is empty",
                             message = "Add some items to get started",
-                            buttonText = "Add Item",
-                            onButtonClick = { showAddItemDialog = true },
+                            buttonText = null, // Button is now in bar above
+                            onButtonClick = { },
                             modifier = Modifier.padding(vertical = Spacing.xxl)
                         )
                     }
@@ -320,18 +501,22 @@ fun ShoppingListScreen(
         }
 
         // Floating action button
+        // Floating action button
         FloatingActionButton(
             onClick = { showAddItemDialog = true },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(Spacing.lg)
-                .padding(bottom = 110.dp), // Above Bottom Nav (96dp) + Margin
+                .padding(bottom = 16.dp)
+                .size(64.dp), // Match MembershipCardsScreen size
+            shape = CircleShape, // Match MembershipCardsScreen shape
             containerColor = AppColors.BrandOrange,
             contentColor = AppColors.Surface
         ) {
             Icon(
                 imageVector = Icons.Outlined.Add,
-                contentDescription = "Add item"
+                contentDescription = "Add item",
+                modifier = Modifier.size(32.dp) // Match MembershipCardsScreen icon size
             )
         }
     }
@@ -374,17 +559,19 @@ fun ShoppingListScreen(
     if (showListSelectionSheet) {
         com.example.omiri.ui.components.ListSelectionBottomSheet(
             shoppingLists = shoppingLists,
-            currentListId = currentListId,
-            onListSelected = { listId ->
-                viewModel.switchList(listId)
+            currentListId = currentListId ?: "",
+            onListSelected = { targetId ->
+                viewModel.switchList(targetId)
                 showListSelectionSheet = false
             },
-            onCreateListClick = {
+            onCreateListClick = { 
                 showListSelectionSheet = false
                 showCreateListDialog = true
             },
-            onDeleteList = { viewModel.deleteList(it) },
-            onResetList = { viewModel.resetRecurringItems() },
+            onDeleteList = { listId ->
+                viewModel.deleteList(listId)
+            }, 
+            onResetList = {},
             onDismiss = { showListSelectionSheet = false }
         )
     }

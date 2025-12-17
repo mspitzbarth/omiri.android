@@ -698,7 +698,12 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 // We'll trust the repository to use current list + user zipcode
                 
                 _isLoading.value = true
-                val result = productRepository.optimizeShoppingList()
+                val listId = com.example.omiri.data.repository.ShoppingListRepository.currentListId.value
+                val list = com.example.omiri.data.repository.ShoppingListRepository.shoppingLists.value.find { it.id == listId }
+                val items = list?.items?.filter { !it.isDone }?.map { it.name } ?: emptyList()
+
+                _isLoading.value = true
+                val result = productRepository.optimizeShoppingList(items = items)
                 
                 result.onSuccess { response ->
                     // Map OptimizationStep to Card data

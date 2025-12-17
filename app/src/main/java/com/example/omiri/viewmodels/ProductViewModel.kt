@@ -27,6 +27,13 @@ import com.example.omiri.data.api.models.ShoppingListOptimizeResponse
 /**
  * ViewModel for managing product data from API
  */
+
+data class CategoryUiModel(
+    val id: String,
+    val name: String,
+    val count: Int
+)
+
 class ProductViewModel(application: Application) : AndroidViewModel(application) {
     
     private val repository = ProductRepository()
@@ -84,8 +91,8 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
     val totalCount: StateFlow<Int> = _totalCount.asStateFlow()
     
     // Categories
-    private val _categories = MutableStateFlow<List<String>>(emptyList())
-    val categories: StateFlow<List<String>> = _categories.asStateFlow()
+    private val _categories = MutableStateFlow<List<CategoryUiModel>>(emptyList())
+    val categories: StateFlow<List<CategoryUiModel>> = _categories.asStateFlow()
 
     // Stores (Moved from below)
     data class StoreFilterOption(val id: String, val name: String, val emoji: String = "🛒")
@@ -348,14 +355,30 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
             // Check cache first (24h validity)
             val cached = userPreferences.cachedCategories.first()
             if (cached.isNotEmpty()) {
-                _categories.value = cached
+                val uiModels = cached.map { 
+                    CategoryUiModel(
+                        id = it.category,
+                        name = it.translations?.get("en") ?: it.category,
+                        count = it.count
+                    )
+                }
+                _categories.value = uiModels
+                com.example.omiri.util.CategoryHelper.updateCategories(uiModels)
                 return@launch
             }
             
             val result = repository.getCategories()
-            result.onSuccess { 
-                _categories.value = it
-                userPreferences.saveCachedCategories(it)
+            result.onSuccess { responses ->
+                val uiModels = responses.map { 
+                    CategoryUiModel(
+                        id = it.category,
+                        name = it.translations?.get("en") ?: it.category,
+                        count = it.count
+                    )
+                }
+                _categories.value = uiModels
+                com.example.omiri.util.CategoryHelper.updateCategories(uiModels)
+                userPreferences.saveCachedCategories(responses) // Save raw responses
             }
         }
     }
@@ -525,13 +548,19 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
          
          // 2. Categories
          // 2. Categories
+         // 2. Categories
          if (!response.categories.isNullOrEmpty()) {
-             // Map CategoryResponse to String using "en" translation
-             val categoryNames = response.categories.map { 
-                 it.translations?.get("en") ?: it.category 
+             // Map CategoryResponse to UI Model
+             val uiCategories = response.categories.map { 
+                 CategoryUiModel(
+                     id = it.category,
+                     name = it.translations?.get("en") ?: it.category,
+                     count = it.count
+                 )
              }
-             _categories.value = categoryNames
-             if (!_isMockMode.value) userPreferences.saveCachedCategories(categoryNames)
+             _categories.value = uiCategories
+             com.example.omiri.util.CategoryHelper.updateCategories(uiCategories)
+             if (!_isMockMode.value) userPreferences.saveCachedCategories(response.categories)
          }
          
          // 3. Stores
@@ -811,8 +840,15 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
                     } else null
 
                     // IO Call
+                    val storeIdsStr = storesForCountry.joinToString(",")
                     val result = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { 
-                        repository.searchShoppingList(items, country, retailers)
+                        repository.searchShoppingList(
+                            items = items, 
+                            country = country, 
+                            retailers = retailers,
+                            stores = if (storeIdsStr.isNotEmpty()) storeIdsStr else null,
+                            limit = null
+                         )
                     }
                     
                     result.onSuccess { response ->
@@ -1043,7 +1079,15 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
 
     private suspend fun executeGenerateSmartPlan(matches: Map<String, List<Deal>>? = null) {
         // ... (existing call to repo) ...
-        val result = repository.optimizeShoppingList(maxStores = 3)
+        val itemsString = userPreferences.shoppingListItems.first()
+        val requestedItemsList = itemsString.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+        
+        if (requestedItemsList.isEmpty()) {
+            _smartPlan.value = null
+            return
+        }
+
+        val result = repository.optimizeShoppingList(items = requestedItemsList, maxStores = 3)
         val finalPlan = if (result.isSuccess && result.getOrNull()?.steps?.isNotEmpty() == true) {
             result.getOrNull()
         } else {

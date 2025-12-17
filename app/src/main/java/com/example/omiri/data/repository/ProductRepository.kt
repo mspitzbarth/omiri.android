@@ -87,7 +87,7 @@ class ProductRepository {
         }
     }
 
-    suspend fun getCategories(): Result<List<String>> {
+    suspend fun getCategories(): Result<List<com.example.omiri.data.api.models.CategoryResponse>> {
         return try {
             val response = apiService.getCategories()
             if (response.isSuccessful) {
@@ -224,11 +224,13 @@ class ProductRepository {
         }
     }
     suspend fun optimizeShoppingList(
+        items: List<String>,
         userZipcode: String? = null,
         maxStores: Int = 3
     ): Result<com.example.omiri.data.api.models.ShoppingListOptimizeResponse> {
         return try {
             val request = com.example.omiri.data.api.models.ShoppingListOptimizeRequest(
+                items = items,
                 userZipcode = userZipcode,
                 maxStores = maxStores
             )

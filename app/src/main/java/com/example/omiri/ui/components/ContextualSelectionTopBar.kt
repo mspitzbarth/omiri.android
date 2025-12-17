@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.DriveFileMove
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -25,7 +26,8 @@ fun ContextualSelectionTopBar(
     onDelete: () -> Unit,
     onDuplicate: () -> Unit,
     onMove: () -> Unit,
-    onEdit: () -> Unit // Only enabled if selectedCount == 1
+    onEdit: () -> Unit, // Only enabled if selectedCount == 1
+    onViewDeal: (() -> Unit)? = null
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
@@ -134,6 +136,17 @@ fun ContextualSelectionTopBar(
                                         onEdit()
                                     }
                                 )
+                                
+                                if (onViewDeal != null) {
+                                    DropdownMenuItem(
+                                        text = { Text("View Deal") },
+                                        leadingIcon = { Icon(Icons.Outlined.Search, null) },
+                                        onClick = {
+                                            showMenu = false
+                                            onViewDeal()
+                                        }
+                                    )
+                                }
                             }
                             DropdownMenuItem(
                                 text = { Text("Duplicate", color = Color(0xFF374151)) },

@@ -63,6 +63,7 @@ data class ShoppingListItemUpdateRequest(
  * Request to optimize shopping list
  */
 data class ShoppingListOptimizeRequest(
+    @SerializedName("items") val items: List<String>?,
     @SerializedName("user_zipcode") val userZipcode: String?,
     @SerializedName("max_stores") val maxStores: Int = 3
 )

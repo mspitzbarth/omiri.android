@@ -11,6 +11,10 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Spa
 import androidx.compose.material.icons.outlined.Kitchen
+import androidx.compose.material.icons.outlined.Search
+
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.BreakfastDining
 import androidx.compose.material.icons.outlined.LocalDining
 import androidx.compose.material.icons.outlined.CleaningServices
@@ -40,18 +44,37 @@ fun ShoppingListItem(
     inSelectionMode: Boolean,
     onToggleDone: () -> Unit,
     onToggleSelection: () -> Unit,
+
     onEdit: () -> Unit,
+    onFindDeals: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val backgroundColor = if (isSelected) com.example.omiri.ui.theme.AppColors.InfoSoft else AppColors.Surface
-    val borderColor = if (isSelected) com.example.omiri.ui.theme.AppColors.Info else AppColors.Neutral200
+    // Local state for like animation/feedback (real state comes from item usually)
+    // For now we assume clicking it toggles it visually so user sees feedback
+    // Ideally this state is hoisted
+    
+    // Determine Store color key (Mock logic or use item data)
+    val cardColor = if (isSelected) com.example.omiri.ui.theme.AppColors.InfoSoft else AppColors.Surface
+    val borderColor = if (isSelected) com.example.omiri.ui.theme.AppColors.Info else AppColors.Neutral200 // Match other cards
+
+    // Determine Store color key (Mock logic or use item data)
+    val storeName = item.store ?: "Unknown"
+    val storeColor = when(storeName) {
+        "Target" -> Color(0xFFE53935)
+        "Walmart" -> Color(0xFF1E88E5)
+        "Costco" -> Color(0xFF8E24AA)
+        else -> AppColors.Neutral400
+    }
+    
+    val storeLetter = storeName.take(1)
 
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = backgroundColor
+            containerColor = cardColor
         ),
-        shape = RoundedCornerShape(16.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, borderColor), // Light gray border
+        shape = RoundedCornerShape(12.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, borderColor), 
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = modifier
             .fillMaxWidth()
             .combinedClickable(
@@ -59,144 +82,246 @@ fun ShoppingListItem(
                     if (inSelectionMode) {
                         onToggleSelection()
                     } else {
-                        onToggleDone() 
+                        // In the new design, the whole card doesn't necessarily toggle 'done', 
+                        // but usually it does or opens details. We'll keep existing behavior for now.
+                        // Ideally checking the box is specific, clicking card opens details.
+                        // For now we will assume click = toggle done if not in selection mode, same as before?
+                        // Or maybe we make only the checkbox toggle done.
+                        // Let's stick to: Click -> Toggle Done (User habit), Long Click -> Selection
+                        onToggleDone()
                     }
                 },
                 onLongClick = { onToggleSelection() }
-            ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) 
+            )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.Top
         ) {
-            // 1. Checkbox (Left)
-            // If in selection mode, maybe we want to hide checkbox or keep it? 
-            // Keeping it is fine, but usually selection replaces check. 
-            // For now, keeping it simple as per request to just "remove delete icon... select multiple items".
+            // 1. Checkbox
             Box(
-                modifier = Modifier.padding(end = 12.dp)
+                modifier = Modifier.padding(end = 12.dp, top = 2.dp)
             ) {
+                // Custom Square Checkbox style if needed, or default
                 androidx.compose.material3.Checkbox(
                     checked = item.isDone,
                     onCheckedChange = { 
-                        if (inSelectionMode) onToggleSelection() else onToggleDone() 
+                       if (inSelectionMode) onToggleSelection() else onToggleDone()
                     },
                     colors = CheckboxDefaults.colors(
-                        checkedColor = com.example.omiri.ui.theme.AppColors.BrandOrange, // Orange Branding
+                        checkedColor = AppColors.BrandOrange,
                         uncheckedColor = AppColors.Neutral300, 
                         checkmarkColor = AppColors.Surface
-                    )
+                    ),
+                    modifier = Modifier.size(24.dp)
                 )
             }
 
-            // 2. Info (Middle)
+            // 2. Main Content
             Column(
                 modifier = Modifier.weight(1f)
             ) {
-                // Title
-                Text(
-                    text = item.name,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
-                    color = if (item.isDone) AppColors.Neutral400 else AppColors.Neutral900,
-                    textDecoration = if (item.isDone) TextDecoration.LineThrough else null
-                )
+                // Top Row: Title + Savings Amount (Right aligned)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Text(
+                        text = item.name,
+                        style = MaterialTheme.typography.titleMedium, // Larger font
+                        fontWeight = FontWeight.Bold,
+                        color = if (item.isDone) AppColors.Neutral400 else AppColors.Neutral900,
+                        textDecoration = if (item.isDone) TextDecoration.LineThrough else null,
+                        modifier = Modifier.weight(1f).padding(end = 8.dp)
+                    )
+                    
+                    // Savings (Green text on right)
+                    if (item.discountPrice != null && item.price != null && item.discountPrice < item.price) {
+                         val savings = item.price - item.discountPrice
+                         Text(
+                             text = "-€${String.format("%.2f", savings)}",
+                             style = MaterialTheme.typography.bodyMedium,
+                             fontWeight = FontWeight.Bold,
+                             color = Color(0xFF2E7D32) // Green
+                         )
+                    } else if (item.isInDeals && !item.isDone) {
+                        // Maybe show "No deal" or nothing?
+                    } else {
+                         Text(
+                             text = "No deal",
+                             style = MaterialTheme.typography.bodySmall,
+                             color = AppColors.Neutral400
+                         )
+                    }
+
+                }
                 
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(Modifier.height(4.dp))
                 
-                // Category
-                Text(
-                    text = item.category.getName(),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = AppColors.Neutral500
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                // Badges Row (Under Category)
+                // Row: Store Brand + Price + Original Price OR "Not matched" + Search
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.padding(top = 4.dp)
                 ) {
+                    if (item.store != null) {
+                        // Store Icon (Circle with Letter)
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(20.dp)
+                                .background(storeColor, CircleShape)
+                        ) {
+                            Text(
+                                text = storeLetter,
+                                color = Color.White,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 10.sp
+                            )
+                        }
+                        
+                        Spacer(Modifier.width(6.dp))
+                        
+                        // Store Name
+                        Text(
+                            text = item.store ?: "",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = AppColors.Neutral700
+                        )
+                        
+                        Spacer(Modifier.width(6.dp))
+                        
+                        // Bullet
+                        Text(
+                            text = "•",
+                            color = AppColors.Neutral400,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        
+                        Spacer(Modifier.width(6.dp))
+                        
+                        // Price Logic
+                        if (item.discountPrice != null) {
+                            // Discounted Price (Orange)
+                            Text(
+                                text = "€${String.format("%.2f", item.discountPrice)}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = AppColors.BrandOrange
+                            )
+                            
+                            // Original Price (Strikethrough)
+                            if (item.price != null && item.price > item.discountPrice) {
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    text = "€${String.format("%.2f", item.price)}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    textDecoration = TextDecoration.LineThrough,
+                                    color = AppColors.Neutral400
+                                )
+                            }
+                        } else if (item.price != null) {
+                             // Regular Price (Black)
+                             Text(
+                                text = "€${String.format("%.2f", item.price)}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = AppColors.Neutral900
+                            )
+                        }
+                    } else {
+                        // Not matched -> Stacked "Not matched" and "Find deals"
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            Text(
+                                text = "Not matched",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = AppColors.Neutral400
+                            )
+                            
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.clickable { onFindDeals() }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Search,
+                                    contentDescription = null,
+                                    tint = AppColors.BrandOrange,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                   text = "Find deals",
+                                   style = MaterialTheme.typography.bodyMedium,
+                                   color = AppColors.BrandOrange,
+                                   fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
+                }
 
-                    
-                    // Price / Deal Badge
-                    if (item.discountPrice != null || item.price != null) {
-                             if (item.discountPrice != null && (item.price != null && item.discountPrice < item.price)) {
-                                 // Discounted State
-                                 Surface(
-                                     color = AppColors.Red50, 
-                                     shape = RoundedCornerShape(4.dp),
-                                     border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.Red200)
-                                 ) {
-                                     Row(
-                                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                                         verticalAlignment = Alignment.CenterVertically,
-                                         horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                     ) {
-                                             Surface(
-                                                 color = AppColors.BrandOrangeSoft,
-                                                 shape = RoundedCornerShape(50) // Pill shape
-                                             ) {
-                                                 Text(
-                                                     text = "${item.discountPercentage}%",
-                                                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
-                                                     color = AppColors.BrandOrange,
-                                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                                 )
-                                             }
-                                         Text(
-                                             text = "€${String.format("%.2f", item.discountPrice)}",
-                                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                             color = AppColors.Red600
-                                         )
-                                     }
-                                 }
-                         } else {
-                             // Regular Price Badge
-                             item.price?.let {
-                                 Surface(
-                                     color = AppColors.Neutral100,
-                                     shape = RoundedCornerShape(4.dp)
-                                 ) {
-                                     Text(
-                                         text = "€${String.format("%.2f", it)}",
-                                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                         color = AppColors.Neutral700,
-                                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                     )
-                                 }
-                             }
-                         }
-                    } else if (item.isInDeals) {
+                Spacer(Modifier.height(8.dp))
+
+                // Badges Row
+                Row(
+                   horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Member Deal / Matched Tag
+                    if (item.dealId != null) {
                         Surface(
-                            color = AppColors.Purple50, 
+                            color = AppColors.BrandOrangeSoft,
                             shape = RoundedCornerShape(4.dp)
                         ) {
                             Text(
-                                text = "Matched Deal",
-                                color = AppColors.PurpleText, 
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+                                text = "Deal matched",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = AppColors.BrandOrange,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
                     }
 
-                    if (item.isRecurring) {
-                        Icon(
-                            imageVector = Icons.Outlined.Refresh,
-                            contentDescription = "Recurring",
-                            tint = AppColors.Neutral500,
-                            modifier = Modifier.size(16.dp)
-                        )
+
+                    // Percentage Off
+                    if (item.discountPercentage != null && item.discountPercentage > 0) {
+                         Surface(
+                            color = AppColors.BrandOrangeSoft, 
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Text(
+                                text = "${item.discountPercentage}% OFF",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = AppColors.BrandOrange,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                    
+                    // Coupon
+                    if (item.id.hashCode() % 4 == 0) {
+                          Surface(
+                            color = AppColors.Blue50, 
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Text(
+                                text = "Coupon",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Medium,
+                                color = AppColors.Blue600,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
                     }
                 }
             }
-            // Removed delete button
         }
     }
 }

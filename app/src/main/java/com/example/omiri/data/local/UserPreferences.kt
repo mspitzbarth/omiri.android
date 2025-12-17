@@ -43,6 +43,22 @@ class UserPreferences(private val context: Context) {
     }
     
     /**
+     * Get user zipcode
+     */
+    val zipcode: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[ZIPCODE]
+    }
+    
+    /**
+     * Save user zipcode
+     */
+    suspend fun saveZipcode(zipcode: String) {
+        context.dataStore.edit { preferences ->
+            preferences[ZIPCODE] = zipcode
+        }
+    }
+    
+    /**
      * Get selected store IDs
      */
     val selectedStores: Flow<Set<String>> = context.dataStore.data.map { preferences ->
@@ -164,7 +180,7 @@ class UserPreferences(private val context: Context) {
     /**
      * Save cached categories (24h TTL)
      */
-    suspend fun saveCachedCategories(categories: List<String>) {
+    suspend fun saveCachedCategories(categories: List<com.example.omiri.data.api.models.CategoryResponse>) {
         val wrapper = CachedGenericWrapper(System.currentTimeMillis(), categories)
         val json = gson.toJson(wrapper)
         context.dataStore.edit { preferences ->
@@ -175,11 +191,11 @@ class UserPreferences(private val context: Context) {
     /**
      * Get cached categories (valid for 24h)
      */
-    val cachedCategories: Flow<List<String>> = context.dataStore.data.map { preferences ->
+    val cachedCategories: Flow<List<com.example.omiri.data.api.models.CategoryResponse>> = context.dataStore.data.map { preferences ->
         val json = preferences[CACHED_CATEGORIES] ?: return@map emptyList()
         try {
-            val type = object : TypeToken<CachedGenericWrapper<List<String>>>() {}.type
-            val wrapper: CachedGenericWrapper<List<String>> = gson.fromJson(json, type)
+            val type = object : TypeToken<CachedGenericWrapper<List<com.example.omiri.data.api.models.CategoryResponse>>>() {}.type
+            val wrapper: CachedGenericWrapper<List<com.example.omiri.data.api.models.CategoryResponse>> = gson.fromJson(json, type)
             
             val ttl = 24 * 60 * 60 * 1000L // 24 Hours
             if (System.currentTimeMillis() - wrapper.timestamp < ttl) {
@@ -603,6 +619,8 @@ class UserPreferences(private val context: Context) {
         
         // Default country
         const val DEFAULT_COUNTRY = "US"
+        
+        private val ZIPCODE = stringPreferencesKey("zipcode")
         
         private val CACHED_RETAILERS_STRING = stringPreferencesKey("cached_retailers_string")
         private val SMART_PLAN = stringPreferencesKey("smart_plan")

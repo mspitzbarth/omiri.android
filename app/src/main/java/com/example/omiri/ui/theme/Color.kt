@@ -76,6 +76,8 @@ object AppColors {
     val Neutral300 = Color(0xFFD1D5DB)
     val Neutral200 = Color(0xFFE5E7EB)
     val Neutral100 = Color(0xFFF3F4F6)
+    val Neutral50 = Color(0xFFF9FAFB)
+    val Neutral600 = Color(0xFF4B5563)
     
     // Semantic / Accents
     val Red600 = Color(0xFFDC2626) // Discount Price
@@ -92,6 +94,7 @@ object AppColors {
     val Green100 = Color(0xFFDCFCE7)
     
     val Blue50 = Color(0xFFEFF6FF)
+    val Blue600 = Color(0xFF2563EB) // Strong Blue (Info)
     val Sky500 = Color(0xFF0EA5E9)
     val Orange400 = Color(0xFFFB923C)
 }

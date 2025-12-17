@@ -119,7 +119,8 @@ fun AppNavGraph(
                     viewModel = shoppingListViewModel,
                     productViewModel = productViewModel,
                     onNotificationsClick = { navController.navigate(Routes.Notifications) },
-                    onProfileClick = { navController.navigate(Routes.Settings) }
+                    onProfileClick = { navController.navigate(Routes.Settings) },
+                    onProductClick = { dealId -> navController.navigate(Routes.productDetails(dealId)) }
                 )
             }
             composable(Routes.Settings) {

@@ -144,9 +144,41 @@ class ShoppingListViewModel(application: Application) : AndroidViewModel(applica
     fun clearStoreFilter() {
         _filterStoreName.value = null
         _filterItemNames.value = null
+        // Reset sort to Custom when clearing store filter (optional, but good UX)
     }
 
-    val filteredItems: StateFlow<List<ShoppingItem>> = combine(currentList, _searchQuery, _selectedCategory, _filterItemNames) { list, query, categoryId, filterNames ->
+    enum class SortOption {
+        CUSTOM,
+        STORE,
+        CATEGORY
+    }
+
+    private val _currentSortOption = MutableStateFlow(SortOption.CUSTOM)
+    val currentSortOption: StateFlow<SortOption> = _currentSortOption.asStateFlow()
+
+    fun setSortOption(option: SortOption) {
+        _currentSortOption.value = option
+    }
+
+    fun reorderItems(fromIndex: Int, toIndex: Int) {
+        if (_currentSortOption.value == SortOption.CUSTOM) {
+             repository.reorderItems(fromIndex, toIndex)
+        }
+    }
+
+    fun reorderItemById(fromId: String, toId: String) {
+        if (_currentSortOption.value == SortOption.CUSTOM) {
+             repository.reorderItemById(fromId, toId)
+        }
+    }
+
+    val filteredItems: StateFlow<List<ShoppingItem>> = combine(
+        currentList, 
+        _searchQuery, 
+        _selectedCategory, 
+        _filterItemNames,
+        _currentSortOption
+    ) { list, query, categoryId, filterNames, sortOption ->
         val items = list?.items ?: emptyList()
         var result = items
         
@@ -165,8 +197,35 @@ class ShoppingListViewModel(application: Application) : AndroidViewModel(applica
             result = result.filter { it.name.contains(query, ignoreCase = true) }
         }
         
+        // 4. Sort
+        result = when (sortOption) {
+            SortOption.STORE -> result.sortedBy { it.store ?: "ZZZ" } // Items with store first? or alphabetical. "ZZZ" puts unknown at end
+            SortOption.CATEGORY -> result.sortedBy { 
+                 // Sort by Category Name (English)
+                 PredefinedCategories.getCategoryById(it.categoryId).getName("en")
+            }
+            SortOption.CUSTOM -> result // Default list order
+        }
+        
         result
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // Grouped items for UI sections
+    val groupedItems: StateFlow<Map<String, List<ShoppingItem>>> = combine(filteredItems, _currentSortOption) { items, sortOption ->
+        when (sortOption) {
+            SortOption.CATEGORY -> {
+                items.groupBy { PredefinedCategories.getCategoryById(it.categoryId).getName("en") }
+                    .toSortedMap()
+            }
+            SortOption.STORE -> {
+                items.groupBy { it.store ?: "Other Stores" }
+                    .toSortedMap(compareBy { if (it == "Other Stores") "ZZZ" else it }) // Put "Other" last
+            }
+            SortOption.CUSTOM -> {
+                mapOf("" to items) // No grouping header needed, or "All Items"
+            }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     private val productRepository = com.example.omiri.data.repository.ProductRepository()
 
@@ -203,63 +262,214 @@ class ShoppingListViewModel(application: Application) : AndroidViewModel(applica
                     
                  userPreferences.saveShoppingListItems(workerString)
                  checkDealsForCurrentList()
+
             }
         }
     }
+    
+    // Smart Plan / Recommended Route (Reactive)
+    val smartPlan: StateFlow<com.example.omiri.data.api.models.ShoppingListOptimizeResponse?> = currentList.map { list ->
+        if (list == null) return@map null
+        val unfinishedItems = list.items.filter { !it.isDone }
+        
+        if (unfinishedItems.isEmpty()) return@map null
+        
+        calculateLocalSmartPlan(unfinishedItems)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    private fun calculateLocalSmartPlan(items: List<ShoppingItem>): com.example.omiri.data.api.models.ShoppingListOptimizeResponse? {
+        // Log to debug why smart plan might be empty
+        android.util.Log.d("ShoppingListViewModel", "Calculating Smart Plan for ${items.size} items")
+        
+        // Relaxed filter: Allow items with just a store, even if dealId is null (e.g. manual store, or legacy deal link)
+        val itemsWithDeals = items.filter { !it.store.isNullOrBlank() }
+        
+        android.util.Log.d("ShoppingListViewModel", "Found ${itemsWithDeals.size} items with assigned stores")
+        
+        if (itemsWithDeals.isEmpty()) return null
+        
+        // Group by Store
+        val shopSteps = itemsWithDeals.groupBy { it.store!! }
+            .map { (storeName, storeItems) ->
+                val savings = storeItems.sumOf { 
+                   if (it.price != null && it.discountPrice != null && it.discountPrice < it.price) {
+                       it.price - it.discountPrice
+                   } else 0.0
+                }
+                
+                com.example.omiri.data.api.models.OptimizationStep(
+                    storeName = storeName,
+                    storeColor = null, // Handled in UI
+                    itemsCount = storeItems.size,
+                    items = storeItems.map { it.name }.distinct(),
+                    stepSavings = savings,
+                    totalCost = storeItems.sumOf { it.discountPrice ?: (it.price ?: 0.0) }
+                )
+            }
+            .sortedWith(
+                compareByDescending<com.example.omiri.data.api.models.OptimizationStep> { it.itemsCount }
+                    .thenByDescending { it.stepSavings }
+            ) // Prioritize stores with most items, then most savings
+            .take(3)
+        
+        if (shopSteps.isEmpty()) return null
+        
+        val totalSavings = shopSteps.sumOf { it.stepSavings }
+        val finalPrice = shopSteps.sumOf { it.totalCost }
+        
+        return com.example.omiri.data.api.models.ShoppingListOptimizeResponse(
+            totalSavings = totalSavings,
+            originalPrice = finalPrice + totalSavings,
+            optimizedPrice = finalPrice,
+            steps = shopSteps
+        )
+    }
+    
+    // Find Deals
+    private val _findingDealsForItem = MutableStateFlow<ShoppingItem?>(null)
+    val findingDealsForItem: StateFlow<ShoppingItem?> = _findingDealsForItem.asStateFlow()
+    
+    private val _dealSearchResults = MutableStateFlow<List<com.example.omiri.data.api.models.ProductResponse>>(emptyList())
+    val dealSearchResults: StateFlow<List<com.example.omiri.data.api.models.ProductResponse>> = _dealSearchResults.asStateFlow()
+    
+    private val _isSearching = MutableStateFlow(false)
+    val isSearching: StateFlow<Boolean> = _isSearching.asStateFlow()
+    
+    fun startFindDeals(item: ShoppingItem) {
+        _findingDealsForItem.value = item
+        _dealSearchResults.value = emptyList()
+        searchDeals(item.name)
+    }
+    
+    fun stopFindDeals() {
+        _findingDealsForItem.value = null
+        _dealSearchResults.value = emptyList()
+    }
+    
+    fun searchDeals(query: String) {
+        if (query.isBlank()) return
+        
+        _isSearching.value = true
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            val country = userPreferences.selectedCountry.firstOrNull() ?: "DE"
+            val zipcode = userPreferences.zipcode.firstOrNull() ?: ""
+            val storesSet: Set<String> = userPreferences.selectedStores.firstOrNull() ?: emptySet()
+            val stores: String? = if (storesSet.isNotEmpty()) storesSet.joinToString(",") else null
+
+            val result = productRepository.searchShoppingList(
+                items = query,
+                country = country,
+                retailers = stores,
+                zipcode = if (zipcode.isNotEmpty()) zipcode else null,
+                limit = 10
+            )
+
+            _isSearching.value = false
+            
+            result.onSuccess { response ->
+                val categories = response.categories ?: emptyMap()
+                val products = categories.values.filterNotNull().flatMap { it.products }
+                _dealSearchResults.value = products
+            }
+            result.onFailure {
+                _dealSearchResults.value = emptyList()
+            }
+        }
+    }
+    
+    fun applyDeal(product: com.example.omiri.data.api.models.ProductResponse) {
+        val item = _findingDealsForItem.value ?: return
+        
+        val originalPrice = product.originalPrice ?: product.priceAmount
+        val finalPrice = product.priceAmount
+        
+        val discountPercent = product.discountPercentage?.toInt() ?: if (originalPrice != null && finalPrice != null && originalPrice > finalPrice) {
+            ((originalPrice - finalPrice) / originalPrice * 100).toInt()
+        } else null
+        
+        repository.updateItemDeal(
+            itemId = item.id,
+            store = product.retailer,
+            price = originalPrice,
+            discountPrice = if (originalPrice != null && finalPrice != null && finalPrice < originalPrice) finalPrice else null,
+            discountPercentage = discountPercent,
+            dealId = product.id
+        )
+        
+        stopFindDeals()
+        // No need to fetchSmartPlan via invalid API anymore. 
+        // Logic will auto-update via `shoppingLists.collect` -> `fetchSmartPlan` (local)
+    }
+
+    private var lastCheckedItems: Set<String> = emptySet()
+    private var lastCheckedState: String? = null
 
     private fun checkDealsForCurrentList() {
         viewModelScope.launch {
-            // Optimization: Move heavy checking to background thread to avoid UI stutter
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
                 try {
                     val list = currentList.value ?: return@withContext
-                    val items = list.items.filter { !it.isDone }.map { it.name }.joinToString(",")
+                    val unfinishedItems = list.items.filter { !it.isDone }
+                    val itemsNames = unfinishedItems.map { it.name }.filter { it.isNotBlank() }.toSet()
                     
-                    if (items.isBlank()) return@withContext
-                    
-                    val storesSet: Set<String> = userPreferences.selectedStores.firstOrNull() ?: emptySet()
-                    val stores: String? = if (storesSet.isNotEmpty()) storesSet.joinToString(",") else null
+                    if (itemsNames.isEmpty()) return@withContext
                     
                     val country = userPreferences.selectedCountry.firstOrNull() ?: "DE"
+                    val zipcode = userPreferences.zipcode.firstOrNull() ?: ""
+                    val storesSet: Set<String> = userPreferences.selectedStores.firstOrNull() ?: emptySet()
+                    val stores: String = if (storesSet.isNotEmpty()) storesSet.joinToString(",") else ""
+                    
+                    val contextState = "$country|$zipcode|$stores"
+                    
+                    // Optimization: If current items are a subset of last checked items, AND context hasn't changed,
+                    // then we don't need to fetch API. Logic: We already have deals for these items.
+                    // This handles the "Item Checked Done" case correctly.
+                    if (lastCheckedState == contextState && lastCheckedItems.containsAll(itemsNames)) {
+                        android.util.Log.d("ShoppingListViewModel", "Skipping API check: Subset of previous items and same context.")
+                        return@withContext
+                    }
+                    
+                    val itemsString = itemsNames.sorted().joinToString(",")
+                    
+                    // Update Cache
+                    lastCheckedState = contextState
+                    lastCheckedItems = itemsNames
                     
                     // IO Call
                     val result = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                         productRepository.searchShoppingList(
-                            items = items,
-                            stores = stores,
+                            items = itemsString,
+                            stores = if (stores.isNotEmpty()) stores else null,
                             country = country,
+                            zipcode = if (zipcode.isNotEmpty()) zipcode else null,
                             limit = 3
                         )
                     }
                     
                     result.onSuccess { response ->
-                        // Defensive check for categories map
                         val categories = response.categories ?: emptyMap()
-                        
-                        // Flatten all found products to easily search by search_term
-                        // Filter out any potential null values from map (though defined as non-null)
                         val allFoundProducts = categories.values.filterNotNull().flatMap { it.products }
                         
-                        // Also track which items were successfully found according to API (mapped by category)
-                        // But relying on products list is safer for "isInDeals" check.
-                        
-                        list.items.forEach { item ->
-                            // Check if any product's search_term matches this item
-                            val hasDeals = allFoundProducts.any { product ->
-                                val term = product.searchTerm
-                                // Fallback: fuzzy match on title if search_term missing? 
-                                // The API provided search_term explicitly.
-                                // We compare item.name with product.searchTerm
+                        unfinishedItems.forEach { item ->
+                            val bestDeal = allFoundProducts
+                                .filter { it.searchTerm.equals(item.name, ignoreCase = true) == true }
+                                .minByOrNull { it.priceAmount ?: Double.MAX_VALUE }
+
+                            if (bestDeal != null) {
+                                val originalPrice = bestDeal.originalPrice ?: bestDeal.priceAmount
+                                val finalPrice = bestDeal.priceAmount
+                                val dP = bestDeal.discountPercentage?.toInt()
                                 
-                                // Strict check:
-                                term.equals(item.name, ignoreCase = true) == true
-                                
-                                // Or looser check if item name is "Organic Milk" and term is "organic milk" -> match
-                                // If item name "Milk" and product found for "Milk" -> match.
-                            }
-                            
-                            if (item.isInDeals != hasDeals) {
-                                repository.setItemInDeals(item.id, hasDeals)
+                                if (item.dealId != bestDeal.id) {
+                                    repository.updateItemDeal(
+                                        itemId = item.id,
+                                        store = bestDeal.retailer,
+                                        price = originalPrice,
+                                        discountPrice = if (originalPrice != null && finalPrice != null && finalPrice < originalPrice) finalPrice else null,
+                                        discountPercentage = dP,
+                                        dealId = bestDeal.id
+                                    )
+                                }
                             }
                         }
                     }
@@ -272,15 +482,38 @@ class ShoppingListViewModel(application: Application) : AndroidViewModel(applica
 
     // ... (rest of class) ...
 
-    fun addItem(name: String, categoryId: String = PredefinedCategories.OTHER.id, isInDeals: Boolean = false, isRecurring: Boolean = false) {
-        repository.addItem(name, categoryId, isInDeals, isRecurring)
-        // Check deals for the new item (or refresh all)
+    fun addItem(
+        name: String, 
+        categoryId: String = PredefinedCategories.OTHER.id, 
+        isInDeals: Boolean = false, 
+        isRecurring: Boolean = false,
+        store: String? = null,
+        price: Double? = null,
+        discountPrice: Double? = null,
+        discountPercentage: Int? = null,
+        dealId: String? = null
+    ) {
+        repository.addItem(name, categoryId, isInDeals, isRecurring, store, price, discountPrice, discountPercentage, dealId)
+        // Check deals for the new item (or refresh all) - ONLY IF dealId is not provided (meaning generic add)
+        // If dealId IS provided, we assume we want THAT deal.
+        // However, we might want to check for *better* deals?
+        // Let's stick to: if adding a specific deal, don't auto-search immediately unless we want to find others.
+        // But checkDealsForCurrentList logic is safe if deal matches.
+        // Actually, if we pass dealId, we are good. checkDeals... might re-verify.
         checkDealsForCurrentList()
     }
 
     fun updateItem(itemId: String, name: String, categoryId: String, isRecurring: Boolean) {
+        val list = currentList.value
+        val existingItem = list?.items?.find { it.id == itemId }
+        
         repository.updateItem(itemId, name, categoryId, isRecurring)
-        checkDealsForCurrentList()
+        
+        // Only check for deals if the name has changed.
+        // This prevents blowing away manually selected deals if the user just changes category/recurring.
+        if (existingItem != null && existingItem.name != name) {
+            checkDealsForCurrentList()
+        }
     }
 
     fun toggleItemDone(itemId: String) = repository.toggleItemDone(itemId)
@@ -312,7 +545,21 @@ class ShoppingListViewModel(application: Application) : AndroidViewModel(applica
                 "Electronics" -> PredefinedCategories.OTHER.id
                 else -> PredefinedCategories.OTHER.id
             }
-            addItem(name = deal.title, categoryId = categoryId, isInDeals = true)
+            
+            // Parse Prices
+            val priceVal = parsePrice(deal.originalPrice ?: deal.price)
+            val discountPriceVal = if (deal.originalPrice != null) parsePrice(deal.price) else null
+            
+            addItem(
+                name = deal.title, 
+                categoryId = categoryId, 
+                isInDeals = true,
+                store = deal.store,
+                price = priceVal,
+                discountPrice = discountPriceVal,
+                discountPercentage = if (deal.discountPercentage > 0) deal.discountPercentage else null,
+                dealId = deal.id
+            )
         } else {
             // Remove logic needs to be in Repository or implemented here using deleteItem
             // For now, simpler to implement removal logic in Repository if needed strictly,
@@ -320,8 +567,21 @@ class ShoppingListViewModel(application: Application) : AndroidViewModel(applica
             // HOWEVER, modifying state must go through Repository.
             // Let's implement a 'removeDealItem' in Repository or just find ID here and call deleteItem.
             val list = currentList.value ?: return
-            val itemToRemove = list.items.find { it.name == deal.title && it.isInDeals }
+            val itemToRemove = list.items.find { (it.dealId == deal.id) || (it.name == deal.title && it.isInDeals) }
             itemToRemove?.let { deleteItem(it.id) }
+        }
+    }
+
+    private fun parsePrice(priceStr: String?): Double? {
+        if (priceStr == null) return null
+        return try {
+            // Remove non-numeric characters except dot and comma
+            val cleanStr = priceStr.replace(Regex("[^0-9.,]"), "")
+            // Replace comma with dot if present
+            val dotStr = cleanStr.replace(",", ".")
+            dotStr.toDoubleOrNull()
+        } catch (e: Exception) {
+            null
         }
     }
 

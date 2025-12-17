@@ -31,7 +31,7 @@ fun FilterModal(
     onDismiss: () -> Unit,
     onApply: (FilterOptions) -> Unit,
     initialFilters: FilterOptions = FilterOptions(),
-    availableCategories: List<String> = emptyList(),
+    availableCategories: List<com.example.omiri.viewmodels.CategoryUiModel> = emptyList(),
     availableStores: List<com.example.omiri.viewmodels.ProductViewModel.StoreFilterOption> = emptyList()
 ) {
     var priceRange by remember(isVisible) { mutableStateOf(initialFilters.priceRange) }
@@ -213,7 +213,11 @@ fun FilterModal(
                     var expandedCategories by remember { mutableStateOf(false) }
                     val selectedCount = selectedCategories.size
                     val displayText = if (selectedCount > 0) {
-                        if(selectedCount == 1) selectedCategories.first() else "$selectedCount Selected"
+                        if(selectedCount == 1) {
+                             // Find name for ID
+                             val id = selectedCategories.first()
+                             categories.find { it.id == id }?.name ?: id
+                        } else "$selectedCount Selected"
                     } else {
                         "Select Categories"
                     }
@@ -242,7 +246,7 @@ fun FilterModal(
                             modifier = Modifier.heightIn(max = 300.dp) // Scrollable if many
                         ) {
                             categories.forEach { category ->
-                                val isSelected = category in selectedCategories
+                                val isSelected = category.id in selectedCategories
                                 DropdownMenuItem(
                                     text = { 
                                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -255,14 +259,14 @@ fun FilterModal(
                                                 )
                                             )
                                             Spacer(Modifier.width(8.dp))
-                                            Text(text = category)
+                                            Text(text = category.name)
                                         }
                                     },
                                     onClick = {
                                         selectedCategories = if (isSelected) {
-                                            selectedCategories - category
+                                            selectedCategories - category.id
                                         } else {
-                                            selectedCategories + category
+                                            selectedCategories + category.id
                                         }
                                         // Keep menu open for multi-select
                                     },

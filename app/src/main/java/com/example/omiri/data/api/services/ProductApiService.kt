@@ -135,7 +135,7 @@ interface ProductApiService {
      * GET /categories
      */
     @GET("categories")
-    suspend fun getCategories(): retrofit2.Response<List<String>>
+    suspend fun getCategories(): retrofit2.Response<List<com.example.omiri.data.api.models.CategoryResponse>>
 
     /**
      * Optimize shopping list

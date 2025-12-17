@@ -38,6 +38,7 @@ import com.example.omiri.ui.components.*
 import com.example.omiri.ui.theme.Spacing
 import com.example.omiri.viewmodels.SettingsViewModel
 import com.example.omiri.viewmodels.ProductViewModel
+import com.example.omiri.viewmodels.CategoryUiModel
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.outlined.WifiOff

@@ -75,7 +75,17 @@ object ShoppingListRepository {
         }
     }
 
-    fun addItem(name: String, categoryId: String = PredefinedCategories.OTHER.id, isInDeals: Boolean = false, isRecurring: Boolean = false) {
+    fun addItem(
+        name: String, 
+        categoryId: String = PredefinedCategories.OTHER.id, 
+        isInDeals: Boolean = false, 
+        isRecurring: Boolean = false,
+        store: String? = null,
+        price: Double? = null,
+        discountPrice: Double? = null,
+        discountPercentage: Int? = null,
+        dealId: String? = null
+    ) {
         val listId = _currentListId.value ?: return
 
         val newItem = ShoppingItem(
@@ -83,7 +93,12 @@ object ShoppingListRepository {
             name = name,
             isInDeals = isInDeals,
             categoryId = categoryId,
-            isRecurring = isRecurring
+            isRecurring = isRecurring,
+            store = store,
+            price = price,
+            discountPrice = discountPrice,
+            discountPercentage = discountPercentage,
+            dealId = dealId
         )
 
         _shoppingLists.update { lists ->
@@ -211,6 +226,89 @@ object ShoppingListRepository {
                         }
                     }
                     list.copy(items = newItems)
+                } else {
+                    list
+                }
+            }
+        }
+    }
+
+    fun reorderItems(fromIndex: Int, toIndex: Int) {
+        val listId = _currentListId.value ?: return
+
+        _shoppingLists.update { lists ->
+            lists.map { list ->
+                if (list.id == listId) {
+                    val mutableItems = list.items.toMutableList()
+                    // Boundary checks
+                    if (fromIndex in mutableItems.indices && toIndex in mutableItems.indices) {
+                        val item = mutableItems.removeAt(fromIndex)
+                        mutableItems.add(toIndex, item)
+                        list.copy(items = mutableItems)
+                    } else {
+                        list
+                    }
+                } else {
+                    list
+                }
+            }
+        }
+    }
+
+    fun reorderItemById(fromId: String, toId: String) {
+        val listId = _currentListId.value ?: return
+
+        _shoppingLists.update { lists ->
+            lists.map { list ->
+                if (list.id == listId) {
+                    val fromIndex = list.items.indexOfFirst { it.id == fromId }
+                    val toIndex = list.items.indexOfFirst { it.id == toId }
+                    
+                    if (fromIndex != -1 && toIndex != -1) {
+                         val mutableItems = list.items.toMutableList()
+                         val item = mutableItems.removeAt(fromIndex)
+                         mutableItems.add(toIndex, item)
+                         list.copy(items = mutableItems)
+                    } else {
+                        list
+                    }
+                } else {
+                    list
+                }
+            }
+        }
+
+    }
+    
+    fun updateItemDeal(
+        itemId: String, 
+        store: String?, 
+        price: Double?, 
+        discountPrice: Double?, 
+        discountPercentage: Int?, 
+        dealId: String?
+    ) {
+        val listId = _currentListId.value ?: return
+
+        _shoppingLists.update { lists ->
+            lists.map { list ->
+                if (list.id == listId) {
+                    list.copy(
+                        items = list.items.map { item ->
+                            if (item.id == itemId) {
+                                item.copy(
+                                    store = store,
+                                    price = price,
+                                    discountPrice = discountPrice,
+                                    discountPercentage = discountPercentage,
+                                    dealId = dealId,
+                                    isInDeals = dealId != null || discountPrice != null
+                                )
+                            } else {
+                                item
+                            }
+                        }
+                    )
                 } else {
                     list
                 }

@@ -70,6 +70,10 @@ dependencies {
 
     // Accompanist
     implementation("com.google.accompanist:accompanist-swiperefresh:0.34.0")
+    
+    // Reorderable (Calvin)
+    implementation("sh.calvin.reorderable:reorderable:2.4.2")
+    
 
     // Optional icon pack
     implementation("com.adamglin:phosphor-icon:1.0.0")
