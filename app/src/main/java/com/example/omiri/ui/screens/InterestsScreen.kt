@@ -35,7 +35,7 @@ fun InterestsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(Color(0xFFF9FAFB))
+                .background(com.example.omiri.ui.theme.AppColors.Bg)
                 .padding(horizontal = com.example.omiri.ui.theme.Spacing.lg)
         ) {
             InterestsContent(
