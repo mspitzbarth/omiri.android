@@ -1,8 +1,11 @@
+
 package com.example.omiri.ui.screens
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
@@ -419,6 +422,7 @@ fun OnboardingDotsIndicator(currentStep: Int, totalSteps: Int) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun OnboardingStep1(
     categories: List<PersonalizationCategory>,
@@ -587,6 +591,7 @@ fun OnboardingStep1(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun OnboardingStep2(
     categories: List<PersonalizationCategory>,
@@ -716,6 +721,7 @@ fun OnboardingStep2(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun OnboardingStep3(
     categories: List<PersonalizationCategory>,

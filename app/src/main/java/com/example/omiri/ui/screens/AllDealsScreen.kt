@@ -27,6 +27,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -74,6 +75,7 @@ fun AllDealsScreen(
     }
 
     var currentFilters by remember { mutableStateOf(FilterOptions()) }
+    // Remove unused page state if not needed, or keep for future
     var currentPage by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
     
@@ -93,7 +95,6 @@ fun AllDealsScreen(
         } else {
             viewModel.refreshAllDeals()
         }
-        // viewModel.initialLoad() // Redundant here if VM manages singletons, but harmless
         adManager.loadAd()
     }
 
@@ -119,7 +120,6 @@ fun AllDealsScreen(
     val shoppingListDeals by viewModel.shoppingListDeals.collectAsState()
     val isMyDeals = toggledFilterChips.contains("My Deals")
     
-    // Use shoppingListDeals if My Deals is toggled, otherwise allDeals. 
     val currentDeals = if (isMyDeals) shoppingListDeals else allDeals
     
     // Group deals by category for the list view
@@ -146,7 +146,6 @@ fun AllDealsScreen(
 
     // Nested Scroll Logic for Collapsible Header
     val density = androidx.compose.ui.platform.LocalDensity.current
-    var topBarHeightPx by remember { mutableFloatStateOf(0f) }
     var filterBarHeightPx by remember { mutableFloatStateOf(0f) }
     var filterBarOffsetPx by remember { mutableFloatStateOf(0f) }
 
@@ -159,29 +158,18 @@ fun AllDealsScreen(
                 val totalItemsNumber = layoutInfo.totalItemsCount
                 val lastVisibleItemIndex = (layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0) + 1
                 
-                // Trigger when we're within 8 items of the end
                 if (lastVisibleItemIndex > (totalItemsNumber - 8) && hasMore && !isLoading && !isPaging && totalItemsNumber > 0) {
                     viewModel.loadMoreDeals()
-                }
-
-                // AdMob Interstitial Logic: Show after scrolling 50 items
-                // We use a local state to track the last ad breakpoint to avoid repeated triggering for the same threshold
-                if (lastVisibleItemIndex > 0 && lastVisibleItemIndex % 50 == 0) {
-                     // Debounce or check against a "lastShownIndex" if needed, but the AdManager generally handles rapid calls.
-                     // Better: use a side-effect that remembers the last index we showed an ad for.
                 }
             }
     }
     
-    // State to track last index where fullscreen ad was shown to preventing multi-firing
+    // State to track last index where fullscreen ad was shown
     var lastAdShownIndex by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(listState) {
         snapshotFlow { listState.firstVisibleItemIndex }
             .collect { firstVisibleIndex ->
-                // Check if we crossed a 50-item threshold we haven't shown an ad for yet
-                // e.g., at 50, 100, 150...
-                // We add a small buffer (e.g. > 50) and ensure we didn't just show it (index > last + 40)
                 if (firstVisibleIndex > 0 && firstVisibleIndex > lastAdShownIndex + 50) {
                     adManager.showAd {
                         lastAdShownIndex = firstVisibleIndex
@@ -196,325 +184,251 @@ fun AllDealsScreen(
                 val delta = available.y
                 val newOffset = (filterBarOffsetPx + delta).coerceIn(-filterBarHeightPx, 0f)
                 filterBarOffsetPx = newOffset
-                // Do NOT consume the scroll. Let the LazyColumn scroll simultaneously.
-                // This ensures the list content moves up WITH the header, preventing the "gap" or "space" issue.
                 return androidx.compose.ui.geometry.Offset.Zero
             }
         }
     }
 
-    PullToRefreshBox(
-        isRefreshing = isRefreshing,
-        state = pullRefreshState,
-        onRefresh = { isRefreshing = true },
-        modifier = Modifier.fillMaxSize()
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(com.example.omiri.ui.theme.AppColors.Bg)
     ) {
-        val density = androidx.compose.ui.platform.LocalDensity.current
-        
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(com.example.omiri.ui.theme.AppColors.Bg)
-                .nestedScroll(nestedScrollConnection)
+        // 2. Content logic with PullToRefresh and Collapsible Filter Bar
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            state = pullRefreshState,
+            onRefresh = { isRefreshing = true },
+            modifier = Modifier.weight(1f)
         ) {
-            // Interstitial Ad Logic: Show every 200 items (Removed in favor of scroll-based)
-            /*
-            LaunchedEffect(allDeals.size) {
-                 if (allDeals.size > 0 && allDeals.size % 200 == 0) {
-                     adManager.showAd {}
-                 }
-            }
-            */
-
-            // List Content
-            val topBarHeightDp = with(density) { topBarHeightPx.toDp() }
-            val filterBarHeightDp = with(density) { filterBarHeightPx.toDp() }
-            val totalHeaderHeightDp = topBarHeightDp + filterBarHeightDp
-            
-            if (isLoading && !isPaging && !isRefreshing) {
-                // Skeleton Grid State
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.md),
-                    contentPadding = PaddingValues(top = totalHeaderHeightDp + Spacing.md, bottom = Spacing.md, start = Spacing.lg, end = Spacing.lg)
-                ) {
-                    items(6) { // Show 6 rows of skeletons
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.md)
-                        ) {
-                            com.example.omiri.ui.components.DealCardSkeleton(modifier = Modifier.weight(1f))
-                            com.example.omiri.ui.components.DealCardSkeleton(modifier = Modifier.weight(1f))
-                        }
-                    }
-                }
-            } else {
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(top = totalHeaderHeightDp, bottom = 0.dp) // Header space + no bottom padding (handled by items)
-                ) {
-                    
-                    // Track cumulative items for ad insertion
-            var cumulativeItemCount = 0
-            var justInsertedAd = false
-            
-            // Feed Items - Grouped by Category (Vertical Layout)
-            groupedDeals.forEach { (category, deals) ->
-                item(key = "header_$category") {
-                    Text(
-                        text = com.example.omiri.util.CategoryHelper.getCategoryName(category).replaceFirstChar { if (it.isLowerCase()) it.titlecase(java.util.Locale.getDefault()) else it.toString() },
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF111827),
-                        modifier = Modifier
-                            .padding(horizontal = Spacing.lg)
-                            .padding(top = Spacing.lg, bottom = Spacing.sm)
-                    )
-                }
+            Box(
+                 modifier = Modifier
+                     .fillMaxSize()
+                     .nestedScroll(nestedScrollConnection)
+            ) {
+                // List Content
+                val filterBarHeightDp = with(density) { filterBarHeightPx.toDp() }
                 
-                // Vertical Grid Logic: Chunk into rows of 2
-                val chunkedDeals = deals.chunked(2)
-                
-                chunkedDeals.forEach { rowDeals ->
-                    item(key = "${category}_row_${rowDeals.first().id}") {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = Spacing.lg, vertical = Spacing.xs),
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.md)
-                        ) {
-                            // First Item
-                            DealCard(
-                                deal = rowDeals[0],
-                                onClick = { onDealClick(rowDeals[0].id) },
-                                onToggleShoppingList = { d, fav -> onToggleShoppingList(d, fav) },
-                                modifier = Modifier.weight(1f)
-                            )
-                            
-                            // Second Item (if exists)
-                            if (rowDeals.size > 1) {
-                                DealCard(
-                                    deal = rowDeals[1],
-                                    onClick = { onDealClick(rowDeals[1].id) },
-                                    onToggleShoppingList = { d, fav -> onToggleShoppingList(d, fav) },
-                                    modifier = Modifier.weight(1f)
-                                )
-                            } else {
-                                // Spacer for grid alignment
-                                Spacer(modifier = Modifier.weight(1f))
+                if (isLoading && !isPaging && !isRefreshing) {
+                    // Skeleton Grid State
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.md),
+                        contentPadding = PaddingValues(top = filterBarHeightDp + Spacing.md, bottom = Spacing.md, start = Spacing.lg, end = Spacing.lg)
+                    ) {
+                        items(6) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                                com.example.omiri.ui.components.DealCardSkeleton(modifier = Modifier.weight(1f))
+                                com.example.omiri.ui.components.DealCardSkeleton(modifier = Modifier.weight(1f))
                             }
-                        }
-                    }
-                    
-                    val previousCount = cumulativeItemCount
-                    cumulativeItemCount += rowDeals.size
-                    justInsertedAd = false
-                    
-                    // Insert ad every 20 items
-                    if (cumulativeItemCount / 20 > previousCount / 20) {
-                        // Alternate Ad Sizes: Even insertions = MEDIUM_RECTANGLE, Odd insertions = BANNER
-                        val insertionIndex = cumulativeItemCount / 20
-                        val adSize = if (insertionIndex % 2 == 0) com.google.android.gms.ads.AdSize.MEDIUM_RECTANGLE else com.google.android.gms.ads.AdSize.LARGE_BANNER
-                        
-                        // Pre-allocate height to prevent jumps when ad loads
-                        val adHeight = if (adSize == com.google.android.gms.ads.AdSize.MEDIUM_RECTANGLE) 250.dp else 100.dp
-
-                        item(key = "ad_banner_${category}_${rowDeals.first().id}") {
-                            com.example.omiri.ui.components.AdCard(
-                                modifier = Modifier
-                                    .padding(horizontal = Spacing.lg)
-                                    .height(adHeight), // Fix height to reserve space
-                                adSize = adSize
-                            )
-                        }
-                        justInsertedAd = true
-                    }
-                }
-            }
-            
-            // Empty State & Initial Loading logic (kept)
-            if (allDeals.isEmpty()) {
-                if (isLoading) {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(400.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(48.dp),
-                                color = com.example.omiri.ui.theme.AppColors.BrandOrange,
-                                strokeWidth = 4.dp
-                            )
                         }
                     }
                 } else {
-                     item {
-                        // Smart Empty State
-                        val error by viewModel.error.collectAsState()
-                        val networkErrorType by viewModel.networkErrorType.collectAsState()
-                        val emptyMessage = "Try adjusting your filters or search query"
-                        
-                        com.example.omiri.ui.components.OmiriSmartEmptyState(
-                            networkErrorType = networkErrorType,
-                            error = error,
-                            onRetry = { viewModel.loadProducts() },
-                            defaultIcon = androidx.compose.material.icons.Icons.Outlined.LocalOffer,
-                            defaultTitle = "No deals found",
-                            defaultMessage = emptyMessage,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = Spacing.xxl)
-                        )
-                     }
-                }
-            }
-            
-            // Loading Indicator at bottom if paging
-            if (isPaging) {
-                item(key = "loading_indicator_bottom") {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = Spacing.md),
-                        contentAlignment = Alignment.Center
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(top = filterBarHeightDp, bottom = 0.dp)
                     ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = com.example.omiri.ui.theme.AppColors.BrandOrange,
-                            strokeWidth = 2.dp
-                        )
-                    }
-                }
-            }
-            
-            item {
-                Spacer(Modifier.height(Spacing.xxxl))
-            }
-        }
-        }
-    }
-
-    // 2. Collapsible Search/Filters Header - Z-Index 1
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .onGloballyPositioned { coordinates ->
-                filterBarHeightPx = coordinates.size.height.toFloat()
-            }
-            .offset { IntOffset(x = 0, y = (topBarHeightPx + filterBarOffsetPx).roundToInt()) }
-            .background(Color.White)
-            .align(Alignment.TopCenter)
-    ) {
-        // Search and Filters Content
-        Column(modifier = Modifier.padding(horizontal = Spacing.lg)) {
-            Spacer(Modifier.height(Spacing.sm))
-            val searchQuery by viewModel.searchQuery.collectAsState()
-            
-            OmiriSearchBar(
-                value = searchQuery,
-                onQueryChange = { query ->
-                    // Directly call VM. VM updates state -> UI updates.
-                    // Ideally verify behavior on partial types, likely fine if searchProducts updates state immediately.
-                    // If we need debounce, VM 'searchProducts' should handle it, but for now we follow existing patterns.
-                    if (query.length > 2) {
-                        viewModel.searchProducts(query)
-                    } else if (query.isEmpty()) {
-                         viewModel.loadProducts() // Reset
-                         viewModel.searchProducts("") // Clear VM query state
-                    } else {
-                         viewModel.searchProducts(query) // Update text only, or logic inside determines execution
-                    }
-                }
-            )
-            Spacer(Modifier.height(Spacing.md))
-            
-            // Filters & Sort Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Filter button (on the left) with badge
-                val activeFilterCount = listOf(
-                    currentFilters.priceRange != 0f..1000f,
-                    currentFilters.selectedStores.isNotEmpty(),
-                    currentFilters.selectedCategories.isNotEmpty(),
-                    currentFilters.onlineOnly
-                ).count { it }
-
-                val hasActiveFilters = activeFilterCount > 0
-
-                BadgedBox(
-                    badge = {
-                        if (activeFilterCount > 0) {
-                            Badge(
-                                containerColor = com.example.omiri.ui.theme.AppColors.BrandOrange,
-                                contentColor = com.example.omiri.ui.theme.AppColors.Surface
-                            ) {
+                        var cumulativeItemCount = 0
+                        var justInsertedAd = false
+                        
+                        groupedDeals.forEach { (category, deals) ->
+                            item(key = "header_$category") {
                                 Text(
-                                    text = activeFilterCount.toString(),
-                                    style = MaterialTheme.typography.labelSmall
+                                    text = com.example.omiri.util.CategoryHelper.getCategoryName(category).replaceFirstChar { if (it.isLowerCase()) it.titlecase(java.util.Locale.getDefault()) else it.toString() },
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF111827),
+                                    modifier = Modifier
+                                        .padding(horizontal = Spacing.lg)
+                                        .padding(top = Spacing.lg, bottom = Spacing.sm)
                                 )
                             }
+                            
+                            val chunkedDeals = deals.chunked(2)
+                            chunkedDeals.forEach { rowDeals ->
+                                item(key = "${category}_row_${rowDeals.first().id}") {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = Spacing.lg, vertical = Spacing.xs),
+                                        horizontalArrangement = Arrangement.spacedBy(Spacing.md)
+                                    ) {
+                                        DealCard(
+                                            deal = rowDeals[0],
+                                            onClick = { onDealClick(rowDeals[0].id) },
+                                            onToggleShoppingList = { d, fav -> onToggleShoppingList(d, fav) },
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        
+                                        if (rowDeals.size > 1) {
+                                            DealCard(
+                                                deal = rowDeals[1],
+                                                onClick = { onDealClick(rowDeals[1].id) },
+                                                onToggleShoppingList = { d, fav -> onToggleShoppingList(d, fav) },
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                        } else {
+                                            Spacer(modifier = Modifier.weight(1f))
+                                        }
+                                    }
+                                }
+                                
+                                val previousCount = cumulativeItemCount
+                                cumulativeItemCount += rowDeals.size
+                                justInsertedAd = false
+                                
+                                if (cumulativeItemCount / 20 > previousCount / 20) {
+                                    val insertionIndex = cumulativeItemCount / 20
+                                    val adSize = if (insertionIndex % 2 == 0) com.google.android.gms.ads.AdSize.MEDIUM_RECTANGLE else com.google.android.gms.ads.AdSize.LARGE_BANNER
+                                    val adHeight = if (adSize == com.google.android.gms.ads.AdSize.MEDIUM_RECTANGLE) 250.dp else 100.dp
+    
+                                    item(key = "ad_banner_${category}_${rowDeals.first().id}") {
+                                        com.example.omiri.ui.components.AdCard(
+                                            modifier = Modifier
+                                                .padding(horizontal = Spacing.lg)
+                                                .height(adHeight),
+                                            adSize = adSize
+                                        )
+                                    }
+                                    justInsertedAd = true
+                                }
+                            }
                         }
-                    }
-                ) {
-                    IconButton(
-                        onClick = { showFilterModal = true },
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.FilterList,
-                            contentDescription = "More filters",
-                            tint = if (hasActiveFilters) com.example.omiri.ui.theme.AppColors.BrandOrange else com.example.omiri.ui.theme.AppColors.BrandInk
-                        )
+                        
+                        if (allDeals.isEmpty()) {
+                            if (isLoading) {
+                                item {
+                                    Box(modifier = Modifier.fillMaxWidth().height(400.dp), contentAlignment = Alignment.Center) {
+                                        CircularProgressIndicator(modifier = Modifier.size(48.dp), color = com.example.omiri.ui.theme.AppColors.BrandOrange, strokeWidth = 4.dp)
+                                    }
+                                }
+                            } else {
+                                 item {
+                                    val error by viewModel.error.collectAsState()
+                                    val networkErrorType by viewModel.networkErrorType.collectAsState()
+                                    com.example.omiri.ui.components.OmiriSmartEmptyState(
+                                        networkErrorType = networkErrorType,
+                                        error = error,
+                                        onRetry = { viewModel.loadProducts() },
+                                        defaultIcon = androidx.compose.material.icons.Icons.Outlined.LocalOffer,
+                                        defaultTitle = "No deals found",
+                                        defaultMessage = "Try adjusting your filters or search query",
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.xxl)
+                                    )
+                                 }
+                            }
+                        }
+                        
+                        if (isPaging) {
+                            item(key = "loading_indicator_bottom") {
+                                Box(modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.md), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = com.example.omiri.ui.theme.AppColors.BrandOrange, strokeWidth = 2.dp)
+                                }
+                            }
+                        }
+                        
+                        item { Spacer(Modifier.height(Spacing.xxxl)) }
                     }
                 }
 
-                MixedFilterChipsRow(
-                    modifier = Modifier.weight(1f),
-                    options = listOf(
-                        MixedFilterOption("My Deals", Icons.Outlined.BookmarkBorder, isToggleable = true),
-                        MixedFilterOption("This Week", Icons.Outlined.Today, isToggleable = false),
-                        MixedFilterOption("Next Week", Icons.Outlined.Event, isToggleable = false)
-                    ),
-                    initialSelected = selectedFilterChip,
-                    initialToggled = toggledFilterChips,
-                    onSelectedChange = { selectedFilterChip = it },
-                    onToggledChange = { toggledFilterChips = it },
-                    selectedBackgroundColor = com.example.omiri.ui.theme.AppColors.BrandOrange,
-                    selectedTextColor = com.example.omiri.ui.theme.AppColors.Surface,
-                    unselectedBackgroundColor = com.example.omiri.ui.theme.AppColors.PastelGrey,
-                    unselectedTextColor = com.example.omiri.ui.theme.AppColors.BrandInk
-                )
+                // Collapsible Search and Filters Header
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onGloballyPositioned { coordinates ->
+                            filterBarHeightPx = coordinates.size.height.toFloat()
+                        }
+                        .graphicsLayer { translationY = filterBarOffsetPx }
+                        .background(Color.White)
+                        .align(Alignment.TopCenter)
+                        .zIndex(1f)
+                ) {
+                    Column(modifier = Modifier.padding(horizontal = Spacing.lg)) {
+                        Spacer(Modifier.height(Spacing.sm))
+                        val searchQuery by viewModel.searchQuery.collectAsState()
+                        
+                        OmiriSearchBar(
+                            value = searchQuery,
+                            onQueryChange = { query ->
+                                if (query.length > 2) {
+                                    viewModel.searchProducts(query)
+                                } else if (query.isEmpty()) {
+                                     viewModel.loadProducts()
+                                     viewModel.searchProducts("")
+                                } else {
+                                     viewModel.searchProducts(query)
+                                }
+                            }
+                        )
+                        Spacer(Modifier.height(Spacing.md))
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            val activeFilterCount = listOf(
+                                currentFilters.priceRange != 0f..1000f,
+                                currentFilters.selectedStores.isNotEmpty(),
+                                currentFilters.selectedCategories.isNotEmpty(),
+                                currentFilters.onlineOnly
+                            ).count { it }
+    
+                            val hasActiveFilters = activeFilterCount > 0
+    
+                            BadgedBox(
+                                badge = {
+                                    if (activeFilterCount > 0) {
+                                        Badge(
+                                            containerColor = com.example.omiri.ui.theme.AppColors.BrandOrange,
+                                            contentColor = com.example.omiri.ui.theme.AppColors.Surface
+                                        ) {
+                                            Text(text = activeFilterCount.toString(), style = MaterialTheme.typography.labelSmall)
+                                        }
+                                    }
+                                }
+                            ) {
+                                IconButton(
+                                    onClick = { showFilterModal = true },
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.FilterList,
+                                        contentDescription = "More filters",
+                                        tint = if (hasActiveFilters) com.example.omiri.ui.theme.AppColors.BrandOrange else com.example.omiri.ui.theme.AppColors.BrandInk
+                                    )
+                                }
+                            }
+    
+                            MixedFilterChipsRow(
+                                modifier = Modifier.weight(1f),
+                                options = listOf(
+                                    MixedFilterOption("My Deals", Icons.Outlined.BookmarkBorder, isToggleable = true),
+                                    MixedFilterOption("This Week", Icons.Outlined.Today, isToggleable = false),
+                                    MixedFilterOption("Next Week", Icons.Outlined.Event, isToggleable = false)
+                                ),
+                                initialSelected = selectedFilterChip,
+                                initialToggled = toggledFilterChips,
+                                onSelectedChange = { selectedFilterChip = it },
+                                onToggledChange = { toggledFilterChips = it },
+                                selectedBackgroundColor = com.example.omiri.ui.theme.AppColors.BrandOrange,
+                                selectedTextColor = com.example.omiri.ui.theme.AppColors.Surface,
+                                unselectedBackgroundColor = com.example.omiri.ui.theme.AppColors.PastelGrey,
+                                unselectedTextColor = com.example.omiri.ui.theme.AppColors.BrandInk
+                            )
+                        }
+                        
+                        Spacer(Modifier.height(Spacing.lg))
+                    }
+                    // Bottom border for the filter bar
+                    Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFE5E7EB)))
+                }
             }
-            
-            Spacer(Modifier.height(Spacing.lg))
         }
     }
-
-    // 1. Fixed Main Header (Logo) - Highest Z-Index
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .onGloballyPositioned { coordinates ->
-                topBarHeightPx = coordinates.size.height.toFloat()
-            }
-            .background(Color.White)
-            .align(Alignment.TopCenter)
-    ) {
-        OmiriHeader(
-            notificationCount = 2,
-            onNotificationClick = onNotificationsClick,
-            onProfileClick = onProfileClick
-        )
-    }
-    }
     
-    // Filter Modal Logic (Update apply to set viewModel params)
-    // Collect filter data
+    // Filter Modal
     val availableCategories by viewModel.categories.collectAsState()
     val availableStores by viewModel.availableStores.collectAsState()
 

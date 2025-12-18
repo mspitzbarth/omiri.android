@@ -112,77 +112,63 @@ fun AiChatScreen(
                 .padding(bottom = padding.calculateBottomPadding())
                 .background(com.example.omiri.ui.theme.AppColors.Bg)
         ) {
-            com.example.omiri.ui.components.OmiriHeader(
-                startContent = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                         // Avatar/Icon
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .background(com.example.omiri.ui.theme.AppColors.BrandOrange, CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = androidx.compose.ui.res.painterResource(id = com.example.omiri.R.drawable.ic_omiri_logo),
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                        
-                        Spacer(Modifier.width(8.dp))
 
-                        Column {
-                            Text(
-                                text = "H.A.N.S",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF111827)
+
+            // Chat Status Sub-header
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color.White,
+                shadowElevation = 1.dp
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = Spacing.lg, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .background(com.example.omiri.ui.theme.AppColors.BrandOrange, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = androidx.compose.ui.res.painterResource(id = com.example.omiri.R.drawable.ic_omiri_logo),
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    
+                    Spacer(Modifier.width(8.dp))
+
+                    Column {
+                        Text(
+                            text = "H.A.N.S",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF111827)
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .background(
+                                        if (isOnline) Color(0xFF10B981) else Color(0xFF9CA3AF),
+                                        CircleShape
+                                    )
                             )
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(6.dp)
-                                        .background(
-                                            if (isOnline) Color(0xFF10B981) else Color(0xFF9CA3AF),
-                                            CircleShape
-                                        )
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text(
-                                    text = if (isOnline) "Online" else "Offline",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = if (isOnline) Color(0xFF10B981) else Color(0xFF6B7280),
-                                    fontSize = androidx.compose.ui.unit.TextUnit(10f, androidx.compose.ui.unit.TextUnitType.Sp)
-                                )
-                            }
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = if (isOnline) "Online" else "Offline",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (isOnline) Color(0xFF10B981) else Color(0xFF6B7280),
+                                fontSize = androidx.compose.ui.unit.TextUnit(10f, androidx.compose.ui.unit.TextUnitType.Sp)
+                            )
                         }
                     }
-                },
-                notificationCount = 2, // Ideally from ViewModel check, but hardcoded in prev example too
-                onNotificationClick = onNotificationsClick,
-                onProfileClick = onProfileClick,
-                customAction = {
-                    Surface(
-                         shape = CircleShape,
-                         color = Color.White,
-                         shadowElevation = 2.dp,
-                         modifier = Modifier
-                             .size(40.dp)
-                             .clip(CircleShape)
-                             .clickable { viewModel.resetConversation() }
-                     ) {
-                         Box(contentAlignment = Alignment.Center) {
-                             Icon(
-                                 imageVector = Icons.Outlined.Delete,
-                                 contentDescription = "Clear Chat",
-                                 tint = Color(0xFF1F2937),
-                                 modifier = Modifier.size(22.dp)
-                             )
-                         }
-                     }
                 }
-            )
+            }
 
             val networkErrorType by viewModel.networkErrorType.collectAsState()
             

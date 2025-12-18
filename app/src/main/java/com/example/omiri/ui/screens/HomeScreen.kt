@@ -118,14 +118,6 @@ fun HomeScreen(
         onRefresh = { isRefreshing = true },
         modifier = Modifier.fillMaxSize()
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // 0. Omiri Header (Fixed at top)
-            com.example.omiri.ui.components.OmiriHeader(
-                notificationCount = 2,
-                onNotificationClick = onNotificationsClick,
-                onProfileClick = onProfileClick
-            )
-
             // Scrollable Content
             Column(
                 modifier = Modifier
@@ -341,7 +333,7 @@ fun HomeScreen(
             }
         }
     }
-}
+
 
 @Composable
 fun SavingsGoalCard(

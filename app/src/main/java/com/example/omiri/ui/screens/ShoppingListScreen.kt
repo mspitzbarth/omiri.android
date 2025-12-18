@@ -150,13 +150,8 @@ fun ShoppingListScreen(
                         (item?.alternativesCount ?: 0) > 0
                     } else false
                 )
-            } else {
-                com.example.omiri.ui.components.OmiriHeader(
-                    notificationCount = 2,
-                    onNotificationClick = onNotificationsClick,
-                    onProfileClick = onProfileClick
-                )
             }
+
 
             // Content List
             val listState = rememberLazyListState()

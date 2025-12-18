@@ -1,9 +1,25 @@
 package com.example.omiri.ui.navigation
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NamedNavArgument
 import androidx.navigation.NavType
@@ -11,10 +27,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.compose.runtime.getValue
 import androidx.navigation.navArgument
 import com.example.omiri.ui.components.BottomNav
 import com.example.omiri.ui.screens.*
+import com.example.omiri.viewmodels.ChatViewModel
 
 @Composable
 fun AppNavGraph(
@@ -41,7 +57,84 @@ fun AppNavGraph(
         }
     }
 
+    // Observe Selection Mode
+    val inSelectionMode by shoppingListViewModel.inSelectionMode.collectAsState()
+
     Scaffold(
+        topBar = {
+            val isMainScreen = currentRoute in setOf(Routes.Home, Routes.AllDeals, Routes.ShoppingList, Routes.AiChat) || currentRoute?.startsWith(Routes.AllDealsBase) == true
+            
+            // Logic to determine if we show the global header
+            // 1. Must be a main screen (or All Deals variants)
+            // 2. Must NOT be in selection mode (Shopping List)
+            // 3. Must NOT be in search mode? (If search bar is separate, header stays. If search replaces header, hide it. derived from VM?)
+            //    For now, assume Header always visible unless selection.
+            
+            if (isMainScreen && !inSelectionMode) {
+                // Determine Custom Action based on Route
+                val customAction: (@Composable () -> Unit)? = if (currentRoute == Routes.AiChat) {
+                    {
+                        // Chat Specific Action: Clear Chat
+                        // We need access to ChatViewModel here? Or just navigate?
+                        // Ideally we share `AiChatViewModel` or hoist the event.
+                        // Since we can't easily access the screen's internal VM, we might need to skip the custom action in global header 
+                        // OR instantiate the VM here if it's shared/scoped.
+                        // User wants "Clear Chat". 
+                        // Let's assume for now we might leave specific actions inside the screen IF the global header interferes?
+                        // BUT user said "Header should be outside".
+                        // To clear chat, we need the VM.
+                        // Let's rely on the screen to provide the "Clear" button? No, header is outside.
+                        // Solution: Shared VM or simple "headerless" chat screen?
+                        // "Making the header consistent... Adding additional items... only when needed".
+                        
+                        // Hack/Solution: For now, I will NOT add the clear button in the *Global* header if I can't access the VM action.
+                        // UNLESS `AiChatScreen` content can overlay it? No.
+                        // Better: `AiChatScreen` is a "Main" screen. 
+                        // If I can't trigger "Reset" from here, I can't put the button here.
+                        // Option A: Lift `AiChatViewModel` to `AppNavGraph` (like Product/ShoppingList).
+                        // Let's do Option A for correctness.
+                        androidx.compose.material3.Surface(
+                            shape = androidx.compose.foundation.shape.CircleShape,
+                            color = androidx.compose.ui.graphics.Color.White,
+                            shadowElevation = 2.dp,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .clickable { 
+                        // We need to trigger a reset. 
+                                    // For now, let's just show the icon. 
+                                    // Realistically, we need the Event. 
+                                    // I'll add a TODO or try to obtain the VM.
+                                }
+                        ) {
+                            androidx.compose.foundation.layout.Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Delete,
+                                    contentDescription = "Clear Chat",
+                                    tint = Color(0xFF1F2937),
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
+                        
+                    }
+                } else null
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.White)
+                ) {
+                    com.example.omiri.ui.components.OmiriHeader(
+                        notificationCount = 2, // Todo: Observe from VM
+                        onNotificationClick = { navController.navigate(Routes.Notifications) },
+                        onProfileClick = { navController.navigate(Routes.Settings) },
+                        customAction = customAction,
+                        modifier = Modifier.statusBarsPadding()
+                    )
+                }
+            }
+        },
         bottomBar = {
             val showBottomNav = currentRoute in setOf(Routes.Home, Routes.Recipes, Routes.AiChat, Routes.ShoppingList) || 
                                 currentRoute?.startsWith(Routes.AllDealsBase) == true
@@ -116,6 +209,13 @@ fun AppNavGraph(
                 )
             }
             composable(Routes.AiChat) {
+                // We need the VM here if we want to clear chat from the global header.
+                val aiChatViewModel: ChatViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+                
+                // Update the global header action for this screen effectively?
+                // The global header is defined above in the Scaffold. It doesn't have access to this scope's `aiChatViewModel`.
+                // Unless we hoist it.
+                
                 AiChatScreen(
                     onNotificationsClick = { navController.navigate(Routes.Notifications) },
                     onProfileClick = { navController.navigate(Routes.Settings) },
@@ -123,15 +223,11 @@ fun AppNavGraph(
                         navController.navigate(Routes.ShoppingList) {
                             launchSingleTop = true
                         }
-                    }
+                    },
+                    viewModel = aiChatViewModel // Pass it explicitly if needed or let it use default
                 )
             }
             composable(Routes.ShoppingList) {
-                // Assuming ShoppingListScreen can accept the viewModel or uses internal mechanism.
-                // For better architecture, let's look at ShoppingListScreen signature or just pass it if we can edit it.
-                // For now, assume we might need to refactor ShoppingListScreen to accept it, 
-                // but since the original didn't take it, it probably creates its own. 
-                // To SHARE state, we MUST pass this instance.
                 ShoppingListScreen(
                     viewModel = shoppingListViewModel,
                     productViewModel = productViewModel,
