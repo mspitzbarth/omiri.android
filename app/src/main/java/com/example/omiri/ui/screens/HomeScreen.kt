@@ -293,7 +293,11 @@ fun HomeScreen(
                                 .height(200.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            com.example.omiri.ui.components.OmiriLoader(size = 32.dp)
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(32.dp),
+                                color = com.example.omiri.ui.theme.AppColors.BrandOrange,
+                                strokeWidth = 3.dp
+                            )
                         }
                     } else if (currentDisplayDeals.isEmpty()) {
                         OmiriEmptyState(

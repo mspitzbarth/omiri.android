@@ -134,6 +134,26 @@ object EmojiHelper {
         // AUTOMOTIVE
         if (containsAny(t, "car", "tire", "automotive")) return "🚗"
 
+        // MEAT & FISH
+        if (containsAny(t, "steak", "beef", "chicken", "pork", "meat", "bacon", "sausage")) return "🥩"
+        if (containsAny(t, "fish", "salmon", "shrimp", "seafood", "tuna")) return "🐟"
+
+        // FRUITS & VEGETABLES
+        if (containsAny(t, "apple", "banana", "orange", "grape", "fruit", "berry", "strawberry", "blueberry")) return "🍎"
+        if (containsAny(t, "carrot", "broccoli", "potato", "onion", "tomato", "salad", "cucumber", "lettuce", "vegetable")) return "🥦"
+
+        // DAIRY & BAKERY
+        if (containsAny(t, "milk", "cheese", "yogurt", "butter", "egg", "dairy")) return "🧀"
+        if (containsAny(t, "bread", "toast", "croissant", "baguette", "bakery", "pastry", "donut", "cake")) return "🥖"
+
+        // DRINKS
+        if (containsAny(t, "water", "juice", "soda", "cola", "beverage", "drink")) return "🥤"
+        if (containsAny(t, "beer", "wine", "vodka", "whiskey", "alcohol", "liquor", "prosecco", "champagne")) return "🍾"
+
+        // HOUSEHOLD
+        if (containsAny(t, "toilet paper", "paper towel", "napkin", "tissue")) return "🧻"
+        if (containsAny(t, "detergent", "soap", "cleaning", "wash", "dish")) return "🧼"
+
         // Default: no match
         return ""
     }
@@ -171,11 +191,33 @@ object EmojiHelper {
         "cameras" to "📷",
         "smart_home" to "🏠",
 
-        // Food & Beverages
+        // Food & Beverages (Expanded)
         "food" to "🍕",
         "beverages" to "🥤",
         "snacks" to "🍫",
         "frozen" to "🧊",
+        "alcohol" to "🍷",
+        "deli" to "🥪",
+        "flowers_plants" to "💐",
+        "fruits_vegetables" to "🥦",
+        "meat_poultry" to "🥩",
+        "dairy_eggs" to "🥚",
+        "bakery" to "🥖",
+        "frozen_foods" to "🧊",
+        "canned_goods" to "🥫",
+        "dry_goods_pasta" to "🍝",
+        "breakfast_cereal" to "🥣",
+        "condiments_sauces" to "🧂",
+        "meat" to "🥩",
+        "vegetables" to "🥦",
+        "fruits" to "🍎",
+        "dairy" to "🥛",
+
+        // Household & Baby
+        "household_general" to "🧹",
+        "household" to "🧹",
+        "baby_child" to "👶",
+        "pet_supplies" to "🐾",
 
         // Fashion
         "clothing" to "👕",
@@ -237,6 +279,21 @@ object EmojiHelper {
         "frozen" to com.example.omiri.ui.theme.AppColors.PastelBlue,
         "snacks_sweets" to com.example.omiri.ui.theme.AppColors.PastelYellow,
         "confectionery" to com.example.omiri.ui.theme.AppColors.PastelPink,
+        "alcohol" to com.example.omiri.ui.theme.AppColors.PastelPurple,
+        "deli" to com.example.omiri.ui.theme.AppColors.PastelOrange,
+        "flowers_plants" to com.example.omiri.ui.theme.AppColors.PastelGreen,
+        "fruits_vegetables" to com.example.omiri.ui.theme.AppColors.PastelGreen,
+        "meat_poultry" to com.example.omiri.ui.theme.AppColors.PastelRed,
+        "dairy_eggs" to com.example.omiri.ui.theme.AppColors.PastelYellow,
+        "bakery" to com.example.omiri.ui.theme.AppColors.PastelOrange,
+        "frozen_foods" to com.example.omiri.ui.theme.AppColors.PastelBlue,
+        "meat" to com.example.omiri.ui.theme.AppColors.PastelRed,
+        "vegetables" to com.example.omiri.ui.theme.AppColors.PastelGreen,
+        "fruits" to com.example.omiri.ui.theme.AppColors.PastelRed,
+        "breakfast_cereal" to com.example.omiri.ui.theme.AppColors.PastelYellow,
+        "household_general" to com.example.omiri.ui.theme.AppColors.PastelBlue,
+        "baby_child" to com.example.omiri.ui.theme.AppColors.PastelPink,
+        "pet_supplies" to com.example.omiri.ui.theme.AppColors.PastelGreen,
         
         // Beauty -> Pink
         "beauty" to com.example.omiri.ui.theme.AppColors.PastelPink,

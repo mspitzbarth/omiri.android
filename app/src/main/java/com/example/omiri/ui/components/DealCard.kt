@@ -34,9 +34,9 @@ fun DealCard(
     modifier: Modifier = Modifier,
     backgroundColor: Color? = null,
     onClick: (Deal) -> Unit = {},
-    onFavoriteChange: (Deal, Boolean) -> Unit = { _, _ -> }
+    onToggleShoppingList: (Deal, Boolean) -> Unit = { _, _ -> }
 ) {
-    var isFav by remember(deal.id) { mutableStateOf(deal.isFavorite) }
+    val isOnList = deal.isOnShoppingList
 
     val shape = MaterialTheme.shapes.medium
     val borderColor = AppColors.Neutral100
@@ -142,15 +142,14 @@ fun DealCard(
                         shape = CircleShape
                     )
                     .clickable {
-                        isFav = !isFav
-                        onFavoriteChange(deal, isFav)
+                        onToggleShoppingList(deal, !isOnList)
                     },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = if (isFav) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                    imageVector = if (isOnList) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                     contentDescription = "Favorite",
-                    tint = if (isFav) AppColors.Danger else AppColors.Neutral800,
+                    tint = if (isOnList) AppColors.Danger else AppColors.Neutral800,
                     modifier = Modifier.size(16.dp)
                 )
             }

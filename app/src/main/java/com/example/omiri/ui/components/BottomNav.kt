@@ -75,11 +75,6 @@ fun BottomNav(
             label = "AI",
             icon = Icons.Filled.AutoAwesome,
             isBeta = true
-        ),
-        BottomNavItem(
-            route = Routes.Recipes,
-            label = "Recipes",
-            icon = Icons.Filled.RestaurantMenu
         )
     )
 
@@ -108,7 +103,7 @@ fun BottomNav(
                     Routes.ShoppingList -> currentRoute == Routes.ShoppingList || 
                                           currentRoute == Routes.ShoppingListMatches
                     Routes.Home -> currentRoute == Routes.Home
-                    Routes.AllDealsBase -> currentRoute == Routes.AllDealsBase
+                    Routes.AllDealsBase -> currentRoute?.startsWith(Routes.AllDealsBase) == true
                     else -> currentRoute == item.route
                 }
 

@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -119,11 +120,11 @@ fun ProductDetailsScreen(
                                 tint = AppColors.BrandInk
                             )
                         }
-                        IconButton(onClick = { /* Toggle Favorite - Logic needed in VM but icon state is enough for UI */ }) {
+                        IconButton(onClick = { if(currentDeal != null) onAddToList(currentDeal, !isOnList) }) {
                             Icon(
-                                imageVector = if(isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                                imageVector = if(isOnList) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                                 contentDescription = "Favorite",
-                                tint = if(isFavorite) AppColors.BrandOrange else AppColors.BrandInk
+                                tint = if(isOnList) AppColors.Danger else AppColors.BrandInk
                             )
                         }
                     }
@@ -134,7 +135,11 @@ fun ProductDetailsScreen(
     ) { padding ->
         if (isLoading) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                com.example.omiri.ui.components.OmiriLoader(size = 48.dp)
+                CircularProgressIndicator(
+                    modifier = Modifier.size(48.dp),
+                    color = AppColors.BrandOrange,
+                    strokeWidth = 4.dp
+                )
             }
         } else if (currentDeal == null) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
@@ -314,14 +319,17 @@ fun ProductDetailsScreen(
                             onClick = { onAddToList(currentDeal, !isOnList) },
                             modifier = Modifier
                                 .weight(1f)
-                                .weight(1f)
                                 .height(40.dp),
                             shape = RoundedCornerShape(8.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = AppColors.BrandOrange)
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if(isOnList) AppColors.Bg else AppColors.BrandOrange,
+                                contentColor = if(isOnList) AppColors.BrandInk else Color.White
+                            ),
+                            border = if(isOnList) BorderStroke(1.dp, AppColors.Neutral200) else null
                         ) {
-                            Icon(Icons.Filled.Add, null)
+                            Icon(if(isOnList) Icons.Filled.Check else Icons.Filled.Add, null)
                             Spacer(Modifier.width(8.dp))
-                            Text("Add to List", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text(if(isOnList) "Added" else "Add to List", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         }
                         
                         // Flyer Button

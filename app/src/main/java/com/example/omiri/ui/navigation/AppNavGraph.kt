@@ -43,14 +43,9 @@ fun AppNavGraph(
 
     Scaffold(
         bottomBar = {
-            val bottomNavRoutes = setOf(
-                Routes.Home,
-                Routes.AllDeals,
-                Routes.Recipes,
-                Routes.AiChat,
-                Routes.ShoppingList
-            )
-            if (currentRoute in bottomNavRoutes) {
+            val showBottomNav = currentRoute in setOf(Routes.Home, Routes.Recipes, Routes.AiChat, Routes.ShoppingList) || 
+                                currentRoute?.startsWith(Routes.AllDealsBase) == true
+            if (showBottomNav) {
                 BottomNav(
                     navController = navController,
                     viewModel = shoppingListViewModel
@@ -105,7 +100,10 @@ fun AppNavGraph(
                     onDealClick = { dealId: String -> navController.navigate(Routes.productDetails(dealId)) },
                     onNotificationsClick = { navController.navigate(Routes.Notifications) },
                     onProfileClick = { navController.navigate(Routes.Settings) },
-                    onToggleShoppingList = { deal, isListed -> shoppingListViewModel.setDealListed(deal, isListed) },
+                    onToggleShoppingList = { deal, isListed -> 
+                        shoppingListViewModel.setDealListed(deal, isListed)
+                        productViewModel.toggleShoppingList(deal)
+                    },
                     onNavigateToMyStores = { navController.navigate(Routes.MyStores) },
                     settingsViewModel = settingsViewModel,
                     viewModel = productViewModel

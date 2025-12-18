@@ -152,21 +152,18 @@ fun AllDealsScreen(
 
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
 
-    // Smooth Pagination Trigger
-    val shouldPaginate = remember {
-        derivedStateOf {
-            val layoutInfo = listState.layoutInfo
-            val totalItemsNumber = layoutInfo.totalItemsCount
-            val lastVisibleItemIndex = (layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0) + 1
-            // Trigger earlier (20 items before end) to load before user sees bottom
-            lastVisibleItemIndex > (totalItemsNumber - 20)
-        }
-    }
-
-    LaunchedEffect(shouldPaginate.value) {
-        if (shouldPaginate.value && hasMore && !isLoading && !isPaging) {
-            viewModel.loadMoreDeals()
-        }
+    // Reactive Pagination Trigger
+    LaunchedEffect(listState, hasMore, isLoading, isPaging) {
+        snapshotFlow { listState.layoutInfo }
+            .collect { layoutInfo ->
+                val totalItemsNumber = layoutInfo.totalItemsCount
+                val lastVisibleItemIndex = (layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0) + 1
+                
+                // Trigger when we're within 8 items of the end
+                if (lastVisibleItemIndex > (totalItemsNumber - 8) && hasMore && !isLoading && !isPaging && totalItemsNumber > 0) {
+                    viewModel.loadMoreDeals()
+                }
+            }
     }
 
     val nestedScrollConnection = remember {
@@ -239,7 +236,7 @@ fun AllDealsScreen(
             groupedDeals.forEach { (category, deals) ->
                 item(key = "header_$category") {
                     Text(
-                        text = category.replaceFirstChar { if (it.isLowerCase()) it.titlecase(java.util.Locale.getDefault()) else it.toString() },
+                        text = com.example.omiri.util.CategoryHelper.getCategoryName(category).replaceFirstChar { if (it.isLowerCase()) it.titlecase(java.util.Locale.getDefault()) else it.toString() },
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF111827),
@@ -264,7 +261,7 @@ fun AllDealsScreen(
                             DealCard(
                                 deal = rowDeals[0],
                                 onClick = { onDealClick(rowDeals[0].id) },
-                                onFavoriteChange = { d, fav -> onToggleShoppingList(d, fav) },
+                                onToggleShoppingList = { d, fav -> onToggleShoppingList(d, fav) },
                                 modifier = Modifier.weight(1f)
                             )
                             
@@ -273,7 +270,7 @@ fun AllDealsScreen(
                                 DealCard(
                                     deal = rowDeals[1],
                                     onClick = { onDealClick(rowDeals[1].id) },
-                                    onFavoriteChange = { d, fav -> onToggleShoppingList(d, fav) },
+                                    onToggleShoppingList = { d, fav -> onToggleShoppingList(d, fav) },
                                     modifier = Modifier.weight(1f)
                                 )
                             } else {
@@ -319,7 +316,11 @@ fun AllDealsScreen(
                                 .height(400.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            com.example.omiri.ui.components.OmiriLoader(size = 48.dp)
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(48.dp),
+                                color = com.example.omiri.ui.theme.AppColors.BrandOrange,
+                                strokeWidth = 4.dp
+                            )
                         }
                     }
                 } else {
@@ -353,7 +354,11 @@ fun AllDealsScreen(
                             .padding(vertical = Spacing.md),
                         contentAlignment = Alignment.Center
                     ) {
-                        com.example.omiri.ui.components.OmiriLoader(size = 24.dp)
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = com.example.omiri.ui.theme.AppColors.BrandOrange,
+                            strokeWidth = 2.dp
+                        )
                     }
                 }
             }

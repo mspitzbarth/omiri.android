@@ -1266,23 +1266,32 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
     fun refreshAllDeals() {
         _currentPage.value = 1
         _allDeals.value = emptyList()
+        _isLoading.value = true
+        
         viewModelScope.launch {
+            try {
                 val country = userPreferences.selectedCountry.first()
-                 val selectedStores = userPreferences.selectedStores.first()
-                 
-                 val storesForCountry = selectedStores.filter { storeId ->
-                     storeId.endsWith("_$country", ignoreCase = true)
-                 }
+                val selectedStores = userPreferences.selectedStores.first()
                 
-                 val storesResult = storeRepository.getStores(country)
-                 val allStores = storesResult.getOrNull() ?: emptyList()
-                 val retailers = if (storesForCountry.isNotEmpty()) {
-                     storesForCountry.mapNotNull { id -> allStores.find { it.id == id }?.retailer }.joinToString(",")
-                 } else null
+                val storesForCountry = selectedStores.filter { storeId ->
+                    storeId.endsWith("_$country", ignoreCase = true)
+                }
+            
+                val storesResult = storeRepository.getStores(country)
+                val allStores = storesResult.getOrNull() ?: emptyList()
+                val retailers = if (storesForCountry.isNotEmpty()) {
+                    storesForCountry.mapNotNull { id -> allStores.find { it.id == id }?.retailer }.joinToString(",")
+                } else null
 
                 loadAllDeals(country, retailers)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error refreshing all deals", e)
+                _error.value = "Error: ${e.message}"
+            } finally {
+                _isLoading.value = false
             }
         }
+    }
 
     /**
      * Load all deals for the all deals screen with filters
@@ -1331,7 +1340,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
             country = country,
             retailer = null,
             retailers = retailers,
-            limit = 12,
+            limit = 24,
             page = page,
             minPrice = _priceRange?.start?.toDouble(),
             maxPrice = _priceRange?.endInclusive?.toDouble(),
