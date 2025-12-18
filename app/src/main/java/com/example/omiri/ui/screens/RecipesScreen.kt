@@ -172,6 +172,16 @@ fun RecipesScreen(
             }
             
             item { Spacer(Modifier.height(Spacing.xl)) } // Reduced bottom padding
+            
+            // Bottom Ad
+            item {
+                com.example.omiri.ui.components.AdCard(
+                    modifier = Modifier.padding(horizontal = Spacing.md),
+                    adSize = com.google.android.gms.ads.AdSize.BANNER
+                )
+            }
+            
+            item { Spacer(Modifier.height(Spacing.xxl)) }
         }
     }
 }

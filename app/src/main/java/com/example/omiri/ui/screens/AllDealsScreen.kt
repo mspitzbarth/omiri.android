@@ -163,6 +163,30 @@ fun AllDealsScreen(
                 if (lastVisibleItemIndex > (totalItemsNumber - 8) && hasMore && !isLoading && !isPaging && totalItemsNumber > 0) {
                     viewModel.loadMoreDeals()
                 }
+
+                // AdMob Interstitial Logic: Show after scrolling 50 items
+                // We use a local state to track the last ad breakpoint to avoid repeated triggering for the same threshold
+                if (lastVisibleItemIndex > 0 && lastVisibleItemIndex % 50 == 0) {
+                     // Debounce or check against a "lastShownIndex" if needed, but the AdManager generally handles rapid calls.
+                     // Better: use a side-effect that remembers the last index we showed an ad for.
+                }
+            }
+    }
+    
+    // State to track last index where fullscreen ad was shown to preventing multi-firing
+    var lastAdShownIndex by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.firstVisibleItemIndex }
+            .collect { firstVisibleIndex ->
+                // Check if we crossed a 50-item threshold we haven't shown an ad for yet
+                // e.g., at 50, 100, 150...
+                // We add a small buffer (e.g. > 50) and ensure we didn't just show it (index > last + 40)
+                if (firstVisibleIndex > 0 && firstVisibleIndex > lastAdShownIndex + 50) {
+                    adManager.showAd {
+                        lastAdShownIndex = firstVisibleIndex
+                    }
+                }
             }
     }
 
@@ -193,12 +217,14 @@ fun AllDealsScreen(
                 .background(com.example.omiri.ui.theme.AppColors.Bg)
                 .nestedScroll(nestedScrollConnection)
         ) {
-            // Interstitial Ad Logic: Show every 200 items
+            // Interstitial Ad Logic: Show every 200 items (Removed in favor of scroll-based)
+            /*
             LaunchedEffect(allDeals.size) {
                  if (allDeals.size > 0 && allDeals.size % 200 == 0) {
                      adManager.showAd {}
                  }
             }
+            */
 
             // List Content
             val topBarHeightDp = with(density) { topBarHeightPx.toDp() }
@@ -284,10 +310,10 @@ fun AllDealsScreen(
                     cumulativeItemCount += rowDeals.size
                     justInsertedAd = false
                     
-                    // Insert ad every 12 items
-                    if (cumulativeItemCount / 12 > previousCount / 12) {
+                    // Insert ad every 20 items
+                    if (cumulativeItemCount / 20 > previousCount / 20) {
                         // Alternate Ad Sizes: Even insertions = MEDIUM_RECTANGLE, Odd insertions = BANNER
-                        val insertionIndex = cumulativeItemCount / 12
+                        val insertionIndex = cumulativeItemCount / 20
                         val adSize = if (insertionIndex % 2 == 0) com.google.android.gms.ads.AdSize.MEDIUM_RECTANGLE else com.google.android.gms.ads.AdSize.LARGE_BANNER
                         
                         // Pre-allocate height to prevent jumps when ad loads

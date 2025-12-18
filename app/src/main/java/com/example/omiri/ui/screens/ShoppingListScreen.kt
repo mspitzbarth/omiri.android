@@ -458,14 +458,13 @@ fun ShoppingListScreen(
                 
                 // Bottom Ad
                 item(key = "shopping_list_ad_banner") {
-                    Box(
+                    com.example.omiri.ui.components.AdCard(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = Spacing.lg),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        com.example.omiri.ui.components.AdMobBanner()
-                    }
+                            .padding(vertical = Spacing.lg)
+                            // Remove horizontal padding if you want edge-to-edge or add it if needed. 
+                            // AdCard default wraps content in center.
+                            // Let's keep it centered.
+                    )
                 }
             }
         }

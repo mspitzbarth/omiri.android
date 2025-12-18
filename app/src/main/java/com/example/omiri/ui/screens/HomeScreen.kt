@@ -95,10 +95,19 @@ fun HomeScreen(
 
     if (isRefreshing) {
         LaunchedEffect(Unit) {
-            adManager.showAd {
+            // Show ad immediately when refreshing starts
+            if (adManager.isAdReady()) {
+                adManager.showAd {
+                    // After ad is dismissed, reload data
+                    viewModel.loadProducts()
+                    isRefreshing = false
+                }
+            } else {
+                // If ad not ready, just reload
                 viewModel.loadProducts()
                 isRefreshing = false
-                adManager.loadAd() // Load next one
+                // Try loading for next time
+                adManager.loadAd()
             }
         }
     }
