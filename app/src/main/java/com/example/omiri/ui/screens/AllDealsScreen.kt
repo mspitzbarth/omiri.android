@@ -369,16 +369,21 @@ fun AllDealsScreen(
         // Search and Filters Content
         Column(modifier = Modifier.padding(horizontal = Spacing.lg)) {
             Spacer(Modifier.height(Spacing.sm))
-            var searchQuery by remember { mutableStateOf("") }
+            val searchQuery by viewModel.searchQuery.collectAsState()
             
             OmiriSearchBar(
                 value = searchQuery,
                 onQueryChange = { query ->
-                    searchQuery = query
+                    // Directly call VM. VM updates state -> UI updates.
+                    // Ideally verify behavior on partial types, likely fine if searchProducts updates state immediately.
+                    // If we need debounce, VM 'searchProducts' should handle it, but for now we follow existing patterns.
                     if (query.length > 2) {
                         viewModel.searchProducts(query)
                     } else if (query.isEmpty()) {
                          viewModel.loadProducts() // Reset
+                         viewModel.searchProducts("") // Clear VM query state
+                    } else {
+                         viewModel.searchProducts(query) // Update text only, or logic inside determines execution
                     }
                 }
             )

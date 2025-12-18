@@ -22,6 +22,10 @@ object ShoppingListRepository {
     private val _currentListId = MutableStateFlow<String?>(null)
     val currentListId: StateFlow<String?> = _currentListId.asStateFlow()
 
+    private val apiService by lazy { 
+        com.example.omiri.data.api.RetrofitClient.createService<com.example.omiri.data.api.services.ShoppingListApiService>() 
+    }
+
     init {
         createDefaultList()
     }
@@ -286,7 +290,9 @@ object ShoppingListRepository {
         price: Double?, 
         discountPrice: Double?, 
         discountPercentage: Int?, 
-        dealId: String?
+        dealId: String?,
+        categoryId: String? = null,
+        alternativesCount: Int = 0
     ) {
         val listId = _currentListId.value ?: return
 
@@ -302,7 +308,9 @@ object ShoppingListRepository {
                                     discountPrice = discountPrice,
                                     discountPercentage = discountPercentage,
                                     dealId = dealId,
-                                    isInDeals = dealId != null || discountPrice != null
+                                    isInDeals = dealId != null || discountPrice != null,
+                                    categoryId = categoryId ?: item.categoryId,
+                                    alternativesCount = alternativesCount
                                 )
                             } else {
                                 item
@@ -316,8 +324,35 @@ object ShoppingListRepository {
         }
     }
     
-    // New method for API support (clearing lists etc)
     fun updateShoppingLists(newLists: List<ShoppingList>) {
         _shoppingLists.value = newLists
+    }
+
+    suspend fun fetchShoppingLists(userId: String) {
+        try {
+            val response = apiService.getUserShoppingLists(userId)
+            val mappedLists = response.map { apiList ->
+                 ShoppingList(
+                     id = apiList.id.toString(),
+                     name = apiList.name,
+                     items = apiList.items?.map { apiItem ->
+                         ShoppingItem(
+                             id = apiItem.id.toString(),
+                             name = apiItem.productName,
+                             isDone = apiItem.isChecked,
+                             categoryId = PredefinedCategories.OTHER.id // Will be updated by Deal check
+                         )
+                     } ?: emptyList()
+                 )
+            }
+            if (mappedLists.isNotEmpty()) {
+                _shoppingLists.value = mappedLists
+                if (_currentListId.value == null || mappedLists.none { it.id == _currentListId.value }) {
+                    _currentListId.value = mappedLists.first().id
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("ShoppingListRepository", "Failed to fetch lists", e)
+        }
     }
 }

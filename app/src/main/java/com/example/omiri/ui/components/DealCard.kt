@@ -123,7 +123,7 @@ fun DealCard(
                             )
                             Spacer(modifier = Modifier.width(2.dp))
                             Text(
-                                text = "In List",
+                                text = "Deal matched",
                                 color = AppColors.PurpleText, // Purple
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold)
                             )

@@ -123,7 +123,7 @@ class ShoppingListViewModel(application: Application) : AndroidViewModel(applica
         list.items
             .groupBy { it.categoryId }
             .map { (catId, items) ->
-                val catName = PredefinedCategories.getCategoryById(catId).getName("en") // Default EN for now or pass Locale
+                val catName = com.example.omiri.util.CategoryHelper.getCategoryName(catId)
                 CategoryCount(catId, catName, items.size)
             }
             .sortedByDescending { it.count }
@@ -242,6 +242,13 @@ class ShoppingListViewModel(application: Application) : AndroidViewModel(applica
                 if (repository.currentListId.value == null || savedLists.none { it.id == repository.currentListId.value }) {
                     repository.switchList(savedLists.first().id)
                 }
+            }
+            
+            // 2. Fetch from API
+            try {
+                repository.fetchShoppingLists("1")
+            } catch (e: Exception) {
+               android.util.Log.e("ShoppingListViewModel", "Error fetching initial lists", e) 
             }
 
             // 2. Observer changes to save persistence & update background worker string
@@ -404,15 +411,26 @@ class ShoppingListViewModel(application: Application) : AndroidViewModel(applica
     private var lastCheckedItems: Set<String> = emptySet()
     private var lastCheckedState: String? = null
 
-    private fun checkDealsForCurrentList() {
+    private val _isCheckingDeals = MutableStateFlow(false)
+    val isCheckingDeals: StateFlow<Boolean> = _isCheckingDeals.asStateFlow()
+
+    private fun checkDealsForCurrentList(force: Boolean = false) {
         viewModelScope.launch {
+             _isCheckingDeals.value = true
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
                 try {
-                    val list = currentList.value ?: return@withContext
+                    val list = currentList.value 
+                    if (list == null) {
+                         _isCheckingDeals.value = false
+                         return@withContext
+                    }
                     val unfinishedItems = list.items.filter { !it.isDone }
                     val itemsNames = unfinishedItems.map { it.name }.filter { it.isNotBlank() }.toSet()
                     
-                    if (itemsNames.isEmpty()) return@withContext
+                    if (itemsNames.isEmpty()) {
+                        _isCheckingDeals.value = false
+                        return@withContext
+                    }
                     
                     val country = userPreferences.selectedCountry.firstOrNull() ?: "DE"
                     val zipcode = userPreferences.zipcode.firstOrNull() ?: ""
@@ -424,8 +442,9 @@ class ShoppingListViewModel(application: Application) : AndroidViewModel(applica
                     // Optimization: If current items are a subset of last checked items, AND context hasn't changed,
                     // then we don't need to fetch API. Logic: We already have deals for these items.
                     // This handles the "Item Checked Done" case correctly.
-                    if (lastCheckedState == contextState && lastCheckedItems.containsAll(itemsNames)) {
+                    if (!force && lastCheckedState == contextState && lastCheckedItems.containsAll(itemsNames)) {
                         android.util.Log.d("ShoppingListViewModel", "Skipping API check: Subset of previous items and same context.")
+                        _isCheckingDeals.value = false
                         return@withContext
                     }
                     
@@ -450,24 +469,29 @@ class ShoppingListViewModel(application: Application) : AndroidViewModel(applica
                         val categories = response.categories ?: emptyMap()
                         val allFoundProducts = categories.values.filterNotNull().flatMap { it.products }
                         
-                        unfinishedItems.forEach { item ->
-                            val bestDeal = allFoundProducts
-                                .filter { it.searchTerm.equals(item.name, ignoreCase = true) == true }
-                                .minByOrNull { it.priceAmount ?: Double.MAX_VALUE }
+                            unfinishedItems.forEach { item ->
+                                val matches = allFoundProducts
+                                    .filter { it.searchTerm.equals(item.name, ignoreCase = true) == true }
+                                val bestDeal = matches.minByOrNull { it.priceAmount ?: Double.MAX_VALUE }
 
                             if (bestDeal != null) {
-                                val originalPrice = bestDeal.originalPrice ?: bestDeal.priceAmount
+                                val originalPriceVal = bestDeal.originalPrice
+                                val originalPrice = if (originalPriceVal != null && originalPriceVal > 0) originalPriceVal else bestDeal.priceAmount
                                 val finalPrice = bestDeal.priceAmount
                                 val dP = bestDeal.discountPercentage?.toInt()
+                                val altCount = (matches.size - 1).coerceAtLeast(0)
                                 
-                                if (item.dealId != bestDeal.id) {
+                if (item.dealId != bestDeal.id || force) {
+                                    val catId = mapCategoryNameToId(bestDeal.categories?.firstOrNull())
                                     repository.updateItemDeal(
                                         itemId = item.id,
                                         store = bestDeal.retailer,
                                         price = originalPrice,
                                         discountPrice = if (originalPrice != null && finalPrice != null && finalPrice < originalPrice) finalPrice else null,
                                         discountPercentage = dP,
-                                        dealId = bestDeal.id
+                                        dealId = bestDeal.id,
+                                        categoryId = catId,
+                                        alternativesCount = altCount
                                     )
                                 }
                             }
@@ -475,6 +499,8 @@ class ShoppingListViewModel(application: Application) : AndroidViewModel(applica
                     }
                 } catch (e: Exception) {
                     android.util.Log.e("ShoppingListViewModel", "Error checking deals: ${e.message}", e)
+                } finally {
+                     _isCheckingDeals.value = false
                 }
             }
         }
@@ -511,8 +537,8 @@ class ShoppingListViewModel(application: Application) : AndroidViewModel(applica
         
         // Only check for deals if the name has changed.
         // This prevents blowing away manually selected deals if the user just changes category/recurring.
-        if (existingItem != null && existingItem.name != name) {
-            checkDealsForCurrentList()
+        if (existingItem != null) {
+            checkDealsForCurrentList(force = true)
         }
     }
 
@@ -522,6 +548,10 @@ class ShoppingListViewModel(application: Application) : AndroidViewModel(applica
     
     fun createList(name: String) = repository.createList(name)
     fun switchList(listId: String) = repository.switchList(listId)
+    fun refreshDeals() {
+        checkDealsForCurrentList(force = true)
+    }
+
     fun deleteList(listId: String) = repository.deleteList(listId)
 
     fun updateSearchQuery(query: String) {
@@ -540,11 +570,8 @@ class ShoppingListViewModel(application: Application) : AndroidViewModel(applica
     fun setDealListed(deal: com.example.omiri.data.models.Deal, isListed: Boolean) {
         if (isListed) {
             // Add
-            val categoryId = when(deal.category) {
-                "Food & Beverages" -> PredefinedCategories.FRUITS_VEGETABLES.id
-                "Electronics" -> PredefinedCategories.OTHER.id
-                else -> PredefinedCategories.OTHER.id
-            }
+            // Add
+            val categoryId = mapCategoryNameToId(deal.category) ?: PredefinedCategories.OTHER.id
             
             // Parse Prices
             val priceVal = parsePrice(deal.originalPrice ?: deal.price)
@@ -569,6 +596,29 @@ class ShoppingListViewModel(application: Application) : AndroidViewModel(applica
             val list = currentList.value ?: return
             val itemToRemove = list.items.find { (it.dealId == deal.id) || (it.name == deal.title && it.isInDeals) }
             itemToRemove?.let { deleteItem(it.id) }
+        }
+    }
+
+    private fun mapCategoryNameToId(categoryName: String?): String? {
+        if (categoryName == null) return null
+        val name = categoryName.lowercase()
+        return when {
+            name.contains("fruit") || name.contains("vegetable") -> PredefinedCategories.FRUITS_VEGETABLES.id
+            name.contains("meat") || name.contains("poultry") || name.contains("beef") || name.contains("chicken") || name.contains("pork") -> PredefinedCategories.MEAT_POULTRY.id
+            name.contains("fish") || name.contains("seafood") -> PredefinedCategories.FISH_SEAFOOD.id
+            name.contains("dairy") || name.contains("egg") || name.contains("cheese") || name.contains("yogurt") || name.contains("milk") -> PredefinedCategories.DAIRY_EGGS.id
+            name.contains("bread") || name.contains("bakery") -> PredefinedCategories.BREAD_BAKERY.id
+            name.contains("frozen") || name.contains("ice cream") -> PredefinedCategories.FROZEN_FOODS.id
+            name.contains("snack") || name.contains("sweet") || name.contains("chocolate") || name.contains("candy") || name.contains("chip") -> PredefinedCategories.SNACKS_SWEETS.id
+            name.contains("beverage") || name.contains("drink") || name.contains("juice") || name.contains("soda") || name.contains("water") || name.contains("coffee") || name.contains("tea") || name.contains("beer") || name.contains("wine") -> PredefinedCategories.BEVERAGES.id
+            name.contains("clean") || name.contains("soap") || name.contains("detergent") || name.contains("laundry") -> PredefinedCategories.CLEANING_SUPPLIES.id
+            name.contains("beauty") || name.contains("cosmetic") || name.contains("shampoo") || name.contains("body") || name.contains("hair") -> PredefinedCategories.BEAUTY_COSMETICS.id
+            name.contains("home") || name.contains("decor") -> PredefinedCategories.HOME_DECOR.id
+            name.contains("electronic") || name.contains("tv") || name.contains("computer") || name.contains("phone") -> PredefinedCategories.ELECTRONICS.id
+            name.contains("baby") || name.contains("diaper") -> PredefinedCategories.BABY_CARE.id
+            name.contains("pet") || name.contains("dog") || name.contains("cat") -> PredefinedCategories.PET_FOOD.id
+            name.contains("pantry") || name.contains("canned") || name.contains("oil") || name.contains("spice") -> PredefinedCategories.PANTRY_STAPLES.id
+            else -> null
         }
     }
 

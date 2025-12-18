@@ -61,6 +61,9 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
     
     private val _allDeals = MutableStateFlow<List<Deal>>(emptyList())
     val allDeals: StateFlow<List<Deal>> = _allDeals.asStateFlow()
+
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
     
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -738,6 +741,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
      * Search products by query
      */
     fun searchProducts(query: String) {
+        _searchQuery.value = query
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) { // Optimize: IO
             _isLoading.value = true
             _error.value = null

@@ -12,7 +12,8 @@ data class ShoppingItem(
     val store: String? = null,
     val price: Double? = null,
     val discountPrice: Double? = null,
-    val discountPercentage: Int? = null
+    val discountPercentage: Int? = null,
+    val alternativesCount: Int = 0
 ) {
     val category: ShoppingCategory
         get() = PredefinedCategories.getCategoryById(categoryId)

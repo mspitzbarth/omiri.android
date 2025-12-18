@@ -50,7 +50,8 @@ fun ShoppingListScreen(
     productViewModel: ProductViewModel? = null,
     onNotificationsClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
-    onProductClick: (String) -> Unit = {}
+    onProductClick: (String) -> Unit = {},
+    onSearchDeals: (String) -> Unit = {}
 ) {
     val shoppingLists by viewModel.shoppingLists.collectAsState()
     val currentListId by viewModel.currentListId.collectAsState()
@@ -58,6 +59,7 @@ fun ShoppingListScreen(
     val filteredItems by viewModel.filteredItems.collectAsState()
     val groupedItems by viewModel.groupedItems.collectAsState()
     val availableCategories by viewModel.availableCategories.collectAsState()
+    val isCheckingDeals by viewModel.isCheckingDeals.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
     val filterStoreName by viewModel.filterStoreName.collectAsState()
     
@@ -135,12 +137,12 @@ fun ShoppingListScreen(
                              if (id != null) {
                                  val item = filteredItems.find { it.id == id }
                                  if (item != null) {
-                                     if (item.dealId != null) {
-                                         onProductClick(item.dealId)
-                                         viewModel.clearSelection()
+                                    viewModel.clearSelection()
+                                    // Use same logic as ShoppingListItem
+                                     if ((currentList?.items?.size ?: 0) > 1) {
+                                         onSearchDeals(item.name)
                                      } else {
                                          viewModel.startFindDeals(item)
-                                         viewModel.clearSelection()
                                      }
                                  }
                              }
@@ -169,9 +171,10 @@ fun ShoppingListScreen(
             
             // 0. Shopping List Title & Switcher (Fixed Top)
             if (!inSelectionMode) {
-                 com.example.omiri.ui.components.ShoppingListHeader(
+                com.example.omiri.ui.components.ShoppingListHeader(
                     listName = currentList?.name ?: "My List",
-                    onClick = { showListSelectionSheet = true }
+                    onClick = { showListSelectionSheet = true },
+                    isCheckingDeals = isCheckingDeals
                 )
             }
 
@@ -407,7 +410,14 @@ fun ShoppingListScreen(
                                                 viewModel.toggleSelection(item.id)
                                             }
                                         },
-                                        onFindDeals = { viewModel.startFindDeals(item) },
+                                        onFindDeals = { 
+                                            val itemCount = currentList?.items?.size ?: 0
+                                            if (itemCount > 1) {
+                                                onSearchDeals(item.name)
+                                            } else {
+                                                viewModel.startFindDeals(item)
+                                            }
+                                        },
                                         modifier = Modifier.weight(1f)
                                     )
                                 }
@@ -426,7 +436,14 @@ fun ShoppingListScreen(
                                         viewModel.toggleSelection(item.id)
                                     }
                                 },
-                                onFindDeals = { viewModel.startFindDeals(item) },
+                                        onFindDeals = { 
+                                            val itemCount = currentList?.items?.size ?: 0
+                                            if (itemCount > 1) {
+                                                onSearchDeals(item.name)
+                                            } else {
+                                                viewModel.startFindDeals(item)
+                                            }
+                                        },
                                 modifier = Modifier.padding(horizontal = Spacing.lg, vertical = 6.dp)
                             )
                         }

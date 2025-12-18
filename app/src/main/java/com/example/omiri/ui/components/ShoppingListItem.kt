@@ -12,15 +12,17 @@ import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Spa
 import androidx.compose.material.icons.outlined.Kitchen
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.MoreVert
 
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.outlined.BreakfastDining
 import androidx.compose.material.icons.outlined.LocalDining
 import androidx.compose.material.icons.outlined.CleaningServices
 import androidx.compose.material.icons.automirrored.outlined.Help
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -52,6 +54,7 @@ fun ShoppingListItem(
     // Local state for like animation/feedback (real state comes from item usually)
     // For now we assume clicking it toggles it visually so user sees feedback
     // Ideally this state is hoisted
+    var showMenu by remember { mutableStateOf(false) }
     
     // Determine Store color key (Mock logic or use item data)
     val cardColor = if (isSelected) com.example.omiri.ui.theme.AppColors.InfoSoft else AppColors.Surface
@@ -123,6 +126,14 @@ fun ShoppingListItem(
             Column(
                 modifier = Modifier.weight(1f)
             ) {
+                // Category Label
+                Text(
+                    text = com.example.omiri.util.CategoryHelper.getCategoryName(item.categoryId),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = AppColors.Neutral500,
+                    modifier = Modifier.padding(bottom = 2.dp)
+                )
+
                 // Top Row: Title + Savings Amount (Right aligned)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -275,15 +286,42 @@ fun ShoppingListItem(
                     // Member Deal / Matched Tag
                     if (item.dealId != null) {
                         Surface(
-                            color = AppColors.BrandOrangeSoft,
+                            color = AppColors.Purple50,
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Icon(
+                                    imageVector = androidx.compose.material.icons.Icons.Default.ShoppingCart,
+                                    contentDescription = null,
+                                    tint = Color(0xFFA12AF9),
+                                    modifier = Modifier.size(10.dp)
+                                )
+                                Spacer(modifier = Modifier.width(2.dp))
+                                Text(
+                                    text = "Deal matched",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = AppColors.PurpleText
+                                )
+                            }
+                        }
+                    }
+
+                    // Alternatives available
+                    if (item.alternativesCount > 0) {
+                        Surface(
+                            color = AppColors.InfoSoft,
                             shape = RoundedCornerShape(4.dp)
                         ) {
                             Text(
-                                text = "Deal matched",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = AppColors.BrandOrange,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    text = "See more deals",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = AppColors.Info,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp).clickable { onFindDeals() }
                             )
                         }
                     }
@@ -292,14 +330,14 @@ fun ShoppingListItem(
                     // Percentage Off
                     if (item.discountPercentage != null && item.discountPercentage > 0) {
                          Surface(
-                            color = AppColors.BrandOrangeSoft, 
+                            color = AppColors.Green100, 
                             shape = RoundedCornerShape(4.dp)
                         ) {
                             Text(
                                 text = "${item.discountPercentage}% OFF",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = AppColors.BrandOrange,
+                                color = AppColors.GreenTextDark,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
@@ -319,6 +357,44 @@ fun ShoppingListItem(
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
+                    }
+                }
+            }
+            
+            // 3. Context Menu
+            Box {
+                IconButton(
+                    onClick = { showMenu = true },
+                    modifier = Modifier.size(24.dp).padding(top = 0.dp) // Adjust padding to align with top
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.MoreVert,
+                        contentDescription = "Options",
+                        tint = AppColors.Neutral400,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Edit") },
+                        onClick = {
+                            showMenu = false
+                            onEdit()
+                        }
+                    )
+                    
+                    if (item.alternativesCount > 0) {
+                        DropdownMenuItem(
+                            text = { Text("See more deals") },
+                            onClick = {
+                                showMenu = false
+                                onFindDeals()
+                            }
+                        )
                     }
                 }
             }

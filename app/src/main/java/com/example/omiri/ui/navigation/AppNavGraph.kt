@@ -120,7 +120,11 @@ fun AppNavGraph(
                     productViewModel = productViewModel,
                     onNotificationsClick = { navController.navigate(Routes.Notifications) },
                     onProfileClick = { navController.navigate(Routes.Settings) },
-                    onProductClick = { dealId -> navController.navigate(Routes.productDetails(dealId)) }
+                    onProductClick = { dealId -> navController.navigate(Routes.productDetails(dealId)) },
+                    onSearchDeals = { query ->
+                        productViewModel.searchProducts(query)
+                        navController.navigate(Routes.AllDeals)
+                    }
                 )
             }
             composable(Routes.Settings) {
