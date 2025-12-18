@@ -418,6 +418,7 @@ fun AllDealsScreen(
                                 unselectedTextColor = com.example.omiri.ui.theme.AppColors.BrandInk
                             )
                         }
+
                         
                         Spacer(Modifier.height(Spacing.lg))
                     }
@@ -447,7 +448,8 @@ fun AllDealsScreen(
                 priceRange = filters.priceRange,
                 sortBy = filters.sortBy,
                 sortOrder = filters.sortOrder,
-                hasDiscount = filters.hasDiscount
+                hasDiscount = filters.hasDiscount,
+                categories = filters.selectedCategories
             )
         },
         initialFilters = currentFilters,

@@ -78,6 +78,13 @@ fun FilterModal(
                 Spacer(Modifier.height(Spacing.lg))
                 
                 // Sort By Dropdown
+                Text(
+                    text = "Sort By",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(8.dp))
+                
                 var expandedSort by remember { mutableStateOf(false) }
                 val sortOptions = listOf(
                     Triple("Price: Low to High", "price", "asc"),
@@ -85,7 +92,7 @@ fun FilterModal(
                 )
                 
                 // Helper to get display label
-                val currentSortLabel = sortOptions.find { it.second == sortBy && it.third == sortOrder }?.first ?: "Select Sort Order"
+                val currentSortLabel = sortOptions.find { it.second == sortBy && it.third == sortOrder }?.first ?: "Best Match"
 
                 ExposedDropdownMenuBox(
                     expanded = expandedSort,
@@ -96,13 +103,14 @@ fun FilterModal(
                         value = currentSortLabel,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Sort By") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedSort) },
                         modifier = Modifier.menuAnchor().fillMaxWidth(),
-                         colors = OutlinedTextFieldDefaults.colors(
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = com.example.omiri.ui.theme.AppColors.BrandOrange,
-                            unfocusedBorderColor = com.example.omiri.ui.theme.AppColors.PastelGrey,
-                            focusedLabelColor = com.example.omiri.ui.theme.AppColors.BrandOrange
+                            unfocusedBorderColor = Color(0xFFE5E7EB),
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White
                         )
                     )
                     ExposedDropdownMenu(
@@ -121,7 +129,7 @@ fun FilterModal(
                         }
                         // Option to clear
                         DropdownMenuItem(
-                            text = { Text("None") },
+                            text = { Text("Best Match") },
                             onClick = {
                                 sortBy = null
                                 sortOrder = null
@@ -133,29 +141,53 @@ fun FilterModal(
 
                 Spacer(Modifier.height(Spacing.lg))
 
-                // Price Range Section
-                Text(
-                    text = "Price Range",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(Modifier.height(Spacing.sm))
-                Text(
-                    text = "$${priceRange.start.toInt()} - $${priceRange.endInclusive.toInt()}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = com.example.omiri.ui.theme.AppColors.BrandOrange
-                )
+                // Budget Range Section
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.xs),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Budget Range",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    val endText = if (priceRange.endInclusive >= 5000f) "€5000+" else "€${priceRange.endInclusive.toInt()}"
+                    Text(
+                        text = "€${priceRange.start.toInt()} - $endText",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = com.example.omiri.ui.theme.AppColors.BrandOrange,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
                 Spacer(Modifier.height(Spacing.xs))
+                
                 RangeSlider(
                     value = priceRange,
                     onValueChange = { priceRange = it },
-                    valueRange = 0f..1000f,
-                    steps = 19,
+                    valueRange = 0f..5000f,
                     colors = SliderDefaults.colors(
                         thumbColor = com.example.omiri.ui.theme.AppColors.BrandOrange,
-                        activeTrackColor = com.example.omiri.ui.theme.AppColors.BrandOrange
+                        activeTrackColor = com.example.omiri.ui.theme.AppColors.BrandOrange,
+                        inactiveTrackColor = Color(0xFFE5E7EB)
                     )
                 )
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.xs),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                     Text(
+                        text = "€0",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray
+                    )
+                    Text(
+                        text = "€5000+",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray
+                    )
+                }
 
                 Spacer(Modifier.height(Spacing.lg))
 
@@ -163,7 +195,7 @@ fun FilterModal(
                 Text(
                     text = "Stores",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.Bold
                 )
                 Spacer(Modifier.height(Spacing.sm))
                 if (stores.isEmpty()) {
@@ -189,8 +221,14 @@ fun FilterModal(
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = com.example.omiri.ui.theme.AppColors.BrandOrange,
                                     selectedLabelColor = Color.White,
-                                    containerColor = com.example.omiri.ui.theme.AppColors.PastelGrey,
+                                    containerColor = Color.White,
                                     labelColor = com.example.omiri.ui.theme.AppColors.BrandInk
+                                ),
+                                border = FilterChipDefaults.filterChipBorder(
+                                    enabled = true,
+                                    selected = isSelected,
+                                    borderColor = if (isSelected) Color.Transparent else Color(0xFFE5E7EB),
+                                    borderWidth = 1.dp
                                 )
                             )
                         }
@@ -199,11 +237,11 @@ fun FilterModal(
 
                 Spacer(Modifier.height(Spacing.lg))
 
-                // Categories Section
+                // Categories (Store Category) Section
                 Text(
-                    text = "Categories",
+                    text = "Store Category", 
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.Bold
                 )
                 Spacer(Modifier.height(Spacing.sm))
                 if (categories.isEmpty()) {
@@ -219,7 +257,7 @@ fun FilterModal(
                              categories.find { it.id == id }?.name ?: id
                         } else "$selectedCount Selected"
                     } else {
-                        "Select Categories"
+                        "All Categories"
                     }
 
                     ExposedDropdownMenuBox(
@@ -231,20 +269,28 @@ fun FilterModal(
                             value = displayText,
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("Categories") },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCategories) },
                             modifier = Modifier.menuAnchor().fillMaxWidth(),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = com.example.omiri.ui.theme.AppColors.BrandOrange,
-                                unfocusedBorderColor = com.example.omiri.ui.theme.AppColors.PastelGrey,
-                                focusedLabelColor = com.example.omiri.ui.theme.AppColors.BrandOrange
+                                unfocusedBorderColor = Color(0xFFE5E7EB),
+                                focusedContainerColor = Color.White,
+                                unfocusedContainerColor = Color.White
                             )
                         )
                         ExposedDropdownMenu(
                             expanded = expandedCategories,
                             onDismissRequest = { expandedCategories = false },
-                            modifier = Modifier.heightIn(max = 300.dp) // Scrollable if many
+                            modifier = Modifier.heightIn(max = 300.dp) 
                         ) {
+                             DropdownMenuItem(
+                                    text = { Text("All Categories") },
+                                    onClick = {
+                                        selectedCategories = emptySet()
+                                        expandedCategories = false
+                                    }
+                                )
                             categories.forEach { category ->
                                 val isSelected = category.id in selectedCategories
                                 DropdownMenuItem(
@@ -268,7 +314,7 @@ fun FilterModal(
                                         } else {
                                             selectedCategories + category.id
                                         }
-                                        // Keep menu open for multi-select
+                                        // Keep menu open for multi-select?
                                     },
                                     contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                                 )
@@ -289,7 +335,7 @@ fun FilterModal(
                         Text(
                             text = "Discount Only",
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.Bold
                         )
                         Text(
                             text = "Show only discounted items",
@@ -302,7 +348,10 @@ fun FilterModal(
                         onCheckedChange = { hasDiscount = it },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = Color.White,
-                            checkedTrackColor = com.example.omiri.ui.theme.AppColors.BrandOrange
+                            checkedTrackColor = com.example.omiri.ui.theme.AppColors.BrandOrange,
+                            uncheckedThumbColor = Color.White,
+                            uncheckedTrackColor = Color(0xFFE5E7EB),
+                            uncheckedBorderColor = Color.Transparent
                         )
                     )
                 }
@@ -319,7 +368,7 @@ fun FilterModal(
                         Text(
                             text = "Online Only",
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.Bold
                         )
                         Text(
                             text = "Show only online deals",
@@ -332,7 +381,10 @@ fun FilterModal(
                         onCheckedChange = { onlineOnly = it },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = Color.White,
-                            checkedTrackColor = com.example.omiri.ui.theme.AppColors.BrandOrange
+                            checkedTrackColor = com.example.omiri.ui.theme.AppColors.BrandOrange,
+                            uncheckedThumbColor = Color.White,
+                            uncheckedTrackColor = Color(0xFFE5E7EB),
+                            uncheckedBorderColor = Color.Transparent
                         )
                     )
                 }

@@ -776,6 +776,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
     private var _sortBy: String? = null
     private var _sortOrder: String? = null
     private var _hasDiscount: Boolean = false
+    private var _selectedCategories: Set<String> = emptySet()
 
     fun setFilterMode(mode: String) {
         if (_currentFilterMode != mode) {
@@ -1224,12 +1225,14 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
         priceRange: ClosedFloatingPointRange<Float>?,
         sortBy: String?,
         sortOrder: String?,
-        hasDiscount: Boolean
+        hasDiscount: Boolean,
+        categories: Set<String> = emptySet()
     ) {
         _priceRange = priceRange
         _sortBy = sortBy
         _sortOrder = sortOrder
         _hasDiscount = hasDiscount
+        _selectedCategories = categories
         _currentPage.value = 1
         _allDeals.value = emptyList()
         refreshAllDeals()
@@ -1348,7 +1351,8 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
             sortBy = _sortBy,
             sortOrder = _sortOrder,
             hasDiscount = if (_hasDiscount) true else null,
-            asOfDate = asOfDate
+            asOfDate = asOfDate,
+            categories = if (_selectedCategories.isNotEmpty()) _selectedCategories.joinToString(",") else null
         )
         
         result.onSuccess { response: com.example.omiri.data.api.models.ProductsResponse ->
