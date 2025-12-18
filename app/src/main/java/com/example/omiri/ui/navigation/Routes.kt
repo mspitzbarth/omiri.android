@@ -2,6 +2,7 @@ package com.example.omiri.ui.navigation
 
 object Routes {
     const val Home = "home"
+    const val AllDealsBase = "all_deals"
     const val AllDealsArgQuery = "query"
     const val AllDealsArgFilter = "filter"
     const val AllDeals = "all_deals?$AllDealsArgQuery={$AllDealsArgQuery}&$AllDealsArgFilter={$AllDealsArgFilter}"

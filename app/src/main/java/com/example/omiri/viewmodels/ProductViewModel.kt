@@ -355,13 +355,14 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
 
     private fun loadCategories() {
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) { // Optimize: IO
+            val currentLang = java.util.Locale.getDefault().language
             // Check cache first (24h validity)
             val cached = userPreferences.cachedCategories.first()
             if (cached.isNotEmpty()) {
                 val uiModels = cached.map { 
                     CategoryUiModel(
                         id = it.category,
-                        name = it.translations?.get("en") ?: it.category,
+                        name = it.translations?.get(currentLang) ?: it.translations?.get("en") ?: it.category,
                         count = it.count
                     )
                 }
@@ -375,7 +376,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
                 val uiModels = responses.map { 
                     CategoryUiModel(
                         id = it.category,
-                        name = it.translations?.get("en") ?: it.category,
+                        name = it.translations?.get(currentLang) ?: it.translations?.get("en") ?: it.category,
                         count = it.count
                     )
                 }
@@ -785,7 +786,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
             if (mode == "MY_DEALS") {
                 checkShoppingListMatches()
             } else {
-                loadProducts()
+                refreshAllDeals()
             }
         }
     }
@@ -1215,7 +1216,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
             _priceRange = range
             _currentPage.value = 1
              _allDeals.value = emptyList()
-            loadProducts()
+            refreshAllDeals()
         }
     }
 
@@ -1231,7 +1232,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
         _hasDiscount = hasDiscount
         _currentPage.value = 1
         _allDeals.value = emptyList()
-        loadProducts()
+        refreshAllDeals()
     }
 
     /**
@@ -1262,9 +1263,10 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
         return start to end
     }
 
-    fun loadAllDealsIfNeeded() {
-        if (_allDeals.value.isEmpty() && !_isLoading.value) {
-            viewModelScope.launch {
+    fun refreshAllDeals() {
+        _currentPage.value = 1
+        _allDeals.value = emptyList()
+        viewModelScope.launch {
                 val country = userPreferences.selectedCountry.first()
                  val selectedStores = userPreferences.selectedStores.first()
                  
@@ -1281,7 +1283,6 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
                 loadAllDeals(country, retailers)
             }
         }
-    }
 
     /**
      * Load all deals for the all deals screen with filters
@@ -1290,19 +1291,14 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
         val page = _currentPage.value
         
         // Date Logic
-        var activeOnly: Boolean? = true
-        var availableFromMin: String? = null
-        var availableFromMax: String? = null
+        var asOfDate: String? = null
         
         if (_currentFilterMode == "NEXT_WEEK") {
-            activeOnly = false // We want future items
-            val (start, end) = getNextWeekRange()
-            availableFromMin = start
-            // availableFromMax could be set if we only want items STARTING next week
-            // User request: "next week" -> available in next week?
-            // "Show products available from this date or later"
+            val (start, _) = getNextWeekRange()
+            asOfDate = start
         } else {
-             // THIS_WEEK (Default) -> active_only=true (implied now)
+             // THIS_WEEK (Default) -> Use today's date
+             asOfDate = formatDate(Calendar.getInstance())
         }
         
         if (_isMockMode.value) {
@@ -1321,7 +1317,6 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
              
              // Apply category/price filters loosely
              var filtered = fullProds
-             if (activeOnly == true) { /* no-op in mock */ }
              if (_priceRange != null) {
                  filtered = filtered.filter { (it.priceAmount ?: 0.0).toFloat() in _priceRange!! }
              }
@@ -1344,8 +1339,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
             sortBy = _sortBy,
             sortOrder = _sortOrder,
             hasDiscount = if (_hasDiscount) true else null,
-            activeOnly = activeOnly,
-            availableFromMin = availableFromMin
+            asOfDate = asOfDate
         )
         
         result.onSuccess { response: com.example.omiri.data.api.models.ProductsResponse ->
@@ -1355,7 +1349,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
                 
                 // Cache first page of results
                 // Only if using default filters to avoid caching specific searches as "default"
-                if (activeOnly == true && _currentFilterMode == "THIS_WEEK" && _priceRange == null && _sortBy == null) {
+                if (_currentFilterMode == "THIS_WEEK" && _priceRange == null && _sortBy == null) {
                     userPreferences.saveCachedProducts("all_deals", response.products)
                 }
             } else {

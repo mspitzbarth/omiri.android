@@ -60,7 +60,7 @@ fun BottomNav(
             icon = Icons.Filled.Home
         ),
         BottomNavItem(
-            route = Routes.AllDeals,
+            route = Routes.AllDealsBase,
             label = "Deals",
             icon = Icons.Filled.LocalOffer
         ),
@@ -108,6 +108,7 @@ fun BottomNav(
                     Routes.ShoppingList -> currentRoute == Routes.ShoppingList || 
                                           currentRoute == Routes.ShoppingListMatches
                     Routes.Home -> currentRoute == Routes.Home
+                    Routes.AllDealsBase -> currentRoute == Routes.AllDealsBase
                     else -> currentRoute == item.route
                 }
 
@@ -119,7 +120,6 @@ fun BottomNav(
                                 saveState = true
                             }
                             launchSingleTop = true
-                            restoreState = true
                         }
                     },
                     icon = {

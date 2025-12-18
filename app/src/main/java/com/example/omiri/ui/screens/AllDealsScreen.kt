@@ -91,7 +91,7 @@ fun AllDealsScreen(
         if (initialQuery != null) {
             viewModel.searchProducts(initialQuery)
         } else {
-            viewModel.loadAllDealsIfNeeded()
+            viewModel.refreshAllDeals()
         }
         // viewModel.initialLoad() // Redundant here if VM manages singletons, but harmless
         adManager.loadAd()
