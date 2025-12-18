@@ -54,6 +54,8 @@ import kotlin.math.roundToInt
 @Composable
 fun AllDealsScreen(
     title: String = "All Deals",
+    initialQuery: String? = null,
+    initialFilterMode: String? = null,
     onDealClick: (String) -> Unit = {},
     onNotificationsClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
@@ -86,14 +88,22 @@ fun AllDealsScreen(
     val adManager = remember { com.example.omiri.ui.components.InterstitialAdManager(context) }
     
     LaunchedEffect(Unit) {
-        viewModel.loadAllDealsIfNeeded()
+        if (initialQuery != null) {
+            viewModel.searchProducts(initialQuery)
+        } else {
+            viewModel.loadAllDealsIfNeeded()
+        }
         // viewModel.initialLoad() // Redundant here if VM manages singletons, but harmless
         adManager.loadAd()
     }
 
     // Filter State
     var selectedFilterChip by remember { mutableStateOf("This Week") }
-    var toggledFilterChips by remember { mutableStateOf(emptySet<String>()) }
+    var toggledFilterChips by remember { 
+        mutableStateOf(
+            if (initialFilterMode == "MY_DEALS") setOf("My Deals") else emptySet<String>()
+        )
+    }
     
     // Logic to update ViewModel
     LaunchedEffect(selectedFilterChip, toggledFilterChips) {

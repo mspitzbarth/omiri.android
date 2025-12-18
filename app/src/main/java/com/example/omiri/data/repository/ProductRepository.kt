@@ -223,27 +223,7 @@ class ProductRepository {
             Result.failure(e)
         }
     }
-    suspend fun optimizeShoppingList(
-        items: List<String>,
-        userZipcode: String? = null,
-        maxStores: Int = 3
-    ): Result<com.example.omiri.data.api.models.ShoppingListOptimizeResponse> {
-        return try {
-            val request = com.example.omiri.data.api.models.ShoppingListOptimizeRequest(
-                items = items,
-                userZipcode = userZipcode,
-                maxStores = maxStores
-            )
-            val response = apiService.optimizeShoppingList(request)
-            if (response.isSuccessful && response.body() != null) {
-                Result.success(response.body()!!)
-            } else {
-                Result.failure(Exception("Optimization failed: ${response.code()}"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
+
     suspend fun getProductsBulk(ids: List<String>): Result<List<ProductResponse>> {
         return try {
             val request = com.example.omiri.data.api.models.BulkProductRequest(ids)

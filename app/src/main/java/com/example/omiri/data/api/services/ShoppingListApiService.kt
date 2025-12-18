@@ -74,13 +74,5 @@ interface ShoppingListApiService {
         @Path("item_id") itemId: Int
     ): Map<String, Any>
     
-    /**
-     * Optimize a shopping list
-     * POST /api/v1/shopping-lists/{list_id}/optimize
-     */
-    @POST("api/v1/shopping-lists/{list_id}/optimize")
-    suspend fun optimizeShoppingList(
-        @Path("list_id") listId: Int,
-        @Body request: ShoppingListOptimizeRequest
-    ): Map<String, Any>
+
 }

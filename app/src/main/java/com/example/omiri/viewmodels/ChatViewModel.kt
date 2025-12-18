@@ -703,8 +703,23 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 val items = list?.items?.filter { !it.isDone }?.map { it.name } ?: emptyList()
 
                 _isLoading.value = true
-                val result = productRepository.optimizeShoppingList(items = items)
+                // _isLoading.value = true // already set
+                // val result = productRepository.optimizeShoppingList(items = items)
                 
+                // Since the optimize endpoint is removed, we provide a placeholder response
+                // or we could implement a local logic similar to ProductViewModel if needed.
+                // For now, let's inform user or show a mock if in debug.
+                
+                // result.onSuccess { ... } .onFailure { ... }
+                
+                // Simulating failure/unavailability for now as endpoint is gone
+                kotlinx.coroutines.delay(500)
+                _messages.value = _messages.value + ChatMessage(
+                    text = "I'm sorry, I can't plan the exact route right now as that feature is under maintenance. But I can help you find deals for individual items!",
+                    isUser = false
+                )
+                
+/*
                 result.onSuccess { response ->
                     // Map OptimizationStep to Card data
                     val stores = response.steps.mapIndexed { index, step ->
@@ -732,6 +747,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                         isUser = false
                     )
                 }
+*/
                 
                 _isLoading.value = false
             } catch (e: Exception) {

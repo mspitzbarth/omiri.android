@@ -27,7 +27,8 @@ fun ContextualSelectionTopBar(
     onDuplicate: () -> Unit,
     onMove: () -> Unit,
     onEdit: () -> Unit, // Only enabled if selectedCount == 1
-    onViewDeal: (() -> Unit)? = null
+    onViewDeal: (() -> Unit)? = null,
+    hasAlternatives: Boolean = false
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
@@ -139,7 +140,7 @@ fun ContextualSelectionTopBar(
                                 
                                 if (onViewDeal != null) {
                                     DropdownMenuItem(
-                                        text = { Text("View Deal") },
+                                        text = { Text(if (hasAlternatives) "See more deals" else "View Deal") },
                                         leadingIcon = { Icon(Icons.Outlined.Search, null) },
                                         onClick = {
                                             showMenu = false

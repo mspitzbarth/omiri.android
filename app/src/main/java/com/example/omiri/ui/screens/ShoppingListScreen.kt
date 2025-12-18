@@ -139,15 +139,16 @@ fun ShoppingListScreen(
                                  if (item != null) {
                                     viewModel.clearSelection()
                                     // Use same logic as ShoppingListItem
-                                     if ((currentList?.items?.size ?: 0) > 1) {
-                                         onSearchDeals(item.name)
-                                     } else {
-                                         viewModel.startFindDeals(item)
-                                     }
+                                     onSearchDeals(item.name)
                                  }
                              }
                          }
-                    } else null
+                    } else null,
+                    hasAlternatives = if (selectedItemIds.size == 1) {
+                        val id = selectedItemIds.firstOrNull()
+                        val item = filteredItems.find { it.id == id }
+                        (item?.alternativesCount ?: 0) > 0
+                    } else false
                 )
             } else {
                 com.example.omiri.ui.components.OmiriHeader(
@@ -412,11 +413,7 @@ fun ShoppingListScreen(
                                         },
                                         onFindDeals = { 
                                             val itemCount = currentList?.items?.size ?: 0
-                                            if (itemCount > 1) {
                                                 onSearchDeals(item.name)
-                                            } else {
-                                                viewModel.startFindDeals(item)
-                                            }
                                         },
                                         modifier = Modifier.weight(1f)
                                     )
@@ -438,11 +435,7 @@ fun ShoppingListScreen(
                                 },
                                         onFindDeals = { 
                                             val itemCount = currentList?.items?.size ?: 0
-                                            if (itemCount > 1) {
                                                 onSearchDeals(item.name)
-                                            } else {
-                                                viewModel.startFindDeals(item)
-                                            }
                                         },
                                 modifier = Modifier.padding(horizontal = Spacing.lg, vertical = 6.dp)
                             )

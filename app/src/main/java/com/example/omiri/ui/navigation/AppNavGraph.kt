@@ -81,8 +81,27 @@ fun AppNavGraph(
                     viewModel = productViewModel
                 )
             }
-            composable(Routes.AllDeals) {
+            composable(
+                route = Routes.AllDeals,
+                arguments = listOf(
+                    navArgument(Routes.AllDealsArgQuery) { 
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                    navArgument(Routes.AllDealsArgFilter) {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) { backStackEntry ->
+                val initialQuery = backStackEntry.arguments?.getString(Routes.AllDealsArgQuery)
+                val initialFilter = backStackEntry.arguments?.getString(Routes.AllDealsArgFilter)
+
                 AllDealsScreen(
+                    initialQuery = initialQuery,
+                    initialFilterMode = initialFilter,
                     onDealClick = { dealId: String -> navController.navigate(Routes.productDetails(dealId)) },
                     onNotificationsClick = { navController.navigate(Routes.Notifications) },
                     onProfileClick = { navController.navigate(Routes.Settings) },
@@ -122,8 +141,7 @@ fun AppNavGraph(
                     onProfileClick = { navController.navigate(Routes.Settings) },
                     onProductClick = { dealId -> navController.navigate(Routes.productDetails(dealId)) },
                     onSearchDeals = { query ->
-                        productViewModel.searchProducts(query)
-                        navController.navigate(Routes.AllDeals)
+                        navController.navigate(Routes.allDeals(query = query, filter = "MY_DEALS"))
                     }
                 )
             }

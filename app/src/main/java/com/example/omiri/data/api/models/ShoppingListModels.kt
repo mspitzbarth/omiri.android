@@ -59,14 +59,7 @@ data class ShoppingListItemUpdateRequest(
     @SerializedName("is_checked") val isChecked: Boolean?
 )
 
-/**
- * Request to optimize shopping list
- */
-data class ShoppingListOptimizeRequest(
-    @SerializedName("items") val items: List<String>?,
-    @SerializedName("user_zipcode") val userZipcode: String?,
-    @SerializedName("max_stores") val maxStores: Int = 3
-)
+
 
 /**
  * Response for shopping list search

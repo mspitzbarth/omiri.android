@@ -2,7 +2,26 @@ package com.example.omiri.ui.navigation
 
 object Routes {
     const val Home = "home"
-    const val AllDeals = "all_deals"
+    const val AllDealsArgQuery = "query"
+    const val AllDealsArgFilter = "filter"
+    const val AllDeals = "all_deals?$AllDealsArgQuery={$AllDealsArgQuery}&$AllDealsArgFilter={$AllDealsArgFilter}"
+
+    fun allDeals(query: String? = null, filter: String? = null): String {
+        val q = query?.let { java.net.URLEncoder.encode(it, "UTF-8") }
+        val f = filter?.let { java.net.URLEncoder.encode(it, "UTF-8") }
+        
+        return buildString {
+            append("all_deals")
+            if (q != null || f != null) {
+                append("?")
+                if (q != null) append("$AllDealsArgQuery=$q")
+                if (f != null) {
+                    if (q != null) append("&")
+                    append("$AllDealsArgFilter=$f")
+                }
+            }
+        }
+    }
     const val ShoppingList = "shopping_list"
     const val Settings = "settings"
     const val MyStores = "my_stores"

@@ -137,14 +137,7 @@ interface ProductApiService {
     @GET("categories")
     suspend fun getCategories(): retrofit2.Response<List<com.example.omiri.data.api.models.CategoryResponse>>
 
-    /**
-     * Optimize shopping list
-     * POST /api/v1/shopping-list/optimize
-     */
-    @POST("api/v1/shopping-list/optimize")
-    suspend fun optimizeShoppingList(
-        @Body request: com.example.omiri.data.api.models.ShoppingListOptimizeRequest
-    ): retrofit2.Response<com.example.omiri.data.api.models.ShoppingListOptimizeResponse>
+
     
     /**
      * Bulk fetch products by ID

@@ -553,17 +553,18 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
          // 2. Categories
          // 2. Categories
          if (!response.categories.isNullOrEmpty()) {
-             // Map CategoryResponse to UI Model
-             val uiCategories = response.categories.map { 
+             // Map String to UI Model
+             val uiCategories = response.categories.map { categoryId -> 
                  CategoryUiModel(
-                     id = it.category,
-                     name = it.translations?.get("en") ?: it.category,
-                     count = it.count
+                     id = categoryId,
+                     name = categoryId,
+                     count = 0
                  )
              }
              _categories.value = uiCategories
              com.example.omiri.util.CategoryHelper.updateCategories(uiCategories)
-             if (!_isMockMode.value) userPreferences.saveCachedCategories(response.categories)
+             // Sync response only returns strings now, so we skip saving to persistent cache 
+             // to avoid overwriting rich data with bare strings.
          }
          
          // 3. Stores
@@ -609,17 +610,15 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
             val storesJson = assets.open("mock_stores.json").bufferedReader().use { it.readText() }
             val storesType = object : com.google.gson.reflect.TypeToken<List<com.example.omiri.data.api.models.StoreListResponse>>() {}.type
             val stores: List<com.example.omiri.data.api.models.StoreListResponse> = gson.fromJson(storesJson, storesType)
-                        val categoryStrings = products.flatMap { it.categories ?: emptyList() }.distinct()
-             val categories = categoryStrings.map { 
-                 com.example.omiri.data.api.models.CategoryResponse(it, 0, mapOf("en" to it)) 
-             }
+             // Read Categories
+            val categoryStrings = products.flatMap { it.categories ?: emptyList() }.distinct()
              
              com.example.omiri.data.api.models.AppSyncResponse(
                  featuredDeals = products.filter { it.featured == true },
                  topDeals = products.take(5),
                  expiringSoon = emptyList(),
                  stores = stores,
-                 categories = categories,
+                 categories = categoryStrings,
                  config = emptyMap()
              )
         } catch (e: Exception) {
@@ -1091,12 +1090,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
             return
         }
 
-        val result = repository.optimizeShoppingList(items = requestedItemsList, maxStores = 3)
-        val finalPlan = if (result.isSuccess && result.getOrNull()?.steps?.isNotEmpty() == true) {
-            result.getOrNull()
-        } else {
-                calculateLocalSmartPlan(matches)
-        }
+        val finalPlan = calculateLocalSmartPlan(matches)
         
         _smartPlan.value = finalPlan
         generateSmartAlerts(finalPlan)
