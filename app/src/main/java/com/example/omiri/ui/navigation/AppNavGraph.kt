@@ -2,20 +2,12 @@ package com.example.omiri.ui.navigation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,6 +37,7 @@ fun AppNavGraph(
     val productViewModel: com.example.omiri.viewmodels.ProductViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
     val shoppingListViewModel: com.example.omiri.viewmodels.ShoppingListViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
     val membershipCardViewModel: com.example.omiri.viewmodels.MembershipCardViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+    val chatViewModel: com.example.omiri.viewmodels.ChatViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
     
     // Handle Notification Deep Links
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -71,54 +64,25 @@ fun AppNavGraph(
             //    For now, assume Header always visible unless selection.
             
             if (isMainScreen && !inSelectionMode) {
-                // Determine Custom Action based on Route
-                val customAction: (@Composable () -> Unit)? = if (currentRoute == Routes.AiChat) {
-                    {
-                        // Chat Specific Action: Clear Chat
-                        // We need access to ChatViewModel here? Or just navigate?
-                        // Ideally we share `AiChatViewModel` or hoist the event.
-                        // Since we can't easily access the screen's internal VM, we might need to skip the custom action in global header 
-                        // OR instantiate the VM here if it's shared/scoped.
-                        // User wants "Clear Chat". 
-                        // Let's assume for now we might leave specific actions inside the screen IF the global header interferes?
-                        // BUT user said "Header should be outside".
-                        // To clear chat, we need the VM.
-                        // Let's rely on the screen to provide the "Clear" button? No, header is outside.
-                        // Solution: Shared VM or simple "headerless" chat screen?
-                        // "Making the header consistent... Adding additional items... only when needed".
-                        
-                        // Hack/Solution: For now, I will NOT add the clear button in the *Global* header if I can't access the VM action.
-                        // UNLESS `AiChatScreen` content can overlay it? No.
-                        // Better: `AiChatScreen` is a "Main" screen. 
-                        // If I can't trigger "Reset" from here, I can't put the button here.
-                        // Option A: Lift `AiChatViewModel` to `AppNavGraph` (like Product/ShoppingList).
-                        // Let's do Option A for correctness.
-                        androidx.compose.material3.Surface(
-                            shape = androidx.compose.foundation.shape.CircleShape,
-                            color = androidx.compose.ui.graphics.Color.White,
-                            shadowElevation = 2.dp,
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .clickable { 
-                        // We need to trigger a reset. 
-                                    // For now, let's just show the icon. 
-                                    // Realistically, we need the Event. 
-                                    // I'll add a TODO or try to obtain the VM.
+                val customAction: (@Composable () -> Unit)? = null // Explicitly declare it back
+                val dropdownContent: (@Composable ColumnScope.(onDismiss: () -> Unit) -> Unit)? = 
+                    if (currentRoute == Routes.AiChat) {
+                        { onDismiss ->
+                            DropdownMenuItem(
+                                text = { Text("Delete chat") },
+                                onClick = { 
+                                    chatViewModel.resetConversation()
+                                    onDismiss()
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Delete,
+                                        contentDescription = null
+                                    )
                                 }
-                        ) {
-                            androidx.compose.foundation.layout.Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Delete,
-                                    contentDescription = "Clear Chat",
-                                    tint = Color(0xFF1F2937),
-                                    modifier = Modifier.size(22.dp)
-                                )
-                            }
+                            )
                         }
-                        
-                    }
-                } else null
+                    } else null
 
                 Column(
                     modifier = Modifier
@@ -130,6 +94,7 @@ fun AppNavGraph(
                         onNotificationClick = { navController.navigate(Routes.Notifications) },
                         onProfileClick = { navController.navigate(Routes.Settings) },
                         customAction = customAction,
+                        dropdownContent = dropdownContent,
                         modifier = Modifier.statusBarsPadding()
                     )
                 }
@@ -209,14 +174,8 @@ fun AppNavGraph(
                 )
             }
             composable(Routes.AiChat) {
-                // We need the VM here if we want to clear chat from the global header.
-                val aiChatViewModel: ChatViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
-                
-                // Update the global header action for this screen effectively?
-                // The global header is defined above in the Scaffold. It doesn't have access to this scope's `aiChatViewModel`.
-                // Unless we hoist it.
-                
                 AiChatScreen(
+                    onBackClick = { navController.navigateUp() },
                     onNotificationsClick = { navController.navigate(Routes.Notifications) },
                     onProfileClick = { navController.navigate(Routes.Settings) },
                     onNavigateToShoppingList = { 
@@ -224,7 +183,7 @@ fun AppNavGraph(
                             launchSingleTop = true
                         }
                     },
-                    viewModel = aiChatViewModel // Pass it explicitly if needed or let it use default
+                    viewModel = chatViewModel
                 )
             }
             composable(Routes.ShoppingList) {

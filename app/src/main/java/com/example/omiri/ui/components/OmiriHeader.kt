@@ -18,6 +18,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.omiri.R
 import com.example.omiri.ui.theme.Spacing
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+
+import androidx.compose.material.icons.filled.MoreVert
 
 @Composable
 fun OmiriHeader(
@@ -25,6 +29,7 @@ fun OmiriHeader(
     onNotificationClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
     customAction: (@Composable () -> Unit)? = null,
+    dropdownContent: (@Composable ColumnScope.(onDismiss: () -> Unit) -> Unit)? = null,
     modifier: Modifier = Modifier,
     startContent: @Composable () -> Unit = {
         Icon(
@@ -35,6 +40,8 @@ fun OmiriHeader(
         )
     }
 ) {
+    var showMenu by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+
     Surface(
         modifier = modifier.fillMaxWidth(),
         shadowElevation = 0.dp,
@@ -123,6 +130,28 @@ fun OmiriHeader(
                                 contentDescription = "Profile",
                                 tint = Color(0xFF1F2937),
                                 modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
+
+                    // Overflow Menu
+                    if (dropdownContent != null) {
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Box {
+                             IconButton(onClick = { showMenu = true }) {
+                                Icon(
+                                    imageVector = Icons.Filled.MoreVert,
+                                    contentDescription = "More options",
+                                    tint = Color(0xFF1F2937)
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = showMenu,
+                                onDismissRequest = { showMenu = false },
+                                modifier = Modifier.background(Color.White),
+                                content = {
+                                    dropdownContent { showMenu = false }
+                                }
                             )
                         }
                     }

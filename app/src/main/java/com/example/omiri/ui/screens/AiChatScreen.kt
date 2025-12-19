@@ -34,6 +34,12 @@ import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material.icons.outlined.RestaurantMenu
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Grass
+import androidx.compose.material.icons.outlined.AttachFile
+import androidx.compose.ui.draw.rotate
+import com.example.omiri.ui.components.AiChatHeader
+import com.example.omiri.ui.components.AiChatEmptyState
+import com.example.omiri.ui.components.AiChatActionBottomSheet
+import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -50,12 +56,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.omiri.ui.theme.Spacing
 import com.example.omiri.viewmodels.ChatMessage
 import com.example.omiri.viewmodels.ChatViewModel
+import com.example.omiri.R
 
 import com.example.omiri.ui.components.simpleVerticalScrollbar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AiChatScreen(
+    onBackClick: () -> Unit = {},
     onNotificationsClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
     onNavigateToShoppingList: () -> Unit = {},
@@ -68,6 +76,8 @@ fun AiChatScreen(
     val error by viewModel.error.collectAsState()
     val isOnline by viewModel.isOnline.collectAsState()
 
+    var showActionSheet by remember { mutableStateOf(false) }
+
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
@@ -77,179 +87,126 @@ fun AiChatScreen(
         }
     }
 
-    Scaffold(
-        topBar = { /* OmiriHeader in content */ },
-        bottomBar = {
-            ChatInputBar(
-                value = messageText,
-                onValueChange = { messageText = it },
-                isLoading = isLoading,
-                error = error,
-                onDismissError = { viewModel.clearError() },
-                onFocus = {
-                    scope.launch {
-                        kotlinx.coroutines.delay(300)
-                        if (messages.isNotEmpty()) {
-                            listState.animateScrollToItem(messages.size)
-                        }
-                    }
-                },
-                onSend = {
-                    val trimmed = messageText.trim()
-                    if (trimmed.isNotEmpty() && !isLoading) {
-                        viewModel.sendMessage(trimmed)
-                        messageText = ""
-                    }
-                },
-                isOnline = isOnline
-            )
-        }
-    ) { padding ->
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(com.example.omiri.ui.theme.AppColors.Bg)
+    ) {
+        val networkErrorType by viewModel.networkErrorType.collectAsState()
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = padding.calculateBottomPadding())
-                .background(com.example.omiri.ui.theme.AppColors.Bg)
-        ) {
-
-
-            // Chat Status Sub-header
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = Color.White,
-                shadowElevation = 1.dp
+        Box(modifier = Modifier.weight(1f)) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .simpleVerticalScrollbar(listState),
+                contentPadding = PaddingValues(bottom = Spacing.md),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = Spacing.lg, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .background(com.example.omiri.ui.theme.AppColors.BrandOrange, CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            painter = androidx.compose.ui.res.painterResource(id = com.example.omiri.R.drawable.ic_omiri_logo),
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp)
+                // Spacer for top padding
+                item { Spacer(Modifier.height(Spacing.md)) }
+
+                // Date Header
+                if (messages.isNotEmpty()) {
+                    item {
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color(0xFFE5E7EB),
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            ) {
+                                Text(
+                                    text = "Today",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color(0xFF4B5563),
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if (messages.isEmpty()) {
+                    item {
+                        AiChatEmptyState(
+                            isOnline = isOnline,
+                            onActionClick = { action ->
+                                if (action == "Shopping List" || action.startsWith("Show")) {
+                                    onNavigateToShoppingList()
+                                } else {
+                                    // Send as message
+                                    if (!isLoading) {
+                                        viewModel.sendMessage(action)
+                                    }
+                                }
+                            }
                         )
                     }
-                    
-                    Spacer(Modifier.width(8.dp))
+                }
 
-                    Column {
-                        Text(
-                            text = "H.A.N.S",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF111827)
-                        )
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(6.dp)
-                                    .background(
-                                        if (isOnline) Color(0xFF10B981) else Color(0xFF9CA3AF),
-                                        CircleShape
-                                    )
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text(
-                                text = if (isOnline) "Online" else "Offline",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = if (isOnline) Color(0xFF10B981) else Color(0xFF6B7280),
-                                fontSize = androidx.compose.ui.unit.TextUnit(10f, androidx.compose.ui.unit.TextUnitType.Sp)
-                            )
-                        }
+                // Safe items block
+                items(messages) { message ->
+                    ChatBubble(message, isOnline, onNavigateToShoppingList)
+                }
+
+                if (isLoading && messages.lastOrNull()?.isUser == true) {
+                    item { TypingIndicator() }
+                }
+            }
+        }
+
+        ChatInputBar(
+            value = messageText,
+            onValueChange = { messageText = it },
+            isLoading = isLoading,
+            error = error,
+            onDismissError = { viewModel.clearError() },
+            onAttachClick = { showActionSheet = true },
+            onFocus = {
+                scope.launch {
+                    kotlinx.coroutines.delay(300)
+                    if (messages.isNotEmpty()) {
+                        listState.animateScrollToItem(messages.size)
+                    }
+                }
+            },
+            onSend = {
+                val trimmed = messageText.trim()
+                if (trimmed.isNotEmpty() && !isLoading) {
+                    viewModel.sendMessage(trimmed)
+                    messageText = ""
+                }
+            },
+            isOnline = isOnline
+        )
+    }
+
+    if (showActionSheet) {
+        AiChatActionBottomSheet(
+            onDismiss = { showActionSheet = false },
+            onActionClick = { action ->
+                showActionSheet = false
+                if (action == "Shopping List") {
+                    onNavigateToShoppingList()
+                } else {
+                    val prompt = when(action) {
+                        "Best Route" -> "Find the best route for my list"
+                        "Discounts" -> "Show me items on sale"
+                        "Recipes" -> "Suggest some recipes"
+                        "Find Stores" -> "Find stores nearby"
+                        "Save Money" -> "How can I save money today?"
+                        else -> action
+                    }
+                    if (!isLoading) {
+                        viewModel.sendMessage(prompt)
                     }
                 }
             }
-
-            val networkErrorType by viewModel.networkErrorType.collectAsState()
-            
-            LazyColumn(
-                    state = listState,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .simpleVerticalScrollbar(listState),
-                    contentPadding = PaddingValues(bottom = Spacing.md), 
-                    verticalArrangement = Arrangement.spacedBy(16.dp) // Explicit larger gap
-                ) {
-                    // Spacer for top padding
-                    item { Spacer(Modifier.height(Spacing.md)) }
-
-                    // Date Header
-                    if (messages.isNotEmpty()) {
-                        item {
-                            Box(
-                                modifier = Modifier.fillMaxWidth(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Surface(
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = Color(0xFFE5E7EB),
-                                    modifier = Modifier.padding(vertical = 4.dp)
-                                ) {
-                                    Text(
-                                        text = "Today",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = Color(0xFF4B5563),
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    if (messages.isEmpty()) {
-                        item {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = Spacing.md),
-                                shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = Color(0xFFFFF7ED)
-                                ),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFED7AA))
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(Spacing.lg),
-                                    verticalArrangement = Arrangement.spacedBy(Spacing.sm)
-                                ) {
-                                    Text(
-                                        text = "💬 AI Shopping Assistant",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFFFE8357)
-                                    )
-                                    Text(
-                                        text = "Ask me about deals, recipes, or help with your shopping list. I can help you find the best prices and plan your meals!",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = Color(0xFF92400E)
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    // Safe items block
-                    items(messages) { message ->
-                        ChatBubble(message, onNavigateToShoppingList)
-                    }
-
-                    if (isLoading && messages.lastOrNull()?.isUser == true) {
-                        item { TypingIndicator() }
-                    }
-                }
-
-        }
+        )
     }
 }
 
@@ -260,6 +217,7 @@ fun AiChatScreen(
 @Composable
 fun ChatBubble(
     message: ChatMessage,
+    isBotOnline: Boolean = true,
     onNavigateToShoppingList: () -> Unit = {}
 ) {
     val bubbleColor = if (message.isUser) Color(0xFFFE8357) else Color.White
@@ -283,9 +241,38 @@ fun ChatBubble(
         horizontalArrangement = if (message.isUser) Arrangement.End else Arrangement.Start,
         verticalAlignment = Alignment.Top
     ) {
+        if (!message.isUser) {
+            Box(modifier = Modifier.padding(top = 4.dp)) {
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .background(Color(0xFFFE8357), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                     Icon(
+                        painter = painterResource(id = R.drawable.ic_omiri_logo),
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+                
+                // Status dot for bot messages
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .size(8.dp)
+                        .background(Color.White, CircleShape)
+                        .padding(1.dp)
+                        .background(if (isBotOnline) Color(0xFF10B981) else Color(0xFFEF4444), CircleShape)
+                )
+            }
+            Spacer(Modifier.width(8.dp))
+        }
+
         Column(
             horizontalAlignment = if (message.isUser) Alignment.End else Alignment.Start,
-            modifier = Modifier.widthIn(max = maxBubbleWidth)
+            modifier = Modifier.weight(1f, fill = false).widthIn(max = maxBubbleWidth)
         ) {
             if (message.text.isNotBlank()) {
                 Surface(
@@ -449,6 +436,7 @@ fun ChatInputBar(
     error: String?,
     onDismissError: () -> Unit,
     onFocus: () -> Unit = {},
+    onAttachClick: () -> Unit = {},
     onSend: () -> Unit
 ) {
     // Voice Search Launcher
@@ -522,14 +510,29 @@ fun ChatInputBar(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                 // Quick Actions Button
+                 IconButton(
+                    onClick = onAttachClick,
+                    modifier = Modifier.size(40.dp)
+                 ) {
+                     Icon(
+                         imageVector = Icons.Outlined.Add,
+                         contentDescription = "Quick Actions",
+                         tint = Color(0xFF9CA3AF),
+                         modifier = Modifier.size(28.dp)
+                     )
+                 }
+
+                 Spacer(Modifier.width(4.dp))
+
                 // Pill Shaped Input Field
                 Surface(
                     modifier = Modifier
                         .weight(1f)
                         .height(48.dp),
                     shape = RoundedCornerShape(26.dp), // Fully rounded pill
-                    color = Color.White,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
+                    color = Color(0xFFF3F4F6), // Light Gray bg as per image
+                    border = null, // No border in image
                     tonalElevation = 0.dp
                 ) {
                     Row(
@@ -553,7 +556,7 @@ fun ChatInputBar(
                             decorationBox = { innerTextField ->
                                 if (value.isEmpty()) {
                                     Text(
-                                        text = if (isOnline) "Ask about deals…" else "Offline",
+                                        text = if (isOnline) "Ask me anything..." else "Offline",
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = Color(0xFF9CA3AF)
                                     )
@@ -563,29 +566,27 @@ fun ChatInputBar(
                         )
                         
                         // Vertical divider/spacer if needed, or just icons
-                        if (value.isEmpty()) {
-                             Spacer(Modifier.width(8.dp))
-                             IconButton(
-                                onClick = {
-                                    val intent = android.content.Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                        putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL, android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                        putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, "Speak to chat...")
-                                    }
-                                    try {
-                                        voiceLauncher.launch(intent)
-                                    } catch (e: Exception) {
-                                        // Ignore
-                                    }
-                                },
-                                modifier = Modifier.size(24.dp),
-                                enabled = isOnline
-                            ) {
-                                Icon(
-                                    imageVector = androidx.compose.material.icons.Icons.Outlined.Mic,
-                                    contentDescription = "Voice Input",
-                                    tint = Color(0xFF9CA3AF)
-                                )
-                            }
+                         Spacer(Modifier.width(8.dp))
+                         IconButton(
+                            onClick = {
+                                val intent = android.content.Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                    putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL, android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                    putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, "Speak to chat...")
+                                }
+                                try {
+                                    voiceLauncher.launch(intent)
+                                } catch (e: Exception) {
+                                    // Ignore
+                                }
+                            },
+                            modifier = Modifier.size(24.dp),
+                            enabled = isOnline
+                        ) {
+                            Icon(
+                                imageVector = androidx.compose.material.icons.Icons.Outlined.Mic,
+                                contentDescription = "Voice Input",
+                                tint = Color(0xFF9CA3AF)
+                            )
                         }
                     }
                 }
@@ -615,7 +616,3 @@ fun ChatInputBar(
         }
     }
 }
-
-
-
-
