@@ -352,6 +352,110 @@ class ShoppingListViewModel(application: Application) : AndroidViewModel(applica
         _findingDealsForItem.value = null
         _dealSearchResults.value = emptyList()
     }
+
+    // Loading State for individual items
+    private val _loadingItemIds = MutableStateFlow<Set<String>>(emptySet())
+    val loadingItemIds: StateFlow<Set<String>> = _loadingItemIds.asStateFlow()
+
+    fun findDealsAndApply(item: ShoppingItem) {
+        val currentLoading = _loadingItemIds.value
+        if (currentLoading.contains(item.id)) return // Already loading
+
+        _loadingItemIds.value = currentLoading + item.id
+
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                // Simulate "searching" effort with retries/stages
+                // User requested: "switch back after like a few seconds... with some retries"
+                // We will guarantee a minimum duration for the visual effect.
+                val minDuration = 2000L
+                val startTime = System.currentTimeMillis()
+
+                val country = userPreferences.selectedCountry.firstOrNull() ?: "DE"
+                val zipcode = userPreferences.zipcode.firstOrNull() ?: ""
+                val storesSet: Set<String> = userPreferences.selectedStores.firstOrNull() ?: emptySet()
+                val stores: String = if (storesSet.isNotEmpty()) storesSet.joinToString(",") else ""
+
+                var bestDeal: com.example.omiri.data.api.models.ProductResponse? = null
+                
+                // Retry logic: try up to 3 times
+                var attempts = 0
+                val maxAttempts = 3
+                
+                while (attempts < maxAttempts && bestDeal == null) {
+                    attempts++
+                    try {
+                        val result = productRepository.searchShoppingList(
+                            items = item.name,
+                            stores = if (stores.isNotEmpty()) stores else null,
+                            country = country,
+                            zipcode = if (zipcode.isNotEmpty()) zipcode else null,
+                            limit = 5
+                        )
+                        
+                        result.onSuccess { response ->
+                            val categories = response.categories ?: emptyMap()
+                            val products = categories.values.filterNotNull().flatMap { it.products }
+                            bestDeal = products.minByOrNull { it.priceAmount ?: Double.MAX_VALUE }
+                        }
+                    } catch (e: Exception) {
+                        // If API is down or throws, we might retry or fail fast.
+                        // User said: "if api is down then cancel instant". 
+                        // So if we catch an exception, we should probably BREAK immediately and clear.
+                        if (attempts == 1) { // Break on first hard error to be "instant"
+                             throw e 
+                        }
+                    }
+                    
+                    // If no deal found, wait briefly before retry (optional, but good for "searching" feel)
+                    // If deal found, loop terminates condition.
+                    if (bestDeal == null && attempts < maxAttempts) {
+                        kotlinx.coroutines.delay(500) 
+                    }
+                }
+                
+                // Only enforce minDuration if we actually found something or finished naturally without crashing
+                val elapsedTime = System.currentTimeMillis() - startTime
+                if (elapsedTime < minDuration) {
+                    kotlinx.coroutines.delay(minDuration - elapsedTime)
+                }
+
+                if (bestDeal != null) {
+                     applyDealDirectly(item, bestDeal!!)
+                } else {
+                    // No deal found after retries. Reverts to normal.
+                }
+
+            } catch (e: Exception) {
+                android.util.Log.e("ShoppingListVM", "Error finding deals for item", e)
+                // "cancel instant" -> No delay here. 
+                // Just let finally block clear the state immediately.
+            } finally {
+                _loadingItemIds.value = _loadingItemIds.value - item.id
+            }
+        }
+    }
+
+    private fun applyDealDirectly(item: ShoppingItem, product: com.example.omiri.data.api.models.ProductResponse) {
+        val originalPrice = product.originalPrice ?: product.priceAmount
+        val finalPrice = product.priceAmount
+        
+        val discountPercent = product.discountPercentage?.toInt() ?: if (originalPrice != null && finalPrice != null && originalPrice > finalPrice) {
+            ((originalPrice - finalPrice) / originalPrice * 100).toInt()
+        } else null
+        
+        val catId = mapCategoryNameToId(product.categories?.firstOrNull()) ?: item.categoryId
+
+        repository.updateItemDeal(
+            itemId = item.id,
+            store = product.retailer,
+            price = originalPrice,
+            discountPrice = if (originalPrice != null && finalPrice != null && finalPrice < originalPrice) finalPrice else null,
+            discountPercentage = discountPercent,
+            dealId = product.id,
+            categoryId = catId
+        )
+    }
     
     fun searchDeals(query: String) {
         if (query.isBlank()) return
@@ -571,7 +675,12 @@ class ShoppingListViewModel(application: Application) : AndroidViewModel(applica
         if (isListed) {
             // Add
             // Add
-            val categoryId = mapCategoryNameToId(deal.category) ?: PredefinedCategories.OTHER.id
+            // Try to use the deal's category ID directly if it matches a known category
+            val categoryId = if (deal.category != null && com.example.omiri.data.models.PredefinedCategories.ALL_CATEGORIES.any { it.id == deal.category }) {
+                deal.category!!
+            } else {
+                mapCategoryNameToId(deal.category) ?: com.example.omiri.data.models.PredefinedCategories.OTHER.id
+            }
             
             // Parse Prices
             val priceVal = parsePrice(deal.originalPrice ?: deal.price)

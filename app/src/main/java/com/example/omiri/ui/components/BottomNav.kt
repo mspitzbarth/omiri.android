@@ -75,6 +75,12 @@ fun BottomNav(
             label = "AI",
             icon = Icons.Filled.AutoAwesome,
             isBeta = true
+        ),
+        BottomNavItem(
+            route = Routes.Recipes,
+            label = "Recipes",
+            icon = Icons.Filled.RestaurantMenu,
+            isBeta = true
         )
     )
 
@@ -147,13 +153,13 @@ fun BottomNav(
                                     Badge(
                                         containerColor = Color(0xFF3B82F6), // Blue
                                         contentColor = Color.White,
-                                        modifier = Modifier.offset(x = 10.dp, y = (-6).dp)
+                                        modifier = Modifier.offset(x = (10).dp, y = (-6).dp)
                                     ) {
                                         Text(
                                             text = "BETA",
-                                            fontSize = 8.sp,
+                                            fontSize = 6.sp,
                                             fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                                            modifier = Modifier.padding(horizontal = 2.dp)
+                                            modifier = Modifier.padding(horizontal = 1.dp)
                                         )
                                     }
                                 }

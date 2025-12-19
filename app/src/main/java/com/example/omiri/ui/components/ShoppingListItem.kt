@@ -49,6 +49,7 @@ fun ShoppingListItem(
 
     onEdit: () -> Unit,
     onFindDeals: () -> Unit = {},
+    isLoading: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     // Local state for like animation/feedback (real state comes from item usually)
@@ -75,11 +76,13 @@ fun ShoppingListItem(
 
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = cardColor
+            containerColor = if (isLoading) AppColors.BrandOrange else {
+                if (isSelected) AppColors.InfoSoft else AppColors.Surface
+            }
         ),
         shape = RoundedCornerShape(12.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, borderColor), 
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = if (isLoading) null else if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, AppColors.Info) else androidx.compose.foundation.BorderStroke(1.dp, AppColors.Neutral200),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isLoading) 4.dp else 0.dp),
         modifier = modifier
             .fillMaxWidth()
             .combinedClickable(
@@ -87,18 +90,40 @@ fun ShoppingListItem(
                     if (inSelectionMode) {
                         onToggleSelection()
                     } else {
-                        // In the new design, the whole card doesn't necessarily toggle 'done', 
-                        // but usually it does or opens details. We'll keep existing behavior for now.
-                        // Ideally checking the box is specific, clicking card opens details.
-                        // For now we will assume click = toggle done if not in selection mode, same as before?
-                        // Or maybe we make only the checkbox toggle done.
-                        // Let's stick to: Click -> Toggle Done (User habit), Long Click -> Selection
                         onToggleDone()
                     }
                 },
                 onLongClick = { onToggleSelection() }
             )
     ) {
+        if (isLoading) {
+             // Loading State Content
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 72.dp)
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                        color = Color.White
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "Finding best deals...",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.White,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+        } else {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -257,23 +282,43 @@ fun ShoppingListItem(
                                 color = AppColors.Neutral400
                             )
                             
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.clickable { onFindDeals() }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Search,
-                                    contentDescription = null,
-                                    tint = AppColors.BrandOrange,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text(
-                                   text = "Find deals",
-                                   style = MaterialTheme.typography.bodyMedium,
-                                   color = AppColors.BrandOrange,
-                                   fontWeight = FontWeight.Medium
-                                )
+                            if (isLoading) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(top = 2.dp)
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        strokeWidth = 2.dp,
+                                        color = AppColors.BrandOrange
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(
+                                       text = "Searching...",
+                                       style = MaterialTheme.typography.bodyMedium,
+                                       color = AppColors.Neutral400,
+                                       fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            } else {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.clickable { onFindDeals() }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Search,
+                                        contentDescription = null,
+                                        tint = AppColors.BrandOrange,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(
+                                       text = "Find deals",
+                                       style = MaterialTheme.typography.bodyMedium,
+                                       color = AppColors.BrandOrange,
+                                       fontWeight = FontWeight.Medium
+                                    )
+                                }
                             }
                         }
                     }
@@ -363,6 +408,7 @@ fun ShoppingListItem(
                 }
             }
         }
-    }
+        }
+}
 }
 }

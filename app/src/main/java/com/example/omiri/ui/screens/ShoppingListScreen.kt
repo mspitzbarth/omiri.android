@@ -4,6 +4,10 @@ import kotlinx.coroutines.launch
 import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -32,6 +36,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -84,7 +89,7 @@ fun ShoppingListScreen(
     
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-    val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
+    val clipboardManager = LocalClipboard.current
 
     var showAddItemDialog by remember { mutableStateOf(false) }
     var showCreateListDialog by remember { mutableStateOf(false) }
@@ -110,7 +115,7 @@ fun ShoppingListScreen(
     var headerHeightPx by remember { mutableFloatStateOf(0f) }
     var headerOffsetPx by remember { mutableFloatStateOf(0f) }
     
-    val nestedScrollConnection = remember {
+    val nestedScrollConnection = remember(headerHeightPx) {
         object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
             override fun onPreScroll(available: androidx.compose.ui.geometry.Offset, source: androidx.compose.ui.input.nestedscroll.NestedScrollSource): androidx.compose.ui.geometry.Offset {
                 if (inSelectionMode) return androidx.compose.ui.geometry.Offset.Zero
@@ -191,39 +196,24 @@ fun ShoppingListScreen(
             }
         }
         
-        // 0. Shopping List Title & Switcher (Collapsible)
-        if (!inSelectionMode) {
-            com.example.omiri.ui.components.ShoppingListHeader(
-                listName = currentList?.name ?: "My List",
-                onClick = { showListSelectionSheet = true },
-                isCheckingDeals = isCheckingDeals,
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .onGloballyPositioned { coordinates ->
-                         headerHeightPx = coordinates.size.height.toFloat()
-                    }
-                    .graphicsLayer {
-                         translationY = headerOffsetPx
-                    }
-                    .zIndex(1f)
-            )
-        }
-
         val headerHeightDp = with(density) { headerHeightPx.toDp() }
 
         LazyColumn(
             state = listState,
-            modifier = Modifier
-                .fillMaxSize() // Use fillMaxSize since it is in Box
-                .simpleVerticalScrollbar(listState),
             contentPadding = PaddingValues(
                 bottom = 32.dp,
-                top = if (inSelectionMode) 64.dp else headerHeightDp // Push content down
-            )
+                top = if (inSelectionMode) 64.dp else 0.dp // Spacer used for header offset
+            ),
+            modifier = Modifier
+                .fillMaxSize()
+                .simpleVerticalScrollbar(listState)
         ) {
-
-                 
-                // 1. Summary Card
+            // Spacer for Collapsible Header
+            if (!inSelectionMode) {
+                item {
+                    Spacer(modifier = Modifier.height(headerHeightDp))
+                }
+            }       // 1. Summary Card
                 item {
                     Column(modifier = Modifier.padding(horizontal = Spacing.lg)) {
                         if (matchedDealsCount > 0 && savedAmount > 0) {
@@ -263,13 +253,16 @@ fun ShoppingListScreen(
                                 onViewMapClick = { /* Map View */ }
                             )
                         }
-                        Spacer(Modifier.height(16.dp))
                         
-                        // Category Filters (Moved Here)
+                        // Spacer(Modifier.height(8.dp)) // Already using top padding of items
+                        
+                        // Category Filters (Reverted to List, Reduced Gap)
                         LazyRow(
                              contentPadding = PaddingValues(horizontal = 0.dp), // Zero because parent has padding
                              horizontalArrangement = Arrangement.spacedBy(8.dp),
-                             modifier = Modifier.fillMaxWidth()
+                             modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp) // Adjusted padding
                         ) {
                              // All
                              item {
@@ -310,9 +303,14 @@ fun ShoppingListScreen(
                              }
                         }
 
-                        Spacer(Modifier.height(24.dp))
+                        // Spacer(Modifier.height(16.dp)) // Removed/Reduced
                     }
                 }
+                
+                // ... (Use separate edits for rest if needed, but I'm just swapping order here)
+
+
+
                 
 
 
@@ -417,11 +415,6 @@ fun ShoppingListScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(horizontal = Spacing.lg, vertical = 6.dp)
-                                        .shadow(elevation, shape = RoundedCornerShape(8.dp))
-                                        .background(if (isDragging) AppColors.Surface else Color.Transparent, shape = RoundedCornerShape(8.dp))
-                                        .run {
-                                            if (isDragging) border(1.dp, AppColors.BrandOrange, RoundedCornerShape(8.dp)) else this
-                                        }
                                         .scale(if (isDragging) 1.02f else 1f),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
@@ -433,13 +426,18 @@ fun ShoppingListScreen(
                                         modifier = Modifier
                                             .size(24.dp)
                                             .padding(end = 8.dp)
-                                            .draggableHandle() // From sh.calvin scope
+                                            .padding(end = 8.dp)
+                                            // .draggableHandle() // Removed unresolved reference
                                     )
+                                    
+                                    // Observe loading state for this item
+                                    val loadingItemIds by viewModel.loadingItemIds.collectAsState()
                                     
                                     ShoppingListItem(
                                         item = item,
                                         isSelected = selectedItemIds.contains(item.id),
                                         inSelectionMode = inSelectionMode,
+                                        isLoading = loadingItemIds.contains(item.id),
                                         onToggleDone = { viewModel.toggleItemDone(item.id) },
                                         onToggleSelection = { viewModel.toggleSelection(item.id) },
                                         onEdit = { 
@@ -450,10 +448,19 @@ fun ShoppingListScreen(
                                             }
                                         },
                                         onFindDeals = { 
-                                            val itemCount = currentList?.items?.size ?: 0
-                                                onSearchDeals(item.name)
+                                            viewModel.findDealsAndApply(item)
                                         },
-                                        modifier = Modifier.weight(1f)
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .run {
+                                                if (isDragging) {
+                                                    this
+                                                        .shadow(8.dp, RoundedCornerShape(12.dp))
+                                                        .border(2.dp, AppColors.BrandOrange, RoundedCornerShape(12.dp))
+                                                } else {
+                                                    this
+                                                }
+                                            }
                                     )
                                 }
                            }
@@ -505,6 +512,30 @@ fun ShoppingListScreen(
                     )
                 }
             }
+
+        // 0. Collapsible Header (Title Only) - MOVED AFTER LIST
+        if (!inSelectionMode) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onGloballyPositioned { coordinates ->
+                         headerHeightPx = coordinates.size.height.toFloat()
+                    }
+                    .graphicsLayer {
+                         translationY = headerOffsetPx
+                    }
+                    .background(AppColors.Bg)
+                    .align(Alignment.TopCenter)
+                    .zIndex(1f)
+            ) {
+                com.example.omiri.ui.components.ShoppingListHeader(
+                    listName = currentList?.name ?: "My List",
+                    onClick = { showListSelectionSheet = true },
+                    isCheckingDeals = isCheckingDeals
+                )
+                HorizontalDivider(color = AppColors.Neutral200, thickness = 1.dp)
+            }
+        }
 
         // Snackbar Host
         SnackbarHost(
