@@ -15,15 +15,8 @@ import com.example.omiri.ui.theme.Spacing
 
 @Composable
 fun AdCard(
-    modifier: Modifier = Modifier,
-    adSize: com.google.android.gms.ads.AdSize = com.google.android.gms.ads.AdSize.BANNER
+    modifier: Modifier = Modifier
+    // adSize removed
 ) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = Spacing.sm),
-        contentAlignment = Alignment.Center
-    ) {
-        AdMobBanner(adSize = adSize)
-    }
+    // AdMob removed for now
 }

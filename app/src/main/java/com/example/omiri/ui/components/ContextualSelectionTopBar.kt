@@ -28,12 +28,13 @@ fun ContextualSelectionTopBar(
     onMove: () -> Unit,
     onEdit: () -> Unit, // Only enabled if selectedCount == 1
     onViewDeal: (() -> Unit)? = null,
-    hasAlternatives: Boolean = false
+    hasAlternatives: Boolean = false,
+    modifier: Modifier = Modifier
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shadowElevation = 0.dp,
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
         color = Color.White

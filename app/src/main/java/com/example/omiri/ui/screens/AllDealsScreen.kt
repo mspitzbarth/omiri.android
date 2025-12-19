@@ -279,16 +279,11 @@ fun AllDealsScreen(
                                 justInsertedAd = false
                                 
                                 if (cumulativeItemCount / 20 > previousCount / 20) {
-                                    val insertionIndex = cumulativeItemCount / 20
-                                    val adSize = if (insertionIndex % 2 == 0) com.google.android.gms.ads.AdSize.MEDIUM_RECTANGLE else com.google.android.gms.ads.AdSize.LARGE_BANNER
-                                    val adHeight = if (adSize == com.google.android.gms.ads.AdSize.MEDIUM_RECTANGLE) 250.dp else 100.dp
-    
                                     item(key = "ad_banner_${category}_${rowDeals.first().id}") {
                                         com.example.omiri.ui.components.AdCard(
                                             modifier = Modifier
                                                 .padding(horizontal = Spacing.lg)
-                                                .height(adHeight),
-                                            adSize = adSize
+                                                // .height(adHeight) // Dynamic height removed
                                         )
                                     }
                                     justInsertedAd = true

@@ -153,34 +153,7 @@ class MainActivity : ComponentActivity() {
     
     private fun handleNotificationIntent() {
         if (intent.getBooleanExtra("SHOW_FULLSCREEN_AD", false)) {
-            // Show AdMob Interstitial
-            android.widget.Toast.makeText(this, "Loading Ad...", android.widget.Toast.LENGTH_SHORT).show()
-            
-            try {
-                // Initialize MobileAds (idempotent)
-                com.google.android.gms.ads.MobileAds.initialize(this) {}
-                
-                // Load Interstitial (Test ID)
-                val adRequest = com.google.android.gms.ads.AdRequest.Builder().build()
-                
-                com.google.android.gms.ads.interstitial.InterstitialAd.load(
-                    this,
-                    "ca-app-pub-3940256099942544/1033173712", // Google Test Ad Unit ID
-                    adRequest,
-                    object : com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback() {
-                        override fun onAdLoaded(interstitialAd: com.google.android.gms.ads.interstitial.InterstitialAd) {
-                            interstitialAd.show(this@MainActivity)
-                        }
-
-                        override fun onAdFailedToLoad(loadAdError: com.google.android.gms.ads.LoadAdError) {
-                            // Ad failed, proceed or just log
-                            android.util.Log.e("MainActivity", "Ad failed to load: ${loadAdError.message}")
-                        }
-                    }
-                )
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+            // AdMob removed
         }
     }
     override fun onStart() {

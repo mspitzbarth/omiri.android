@@ -1,6 +1,7 @@
 package com.example.omiri.ui.screens
 
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -25,6 +26,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.zIndex
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -98,90 +105,122 @@ fun ShoppingListScreen(
         } else 0.0
     } // Dynamic Calculation
 
+    // Nested Scroll Setup for Collapsible Header
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    var headerHeightPx by remember { mutableFloatStateOf(0f) }
+    var headerOffsetPx by remember { mutableFloatStateOf(0f) }
+    
+    val nestedScrollConnection = remember {
+        object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
+            override fun onPreScroll(available: androidx.compose.ui.geometry.Offset, source: androidx.compose.ui.input.nestedscroll.NestedScrollSource): androidx.compose.ui.geometry.Offset {
+                if (inSelectionMode) return androidx.compose.ui.geometry.Offset.Zero
+                
+                val delta = available.y
+                val newOffset = (headerOffsetPx + delta).coerceIn(-headerHeightPx, 0f)
+                headerOffsetPx = newOffset
+                return androidx.compose.ui.geometry.Offset.Zero
+            }
+        }
+    }
+
     Box(
-        modifier = Modifier.fillMaxSize().background(com.example.omiri.ui.theme.AppColors.Bg) // Ensure background is light gray so white items pop
+        modifier = Modifier
+            .fillMaxSize()
+            .background(com.example.omiri.ui.theme.AppColors.Bg)
+            .nestedScroll(nestedScrollConnection)
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            // Header (Notification/Profile OR Contextual Selection Bar)
-            if (inSelectionMode) {
-                com.example.omiri.ui.components.ContextualSelectionTopBar(
-                    selectedCount = selectedItemIds.size,
-                    onClearSelection = { viewModel.clearSelection() },
-                    onDelete = { viewModel.deleteSelectedItems() },
-                    onDuplicate = { 
-                         val count = selectedItemIds.size
-                         viewModel.duplicateSelectedItems()
-                         scope.launch {
-                             snackbarHostState.showSnackbar("Duplicated $count items")
-                         }
-                    },
-                    onMove = {
-                        showMoveSelectionSheet = true
-                    },
-                    onEdit = {
-                        val id = selectedItemIds.firstOrNull()
-                        if (id != null) {
-                            val item = filteredItems.find { it.id == id }
-                            if (item != null) {
-                                itemToEdit = item
-                                showAddItemDialog = true
-                                viewModel.clearSelection()
-                            }
+        // Header (Notification/Profile OR Contextual Selection Bar)
+        if (inSelectionMode) {
+             com.example.omiri.ui.components.ContextualSelectionTopBar(
+                selectedCount = selectedItemIds.size,
+                onClearSelection = { viewModel.clearSelection() },
+                onDelete = { viewModel.deleteSelectedItems() },
+                onDuplicate = { 
+                     val count = selectedItemIds.size
+                     viewModel.duplicateSelectedItems()
+                     scope.launch {
+                         snackbarHostState.showSnackbar("Duplicated $count items")
+                     }
+                },
+                onMove = {
+                    showMoveSelectionSheet = true
+                },
+                onEdit = {
+                    val id = selectedItemIds.firstOrNull()
+                    if (id != null) {
+                        val item = filteredItems.find { it.id == id }
+                        if (item != null) {
+                            itemToEdit = item
+                            showAddItemDialog = true
+                            viewModel.clearSelection()
                         }
-                    },
-                    onViewDeal = if (selectedItemIds.size == 1) {
-                         {
-                             val id = selectedItemIds.firstOrNull()
-                             if (id != null) {
-                                 val item = filteredItems.find { it.id == id }
-                                 if (item != null) {
-                                    viewModel.clearSelection()
-                                    // Use same logic as ShoppingListItem
-                                     onSearchDeals(item.name)
-                                 }
+                    }
+                },
+                onViewDeal = if (selectedItemIds.size == 1) {
+                     {
+                         val id = selectedItemIds.firstOrNull()
+                         if (id != null) {
+                             val item = filteredItems.find { it.id == id }
+                             if (item != null) {
+                                viewModel.clearSelection()
+                                // Use same logic as ShoppingListItem
+                                 onSearchDeals(item.name)
                              }
                          }
-                    } else null,
-                    hasAlternatives = if (selectedItemIds.size == 1) {
-                        val id = selectedItemIds.firstOrNull()
-                        val item = filteredItems.find { it.id == id }
-                        (item?.alternativesCount ?: 0) > 0
-                    } else false
-                )
-            }
+                     }
+                } else null,
+                hasAlternatives = if (selectedItemIds.size == 1) {
+                    val id = selectedItemIds.firstOrNull()
+                    val item = filteredItems.find { it.id == id }
+                    (item?.alternativesCount ?: 0) > 0
+                } else false,
+                modifier = Modifier.align(Alignment.TopCenter).zIndex(2f)
+            )
+        }
 
 
-            // Content List
-            val listState = rememberLazyListState()
-            
-            // Reorderable State
-            val reorderableState = rememberReorderableLazyListState(listState) { from, to ->
-                val fromId = from.key as? String
-                val toId = to.key as? String
-                if (fromId != null && toId != null) {
-                    viewModel.reorderItemById(fromId, toId)
-                }
+        // Content List
+        val listState = rememberLazyListState()
+        
+        // Reorderable State
+        val reorderableState = rememberReorderableLazyListState(listState) { from, to ->
+            val fromId = from.key as? String
+            val toId = to.key as? String
+            if (fromId != null && toId != null) {
+                viewModel.reorderItemById(fromId, toId)
             }
-            
-            // 0. Shopping List Title & Switcher (Fixed Top)
-            if (!inSelectionMode) {
-                com.example.omiri.ui.components.ShoppingListHeader(
-                    listName = currentList?.name ?: "My List",
-                    onClick = { showListSelectionSheet = true },
-                    isCheckingDeals = isCheckingDeals
-                )
-            }
-
-            LazyColumn(
-                state = listState,
+        }
+        
+        // 0. Shopping List Title & Switcher (Collapsible)
+        if (!inSelectionMode) {
+            com.example.omiri.ui.components.ShoppingListHeader(
+                listName = currentList?.name ?: "My List",
+                onClick = { showListSelectionSheet = true },
+                isCheckingDeals = isCheckingDeals,
                 modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .simpleVerticalScrollbar(listState),
-                contentPadding = PaddingValues(bottom = 32.dp)
-            ) {
+                    .align(Alignment.TopCenter)
+                    .onGloballyPositioned { coordinates ->
+                         headerHeightPx = coordinates.size.height.toFloat()
+                    }
+                    .graphicsLayer {
+                         translationY = headerOffsetPx
+                    }
+                    .zIndex(1f)
+            )
+        }
+
+        val headerHeightDp = with(density) { headerHeightPx.toDp() }
+
+        LazyColumn(
+            state = listState,
+            modifier = Modifier
+                .fillMaxSize() // Use fillMaxSize since it is in Box
+                .simpleVerticalScrollbar(listState),
+            contentPadding = PaddingValues(
+                bottom = 32.dp,
+                top = if (inSelectionMode) 64.dp else headerHeightDp // Push content down
+            )
+        ) {
 
                  
                 // 1. Summary Card
@@ -378,15 +417,19 @@ fun ShoppingListScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(horizontal = Spacing.lg, vertical = 6.dp)
-                                        // .shadow(elevation) // Optional visual
-                                        .background(if (isDragging) AppColors.Bg else Color.Transparent), // clear background if dragging?
+                                        .shadow(elevation, shape = RoundedCornerShape(8.dp))
+                                        .background(if (isDragging) AppColors.Surface else Color.Transparent, shape = RoundedCornerShape(8.dp))
+                                        .run {
+                                            if (isDragging) border(1.dp, AppColors.BrandOrange, RoundedCornerShape(8.dp)) else this
+                                        }
+                                        .scale(if (isDragging) 1.02f else 1f),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     // External Drag Handle
                                     Icon(
                                         imageVector = Icons.Default.DragIndicator,
                                         contentDescription = "Drag to reorder",
-                                        tint = AppColors.Neutral400,
+                                        tint = if (isDragging) AppColors.BrandOrange else AppColors.Neutral400,
                                         modifier = Modifier
                                             .size(24.dp)
                                             .padding(end = 8.dp)
@@ -462,7 +505,6 @@ fun ShoppingListScreen(
                     )
                 }
             }
-        }
 
         // Snackbar Host
         SnackbarHost(

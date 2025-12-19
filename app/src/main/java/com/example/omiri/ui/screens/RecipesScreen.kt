@@ -176,8 +176,8 @@ fun RecipesScreen(
             // Bottom Ad
             item {
                 com.example.omiri.ui.components.AdCard(
-                    modifier = Modifier.padding(horizontal = Spacing.md),
-                    adSize = com.google.android.gms.ads.AdSize.BANNER
+                    modifier = Modifier.padding(horizontal = Spacing.md)
+                    // adSize removed
                 )
             }
             

@@ -102,7 +102,8 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.5.0")
 
     // AdMob
-    implementation("com.google.android.gms:play-services-ads:23.0.0")
+    // AdMob - Removed for now
+    // implementation("com.google.android.gms:play-services-ads:23.0.0")
 
     // --- Debug ---
     debugImplementation("androidx.compose.ui:ui-tooling")
