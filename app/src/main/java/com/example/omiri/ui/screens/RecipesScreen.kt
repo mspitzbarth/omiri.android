@@ -14,15 +14,20 @@ import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.RestaurantMenu
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.omiri.ui.components.OmiriHeader
+import androidx.compose.ui.zIndex
+import com.example.omiri.ui.components.*
+import com.example.omiri.ui.theme.AppColors
 import com.example.omiri.ui.theme.Spacing
 
 @Composable
@@ -30,6 +35,23 @@ fun RecipesScreen(
     onNotificationsClick: () -> Unit,
     onProfileClick: () -> Unit
 ) {
+    // Nested Scroll Logic for Collapsible Header
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    var filterBarHeightPx by remember { mutableFloatStateOf(0f) }
+    var filterBarOffsetPx by remember { mutableFloatStateOf(0f) }
+    var stickyAlertHeightPx by remember { mutableFloatStateOf(0f) }
+
+    val nestedScrollConnection = remember {
+        object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
+            override fun onPreScroll(available: androidx.compose.ui.geometry.Offset, source: androidx.compose.ui.input.nestedscroll.NestedScrollSource): androidx.compose.ui.geometry.Offset {
+                val delta = available.y
+                val newOffset = (filterBarOffsetPx + delta).coerceIn(-filterBarHeightPx, 0f)
+                filterBarOffsetPx = newOffset
+                return androidx.compose.ui.geometry.Offset.Zero
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             OmiriHeader(
@@ -39,149 +61,186 @@ fun RecipesScreen(
         },
         containerColor = Color(0xFFF9FAFB) // App Colors Bg
     ) { padding ->
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
-            verticalArrangement = Arrangement.spacedBy(Spacing.lg)
+                .padding(padding)
+                .nestedScroll(nestedScrollConnection)
         ) {
-            // Spacer for top gap
-            item { Spacer(Modifier.height(Spacing.md)) }
+            val filterBarHeightDp = with(density) { filterBarHeightPx.toDp() }
+            val stickyAlertHeightDp = with(density) { stickyAlertHeightPx.toDp() }
 
-            // Search Bar (Scrollable)
-            item {
-                com.example.omiri.ui.components.OmiriSearchBar(
-                    modifier = Modifier.padding(horizontal = Spacing.md),
-                    placeholder = "Search recipes, ingredients..."
-                )
-            }
-            
-            // Cook from your list Card
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(Spacing.lg),
+                contentPadding = PaddingValues(top = filterBarHeightDp + stickyAlertHeightDp, bottom = Spacing.xxl)
+            ) {
+                // 5. Featured Section
+                item {
+                    Column(modifier = Modifier.padding(horizontal = Spacing.md)) {
+                        Text(
+                            text = "Featured This Week",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = AppColors.BrandInk
+                        )
+                        Spacer(modifier = Modifier.height(Spacing.md))
+                        FeaturedRecipeCard()
+                    }
+                }
 
-            // Cook from your list Card
-            item {
-                Card(
-                     modifier = Modifier.padding(horizontal = Spacing.md),
-                     shape = RoundedCornerShape(16.dp),
-                     colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF7ED)), // Light Orange
-                     border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFED7AA))
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.Top) {
-                             Box(
-                                 modifier = Modifier.size(40.dp).background(Color(0xFFFE8357), RoundedCornerShape(8.dp)),
-                                 contentAlignment = Alignment.Center
-                             ) {
-                                 Icon(Icons.Outlined.RestaurantMenu, null, tint = Color.White)
-                             }
-                             Spacer(Modifier.width(12.dp))
-                             Column {
-                                 Text("Cook from your list", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                                 Text("You already have 6 ingredients for these recipes.", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                             }
-                        }
-                        Spacer(Modifier.height(16.dp))
-                        Button(
-                            onClick = {},
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFE8357)),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.fillMaxWidth()
+                // 6. Based on Your List
+                item {
+                    RecipeHorizontalList(
+                        title = "Based on Your List",
+                        showMatchBadge = true,
+                        recipes = listOf(
+                            RecipeMiniData(title = "Greek Salad Bowl", description = "Fresh and healthy salad with tomatoes, feta, and olives", time = "15 min", rating = 4.9, price = "€2.80", matchPercentage = 90),
+                            RecipeMiniData(title = "Classic Breakfast Plate", description = "Scrambled eggs with whole wheat toast and fresh tomatoes", time = "10 min", rating = 4.7, price = "€2.10", matchPercentage = 85),
+                            RecipeMiniData(title = "Grilled Chicken & Veggies", description = "Healthy grilled chicken with roasted vegetables", time = "35 min", rating = 4.6, price = "€4.50", matchPercentage = 80)
+                        )
+                    )
+                }
+
+                // 7. Weekly Meal Planner Promo
+                item {
+                    WeeklyMealPlannerCard(
+                        modifier = Modifier.padding(horizontal = Spacing.md)
+                    )
+                }
+
+                // 8. Popular This Week
+                item {
+                    RecipeHorizontalList(
+                        title = "Popular This Week",
+                        recipes = listOf(
+                            RecipeMiniData(title = "Spaghetti Carbonara", time = "25 min", rating = 4.9, price = "€3.50"),
+                            RecipeMiniData(title = "Beef Tacos", time = "20 min", rating = 4.8, price = "€4.20"),
+                            RecipeMiniData(title = "Veggie Stir Fry", time = "15 min", rating = 4.7, price = "€2.90"),
+                            RecipeMiniData(title = "Lemon Herb Salmon", time = "30 min", rating = 4.9, price = "€6.80")
+                        )
+                    )
+                }
+
+                // 9. Browse by Category
+                item {
+                    RecipeCategoryGrid()
+                }
+
+                // 10. Trending Now
+                item {
+                    Column(modifier = Modifier.padding(horizontal = Spacing.md)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("See best matches")
+                            Column {
+                                Text(
+                                    text = "Trending Now",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = AppColors.BrandInk
+                                )
+                                Text(
+                                    text = "What everyone's cooking",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = AppColors.Neutral500
+                                )
+                            }
+                            Text(
+                                text = "View All",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = AppColors.BrandOrange,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(Spacing.md))
+                        
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            TrendingRecipeRow(rank = 1, rankColor = Color(0xFFF97316), title = "One-Pot Pasta Primavera", views = "2.3k", rating = 4.9, price = "€3.40")
+                            TrendingRecipeRow(rank = 2, rankColor = Color(0xFF94A3B8), title = "Crispy Baked Chicken Wings", views = "1.9k", rating = 4.8, price = "€4.90")
+                            TrendingRecipeRow(rank = 3, rankColor = Color(0xFFB45309), title = "Chocolate Chip Cookies", views = "1.7k", rating = 5.0, price = "€2.20")
                         }
                     }
                 }
-            }
-            
-            // Filters Row (Chips)
-            item {
-                Row(
-                    modifier = Modifier.padding(horizontal = Spacing.md),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    FilterChip(selected = true, label = "For You", onClick = {})
-                    FilterChip(selected = false, label = "From My List", onClick = {})
-                    FilterChip(selected = false, label = "Matched Deals", onClick = {})
+
+                // 11. Savings Tip
+                item {
+                    SavingsTipCard(
+                        modifier = Modifier.padding(horizontal = Spacing.md)
+                    )
                 }
+
+                item { Spacer(modifier = Modifier.height(Spacing.xxl)) }
             }
 
-            // Best Matches
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.md),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+            // Collapsible Header (Hero + Search + Chips) + Sticky Match Alert
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .zIndex(1f)
+            ) {
+                // Part 1: Sliding Header (Hero + Search + Chips)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onGloballyPositioned { coordinates ->
+                            filterBarHeightPx = coordinates.size.height.toFloat()
+                        }
+                        .graphicsLayer { translationY = filterBarOffsetPx }
+                        .background(Color(0xFFF9FAFB)) // Match screen background
                 ) {
-                    Text("Best Matches", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                    Text("View All >", color = Color(0xFFFE8357), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                }
-            }
-            
-            item {
-                val listState = androidx.compose.foundation.lazy.rememberLazyListState()
-                
-                @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
-                val flingBehavior = androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior(
-                    lazyListState = listState,
-                    snapPosition = androidx.compose.foundation.gestures.snapping.SnapPosition.Start
-                )
+                    /*
+                    // 1. Hero Section
+                    RecipeHero(
+                        modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm)
+                    )
 
-                LazyRow(
-                    state = listState,
-                    flingBehavior = flingBehavior,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.md),
-                    contentPadding = PaddingValues(horizontal = Spacing.md), // Add padding for snap effect
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    items(3) {
-                         RecipeCard(
-                             title = "Grilled Chicken & Garden Salad",
-                             time = "25 min",
-                             servings = "4 servings",
-                             tags = listOf("High Protein", "Uses your list"),
-                             buttonText = "Cook This",
-                             width = 280.dp
-                         )
+                    */
+                    // 2 & 3. Search + Chips Container
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.White)
+                            .padding(bottom = Spacing.lg)
+                    ) {
+                        com.example.omiri.ui.components.OmiriSearchBar(
+                            modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.sm),
+                            placeholder = "Search recipes, ingredients..."
+                        )
+                        
+                        Spacer(modifier = Modifier.height(Spacing.sm))
+                        
+                        RecipeFilterChips()
+                        
+                        Spacer(modifier = Modifier.height(Spacing.md))
+                        
+                        // Bottom border
+                        Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFE5E7EB)))
                     }
                 }
-            }
-            
-            // Deal-Friendly Recipes
-            item {
-                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.md),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+
+                /*
+                // Part 2: Sticky Match Alert (Slides up with header but stays at top)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onGloballyPositioned { coordinates ->
+                            stickyAlertHeightPx = coordinates.size.height.toFloat()
+                        }
+                        .graphicsLayer { translationY = filterBarOffsetPx }
+                        .background(Color(0xFFF9FAFB))
+                        .padding(bottom = Spacing.sm)
                 ) {
-                    Text("Deal-Friendly Recipes", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                    Text("View All >", color = Color(0xFFFE8357), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                    RecipeMatchAlert(
+                        modifier = Modifier.padding(horizontal = Spacing.md)
+                    )
                 }
+
+                 */
             }
-            
-            items(3) {
-                  RecipeListItem(
-                      modifier = Modifier.padding(horizontal = Spacing.md),
-                      title = "Homemade Margherita Pizza",
-                      time = "35 min",
-                      servings = "4",
-                      savedAmount = "€5.20",
-                      store = "Lidl & Aldi"
-                  )
-            }
-            
-            item { Spacer(Modifier.height(Spacing.xl)) } // Reduced bottom padding
-            
-            // Bottom Ad
-            item {
-                com.example.omiri.ui.components.AdCard(
-                    modifier = Modifier.padding(horizontal = Spacing.md)
-                    // adSize removed
-                )
-            }
-            
-            item { Spacer(Modifier.height(Spacing.xxl)) }
         }
     }
 }
