@@ -38,6 +38,7 @@ object Routes {
     const val MembershipCards = "membership_cards"
     const val Recipes = "recipes"
     const val Interests = "interests"
+    const val ComponentGallery = "component_gallery"
 
     const val WebViewArgUrl = "url"
     const val WebViewArgTitle = "title"

@@ -52,6 +52,7 @@ fun SettingsScreen(
     onMembershipCardsClick: () -> Unit = {},
     onInterestsClick: () -> Unit = {},
     onOnboardingClick: () -> Unit = {},
+    onComponentGalleryClick: () -> Unit = {},
     viewModel: SettingsViewModel = viewModel()
 ) {
     val shoppingListNotifications by viewModel.shoppingListNotifications.collectAsState()
@@ -276,6 +277,17 @@ fun SettingsScreen(
                                 )
                             )
                         }
+                    )
+                    
+                    HorizontalDivider(color = Color(0xFFF3F4F6))
+                    
+                    SettingsItem(
+                        icon = Icons.Outlined.Collections,
+                        iconColor = Color(0xFFF1F5F9), // Slate 100
+                        iconTint = Color(0xFF475569), // Slate 600
+                        title = "UI Component Gallery",
+                        subtitle = "Preview implementation library",
+                        onClick = onComponentGalleryClick
                     )
                 }
                 

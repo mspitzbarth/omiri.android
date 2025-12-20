@@ -205,8 +205,12 @@ fun AppNavGraph(
                 onMembershipCardsClick = { navController.navigate("membership_cards") },
                 onInterestsClick = { navController.navigate(Routes.Interests) },
                 onOnboardingClick = { navController.navigate("onboarding") },
+                onComponentGalleryClick = { navController.navigate(Routes.ComponentGallery) },
                 viewModel = settingsViewModel
             )
+            }
+            composable(Routes.ComponentGallery) {
+                ComponentGalleryScreen()
             }
             composable(Routes.Interests) {
                 InterestsScreen(
