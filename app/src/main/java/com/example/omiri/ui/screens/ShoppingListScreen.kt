@@ -20,6 +20,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DragIndicator
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
@@ -34,22 +38,16 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.zIndex
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import sh.calvin.reorderable.rememberReorderableLazyListState
-import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.*
 
-import com.example.omiri.ui.components.RecommendedRouteCard
-import com.example.omiri.ui.components.RouteStepUi
-import com.example.omiri.ui.components.ShoppingListHeader
-import com.example.omiri.ui.components.ShoppingListSummaryCard
-import com.example.omiri.ui.components.AddItemBar
-import com.example.omiri.ui.components.ShoppingListItem
-import com.example.omiri.ui.components.simpleVerticalScrollbar
+import com.example.omiri.ui.components.*
 import com.example.omiri.ui.theme.Spacing
 import com.example.omiri.ui.theme.AppColors
 import com.example.omiri.viewmodels.ShoppingListViewModel
@@ -110,22 +108,8 @@ fun ShoppingListScreen(
         } else 0.0
     } // Dynamic Calculation
 
-    // Nested Scroll Setup for Collapsible Header
-    val density = androidx.compose.ui.platform.LocalDensity.current
-    var headerHeightPx by remember { mutableFloatStateOf(0f) }
-    var headerOffsetPx by remember { mutableFloatStateOf(0f) }
-    
-    val nestedScrollConnection = remember(headerHeightPx) {
-        object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
-            override fun onPreScroll(available: androidx.compose.ui.geometry.Offset, source: androidx.compose.ui.input.nestedscroll.NestedScrollSource): androidx.compose.ui.geometry.Offset {
-                if (inSelectionMode) return androidx.compose.ui.geometry.Offset.Zero
-                
-                val delta = available.y
-                val newOffset = (headerOffsetPx + delta).coerceIn(-headerHeightPx, 0f)
-                headerOffsetPx = newOffset
-                return androidx.compose.ui.geometry.Offset.Zero
-            }
-        }
+    val nestedScrollConnection = remember {
+        object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {}
     }
 
     Box(
@@ -195,165 +179,48 @@ fun ShoppingListScreen(
                 viewModel.reorderItemById(fromId, toId)
             }
         }
-        
-        val headerHeightDp = with(density) { headerHeightPx.toDp() }
-
         LazyColumn(
             state = listState,
             contentPadding = PaddingValues(
-                bottom = 32.dp,
-                top = if (inSelectionMode) 64.dp else 0.dp // Spacer used for header offset
+                bottom = 100.dp, // Space for FAB
+                top = 0.dp
             ),
             modifier = Modifier
                 .fillMaxSize()
                 .simpleVerticalScrollbar(listState)
         ) {
-            // Spacer for Collapsible Header
-            if (!inSelectionMode) {
-                item {
-                    Spacer(modifier = Modifier.height(headerHeightDp))
-                }
-            }       // 1. Summary Card
-                item {
-                    Column(modifier = Modifier.padding(horizontal = Spacing.lg)) {
-                        if (matchedDealsCount > 0 && savedAmount > 0) {
-                            ShoppingListSummaryCard(
-                                itemCount = totalItemsCount,
-                                storeCount = smartPlan?.steps?.size ?: 1, 
-                                matchedDealsCount = matchedDealsCount,
-                                totalSavings = savedAmount,
-                                bestTime = "",
-                                modifier = Modifier.padding(vertical = 16.dp)
-                            )
-                        }
-                        
-                        // Recommended Route (Real Data)
-                        val plan = smartPlan
-                        val steps = plan?.steps?.mapIndexed { index, step ->
-                            com.example.omiri.ui.components.RouteStepUi(
-                                index = index + 1,
-                                storeName = step.storeName,
-                                itemCount = step.itemsCount,
-                                savings = step.stepSavings,
-                                items = step.items,
-                                color = when(step.storeName) {
-                                    "Target" -> Color(0xFFE53935)
-                                    "Walmart" -> Color(0xFF1E88E5)
-                                    "Costco" -> Color(0xFF8E24AA)
-                                    "Lidl" -> Color(0xFF0050AA)
-                                    "Aldi" -> Color(0xFF0A2761)
-                                    else -> AppColors.Neutral500
-                                }
-                            )
-                        } ?: emptyList()
+            item {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    // 1. Header (List Selector)
+                    ShoppingListHeader(
+                        listName = currentList?.name ?: "My List",
+                        itemCount = totalItemsCount,
+                        matchedDealsCount = matchedDealsCount,
+                        onClick = { showListSelectionSheet = true },
+                        isCheckingDeals = isCheckingDeals
+                    )
 
-                        if (steps.isNotEmpty()) {
-                            com.example.omiri.ui.components.RecommendedRouteCard(
-                                steps = steps,
-                                onViewMapClick = { /* Map View */ }
-                            )
-                        }
-                        
-                        // Spacer(Modifier.height(8.dp)) // Already using top padding of items
-                        
-                        // Category Filters (Reverted to List, Reduced Gap)
-                        LazyRow(
-                             contentPadding = PaddingValues(horizontal = 0.dp), // Zero because parent has padding
-                             horizontalArrangement = Arrangement.spacedBy(8.dp),
-                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 12.dp) // Adjusted padding
-                        ) {
-                             // All
-                             item {
-                                 Surface(
-                                    shape = RoundedCornerShape(20.dp),
-                                    color = if (selectedCategory == null) AppColors.BrandOrange else AppColors.Neutral100,
-                                    border = if (selectedCategory != null) androidx.compose.foundation.BorderStroke(1.dp, AppColors.Neutral200) else null,
-                                    modifier = Modifier.height(32.dp).clickable { viewModel.selectCategory(null) }
-                                 ) {
-                                     Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 16.dp)) {
-                                         Text(
-                                             text = "All",
-                                             style = MaterialTheme.typography.labelSmall,
-                                             fontWeight = FontWeight.Medium,
-                                             color = if (selectedCategory == null) AppColors.Surface else AppColors.Neutral700
-                                         )
-                                     }
-                                 }
-                             }
-                             
-                             items(availableCategories) { cat ->
-                                 val isSelected = selectedCategory == cat.id
-                                 Surface(
-                                    shape = RoundedCornerShape(20.dp),
-                                    color = if (isSelected) AppColors.BrandOrange else AppColors.Neutral100,
-                                    border = if (!isSelected) androidx.compose.foundation.BorderStroke(1.dp, AppColors.Neutral200) else null,
-                                    modifier = Modifier.height(32.dp).clickable { viewModel.selectCategory(cat.id) }
-                                 ) {
-                                     Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 16.dp)) {
-                                         Text(
-                                             text = "${cat.name} (${cat.count})",
-                                             style = MaterialTheme.typography.labelSmall,
-                                             fontWeight = FontWeight.Medium,
-                                             color = if (isSelected) AppColors.Surface else AppColors.Neutral700
-                                         )
-                                     }
-                                 }
-                             }
-                        }
-
-                        // Spacer(Modifier.height(16.dp)) // Removed/Reduced
-                    }
-                }
-                
-                // ... (Use separate edits for rest if needed, but I'm just swapping order here)
-
-
-
-                
-
-
-                // 4. Items List Header
-                item {
+                    // 2. Sort/Filter/View Row
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "Items ($totalItemsCount)",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = AppColors.Neutral900
-                        )
-                        
-                        Box {
-                            Row(
-                                modifier = Modifier
-                                    .clickable { showSortMenu = true }
-                                    .padding(4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = when(currentSortOption) {
-                                        com.example.omiri.viewmodels.ShoppingListViewModel.SortOption.STORE -> "Sort: Store"
-                                        com.example.omiri.viewmodels.ShoppingListViewModel.SortOption.CATEGORY -> "Sort: Category"
-                                        com.example.omiri.viewmodels.ShoppingListViewModel.SortOption.CUSTOM -> "Sort: Custom"
-                                    },
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = AppColors.BrandOrange,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Icon(
-                                    imageVector = Icons.Outlined.KeyboardArrowDown,
-                                    contentDescription = null,
-                                    tint = AppColors.BrandOrange,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
+                        Box(modifier = Modifier.weight(1f)) {
+                            OmiriButton(
+                                text = when(currentSortOption) {
+                                    com.example.omiri.viewmodels.ShoppingListViewModel.SortOption.STORE -> "Sort: Store"
+                                    com.example.omiri.viewmodels.ShoppingListViewModel.SortOption.CATEGORY -> "Sort: Category"
+                                    com.example.omiri.viewmodels.ShoppingListViewModel.SortOption.CUSTOM -> "Sort: Custom"
+                                },
+                                onClick = { showSortMenu = true },
+                                style = OmiriButtonStyle.Neutral,
+                                size = OmiriButtonSize.Small,
+                                leadingIcon = Icons.Default.Sort,
+                                modifier = Modifier.fillMaxWidth()
+                            )
                             
                             DropdownMenu(
                                 expanded = showSortMenu,
@@ -382,6 +249,101 @@ fun ShoppingListScreen(
                                 )
                             }
                         }
+                        
+                        OmiriButton(
+                            text = "Filter",
+                            onClick = { /* Filter */ },
+                            style = OmiriButtonStyle.Neutral,
+                            size = OmiriButtonSize.Small,
+                            leadingIcon = Icons.Default.FilterList,
+                            modifier = Modifier.weight(1f)
+                        )
+                        OmiriIconButton(
+                            icon = Icons.Default.GridView,
+                            onClick = { /* Toggle View */ },
+                            style = OmiriButtonStyle.Neutral,
+                            modifier = Modifier.size(36.dp)
+                        )
+                    }
+
+                    // 3. Deal Matched Alert
+                    if (matchedDealsCount > 0) {
+                        Surface(
+                            color = Color(0xFFE8F7EF),
+                            shape = RoundedCornerShape(16.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF1E9E5A).copy(alpha = 0.1f)),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFF1E9E5A)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.LocalOffer,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                                Spacer(Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "$matchedDealsCount Deal${if (matchedDealsCount > 1) "s" else ""} Matched!",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = AppColors.Neutral900
+                                    )
+                                    Text(
+                                        text = "Save €${String.format("%.2f", savedAmount)} on this list",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = AppColors.SubtleText
+                                    )
+                                }
+                                OmiriButton(
+                                    text = "View",
+                                    onClick = { /* View deals */ },
+                                    style = OmiriButtonStyle.Gradient, // Or a custom green style
+                                    size = OmiriButtonSize.Small,
+                                    fullWidth = false,
+                                    modifier = Modifier.height(28.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+                
+                // ... (Use separate edits for rest if needed, but I'm just swapping order here)
+
+
+
+                
+
+
+                // 4. Items List Header
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Items ($totalItemsCount)",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = AppColors.Neutral900
+                        )
                     }
                 }
                 
@@ -426,8 +388,7 @@ fun ShoppingListScreen(
                                         modifier = Modifier
                                             .size(24.dp)
                                             .padding(end = 8.dp)
-                                            .padding(end = 8.dp)
-                                            // .draggableHandle() // Removed unresolved reference
+                                            .then(Modifier.draggableHandle())
                                     )
                                     
                                     // Observe loading state for this item
@@ -441,11 +402,7 @@ fun ShoppingListScreen(
                                         onToggleDone = { viewModel.toggleItemDone(item.id) },
                                         onToggleSelection = { viewModel.toggleSelection(item.id) },
                                         onEdit = { 
-                                            if (inSelectionMode) {
-                                                viewModel.toggleSelection(item.id)
-                                            } else {
-                                                viewModel.toggleSelection(item.id)
-                                            }
+                                            viewModel.toggleSelection(item.id)
                                         },
                                         onFindDeals = { 
                                             viewModel.findDealsAndApply(item)
@@ -506,36 +463,21 @@ fun ShoppingListScreen(
                     com.example.omiri.ui.components.AdCard(
                         modifier = Modifier
                             .padding(vertical = Spacing.lg)
-                            // Remove horizontal padding if you want edge-to-edge or add it if needed. 
-                            // AdCard default wraps content in center.
-                            // Let's keep it centered.
+                    )
+                }
+
+                // 6. Summary Section
+                item {
+                    com.example.omiri.ui.components.ShoppingListSummarySection(
+                        totalItems = totalItemsCount,
+                        checkedItems = filteredItems.count { it.isDone },
+                        estimatedTotal = filteredItems.sumOf { it.discountPrice ?: it.price ?: 0.0 },
+                        potentialSavings = savedAmount,
+                        modifier = Modifier.padding(top = 16.dp)
                     )
                 }
             }
 
-        // 0. Collapsible Header (Title Only) - MOVED AFTER LIST
-        if (!inSelectionMode) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .onGloballyPositioned { coordinates ->
-                         headerHeightPx = coordinates.size.height.toFloat()
-                    }
-                    .graphicsLayer {
-                         translationY = headerOffsetPx
-                    }
-                    .background(AppColors.Bg)
-                    .align(Alignment.TopCenter)
-                    .zIndex(1f)
-            ) {
-                com.example.omiri.ui.components.ShoppingListHeader(
-                    listName = currentList?.name ?: "My List",
-                    onClick = { showListSelectionSheet = true },
-                    isCheckingDeals = isCheckingDeals
-                )
-                HorizontalDivider(color = AppColors.Neutral200, thickness = 1.dp)
-            }
-        }
 
         // Snackbar Host
         SnackbarHost(

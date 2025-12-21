@@ -36,7 +36,21 @@ object Routes {
     const val AiChat = "ai_chat"
     const val ShoppingListMatches = "shopping_list_matches"
     const val MembershipCards = "membership_cards"
-    const val Recipes = "recipes"
+    const val RecipesBase = "recipes"
+    const val RecipesArgQuery = "query"
+    const val Recipes = "$RecipesBase?$RecipesArgQuery={$RecipesArgQuery}"
+    
+    fun recipes(query: String? = null): String {
+        val q = query?.let { java.net.URLEncoder.encode(it, "UTF-8") }
+        return if (q != null) "$RecipesBase?$RecipesArgQuery=$q" else RecipesBase
+    }
+    
+    const val RecipeDetailsArg = "recipeId"
+    const val RecipeDetails = "recipe_details/{$RecipeDetailsArg}"
+    
+    fun recipeDetails(recipeId: Int): String {
+        return "recipe_details/$recipeId"
+    }
     const val Interests = "interests"
     const val ComponentGallery = "component_gallery"
 

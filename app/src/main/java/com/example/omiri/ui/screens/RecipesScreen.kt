@@ -26,20 +26,46 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.omiri.data.mappers.toMiniDataList
+import com.example.omiri.viewmodels.RecipeViewModel
 import com.example.omiri.ui.components.*
 import com.example.omiri.ui.theme.AppColors
 import com.example.omiri.ui.theme.Spacing
+import coil.compose.AsyncImage
+import androidx.compose.ui.draw.clip
 
 @Composable
 fun RecipesScreen(
+    initialQuery: String? = null,
     onNotificationsClick: () -> Unit,
-    onProfileClick: () -> Unit
+    onProfileClick: () -> Unit,
+    onRecipeClick: (Int) -> Unit,
+    recipeViewModel: RecipeViewModel = viewModel()
 ) {
+    val recipes by recipeViewModel.recipes.collectAsState()
+    val isLoading by recipeViewModel.isLoading.collectAsState()
+    val error by recipeViewModel.error.collectAsState()
+
+    var searchQuery by remember { mutableStateOf(initialQuery ?: "") }
+    var ingredientQuery by remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+        if (searchQuery.isNotEmpty()) {
+            recipeViewModel.searchRecipes(query = searchQuery)
+        } else {
+            recipeViewModel.searchRecipes()
+        }
+    }
     // Nested Scroll Logic for Collapsible Header
     val density = androidx.compose.ui.platform.LocalDensity.current
     var filterBarHeightPx by remember { mutableFloatStateOf(0f) }
     var filterBarOffsetPx by remember { mutableFloatStateOf(0f) }
     var stickyAlertHeightPx by remember { mutableFloatStateOf(0f) }
+    var showGenerationSheet by remember { mutableStateOf(false) }
+    
+    val isGenerating by recipeViewModel.isGenerating.collectAsState()
+    val isSearchActive = searchQuery.isNotEmpty() || ingredientQuery.isNotEmpty()
 
     val nestedScrollConnection = remember {
         object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
@@ -75,102 +101,153 @@ fun RecipesScreen(
                 verticalArrangement = Arrangement.spacedBy(Spacing.lg),
                 contentPadding = PaddingValues(top = filterBarHeightDp + stickyAlertHeightDp, bottom = Spacing.xxl)
             ) {
-                // 5. Featured Section
-                item {
-                    Column(modifier = Modifier.padding(horizontal = Spacing.md)) {
-                        Text(
-                            text = "Featured This Week",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = AppColors.BrandInk
+                if (!isSearchActive) {
+                    // Regular Discovery View
+                    // 5. Weekly Meal Planner Promo (High Prominence)
+                    item {
+                        WeeklyMealPlannerCard(
+                            modifier = Modifier
+                                .padding(horizontal = Spacing.md)
+                                .padding(top = Spacing.sm),
+                            onTryNowClick = { showGenerationSheet = true }
                         )
-                        Spacer(modifier = Modifier.height(Spacing.md))
-                        FeaturedRecipeCard()
                     }
-                }
 
-                // 6. Based on Your List
-                item {
-                    RecipeHorizontalList(
-                        title = "Based on Your List",
-                        showMatchBadge = true,
-                        recipes = listOf(
-                            RecipeMiniData(title = "Greek Salad Bowl", description = "Fresh and healthy salad with tomatoes, feta, and olives", time = "15 min", rating = 4.9, price = "€2.80", matchPercentage = 90),
-                            RecipeMiniData(title = "Classic Breakfast Plate", description = "Scrambled eggs with whole wheat toast and fresh tomatoes", time = "10 min", rating = 4.7, price = "€2.10", matchPercentage = 85),
-                            RecipeMiniData(title = "Grilled Chicken & Veggies", description = "Healthy grilled chicken with roasted vegetables", time = "35 min", rating = 4.6, price = "€4.50", matchPercentage = 80)
-                        )
-                    )
-                }
-
-                // 7. Weekly Meal Planner Promo
-                item {
-                    WeeklyMealPlannerCard(
-                        modifier = Modifier.padding(horizontal = Spacing.md)
-                    )
-                }
-
-                // 8. Popular This Week
-                item {
-                    RecipeHorizontalList(
-                        title = "Popular This Week",
-                        recipes = listOf(
-                            RecipeMiniData(title = "Spaghetti Carbonara", time = "25 min", rating = 4.9, price = "€3.50"),
-                            RecipeMiniData(title = "Beef Tacos", time = "20 min", rating = 4.8, price = "€4.20"),
-                            RecipeMiniData(title = "Veggie Stir Fry", time = "15 min", rating = 4.7, price = "€2.90"),
-                            RecipeMiniData(title = "Lemon Herb Salmon", time = "30 min", rating = 4.9, price = "€6.80")
-                        )
-                    )
-                }
-
-                // 9. Browse by Category
-                item {
-                    RecipeCategoryGrid()
-                }
-
-                // 10. Trending Now
-                item {
-                    Column(modifier = Modifier.padding(horizontal = Spacing.md)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text(
-                                    text = "Trending Now",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    color = AppColors.BrandInk
-                                )
-                                Text(
-                                    text = "What everyone's cooking",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = AppColors.Neutral500
-                                )
-                            }
+                    // 6. Featured Section
+                    item {
+                        Column(modifier = Modifier.padding(horizontal = Spacing.md)) {
                             Text(
-                                text = "View All",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = AppColors.BrandOrange,
-                                fontWeight = FontWeight.Bold
+                                text = "Featured This Week",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = AppColors.BrandInk
+                            )
+                            Spacer(modifier = Modifier.height(Spacing.md))
+                            val featuredRecipe = recipes.firstOrNull()
+                            FeaturedRecipeCard(
+                                title = featuredRecipe?.recipeName ?: "Creamy Chicken Pasta",
+                                description = featuredRecipe?.description ?: "A rich and comforting pasta dish",
+                                time = featuredRecipe?.timeEstimate?.total ?: "30 min",
+                                imageUrl = featuredRecipe?.imageUrl,
+                                onViewRecipeClick = { featuredRecipe?.id?.let { onRecipeClick(it) } }
                             )
                         }
-                        
-                        Spacer(modifier = Modifier.height(Spacing.md))
-                        
-                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            TrendingRecipeRow(rank = 1, rankColor = Color(0xFFF97316), title = "One-Pot Pasta Primavera", views = "2.3k", rating = 4.9, price = "€3.40")
-                            TrendingRecipeRow(rank = 2, rankColor = Color(0xFF94A3B8), title = "Crispy Baked Chicken Wings", views = "1.9k", rating = 4.8, price = "€4.90")
-                            TrendingRecipeRow(rank = 3, rankColor = Color(0xFFB45309), title = "Chocolate Chip Cookies", views = "1.7k", rating = 5.0, price = "€2.20")
+                    }
+
+                    // 7. Based on Your List
+                    item {
+                        RecipeHorizontalList(
+                            title = "Based on Your List",
+                            showMatchBadge = true,
+                            recipes = recipes.filter { it.dishType == "Vegetarian" }.toMiniDataList(),
+                            onRecipeClick = { miniData -> 
+                                onRecipeClick(miniData.id)
+                            }
+                        )
+                    }
+
+                    // 8. Popular This Week
+                    item {
+                        RecipeHorizontalList(
+                            title = "Popular This Week",
+                            recipes = recipes.take(4).toMiniDataList(),
+                            onRecipeClick = { miniData -> 
+                                onRecipeClick(miniData.id)
+                            }
+                        )
+                    }
+
+                    // 9. Browse by Category
+                    item {
+                        RecipeCategoryGrid()
+                    }
+
+                    // 10. Trending Now
+                    item {
+                        Column(modifier = Modifier.padding(horizontal = Spacing.md)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "Trending Now",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = AppColors.BrandInk
+                                    )
+                                    Text(
+                                        text = "What everyone's cooking",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = AppColors.Neutral500
+                                    )
+                                }
+                                Text(
+                                    text = "View All",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = AppColors.BrandOrange,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            
+                            Spacer(modifier = Modifier.height(Spacing.md))
+                            
+                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                TrendingRecipeRow(rank = 1, rankColor = Color(0xFFF97316), title = "One-Pot Pasta Primavera", views = "2.3k", rating = 4.9, price = "€3.40")
+                                TrendingRecipeRow(rank = 2, rankColor = Color(0xFF94A3B8), title = "Crispy Baked Chicken Wings", views = "1.9k", rating = 4.8, price = "€4.90")
+                                TrendingRecipeRow(rank = 3, rankColor = Color(0xFFB45309), title = "Chocolate Chip Cookies", views = "1.7k", rating = 5.0, price = "€2.20")
+                            }
                         }
                     }
-                }
 
-                // 11. Savings Tip
-                item {
-                    SavingsTipCard(
-                        modifier = Modifier.padding(horizontal = Spacing.md)
-                    )
+                    // 11. Savings Tip
+                    item {
+                        SavingsTipCard(
+                            modifier = Modifier.padding(horizontal = Spacing.md)
+                        )
+                    }
+                } else {
+                    // Search Results View
+                    item {
+                        val resultText = if (searchQuery.isNotEmpty() && ingredientQuery.isNotEmpty()) {
+                            "Results for \"$searchQuery\" with $ingredientQuery"
+                        } else if (searchQuery.isNotEmpty()) {
+                            "Results for \"$searchQuery\""
+                        } else {
+                            "Recipes with $ingredientQuery"
+                        }
+                        Text(
+                            text = resultText,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = Spacing.md)
+                        )
+                    }
+
+                    if (recipes.isEmpty() && !isLoading) {
+                        item {
+                            OmiriEmptyState(
+                                title = "No recipes found",
+                                message = "Try searching for something else or different ingredients."
+                            )
+                        }
+                    } else {
+                        items(recipes.size) { index ->
+                            val recipe = recipes[index]
+                            RecipeListItem(
+                                modifier = Modifier
+                                    .padding(horizontal = Spacing.md)
+                                    .clickable { onRecipeClick(recipe.id) },
+                                title = recipe.recipeName,
+                                time = recipe.timeEstimate.total ?: "unknown",
+                                servings = "4 servings", // Default servings for now
+                                savedAmount = "€2.50",
+                                store = "ALDI",
+                                imageUrl = recipe.imageUrl
+                            )
+                        }
+                    }
                 }
 
                 item { Spacer(modifier = Modifier.height(Spacing.xxl)) }
@@ -206,12 +283,18 @@ fun RecipesScreen(
                             .background(Color.White)
                             .padding(bottom = Spacing.lg)
                     ) {
+                        // Recipe Name Search (Full width/prominent)
                         com.example.omiri.ui.components.OmiriSearchBar(
-                            modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.sm),
-                            placeholder = "Search recipes, ingredients..."
+                            modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs),
+                            placeholder = "Search recipes...",
+                            value = searchQuery,
+                            onQueryChange = { 
+                                searchQuery = it
+                                recipeViewModel.searchRecipes(query = it)
+                            }
                         )
                         
-                        Spacer(modifier = Modifier.height(Spacing.sm))
+                        Spacer(modifier = Modifier.height(Spacing.xs))
                         
                         RecipeFilterChips()
                         
@@ -242,6 +325,26 @@ fun RecipesScreen(
                  */
             }
         }
+
+        if (showGenerationSheet) {
+            RecipeGenerationBottomSheet(
+                onDismiss = { showGenerationSheet = false },
+                isGenerating = isGenerating,
+                onGenerate = { ingredients, preferences, language, includeShoppingList ->
+                    recipeViewModel.generateRecipe(ingredients, preferences, language, includeShoppingList)
+                }
+            )
+        }
+
+        // Handle success/selection navigation
+        val selectedRecipe by recipeViewModel.selectedRecipe.collectAsState()
+        LaunchedEffect(selectedRecipe) {
+            if (selectedRecipe != null) {
+                onRecipeClick(selectedRecipe!!.id)
+                recipeViewModel.clearSelection()
+                showGenerationSheet = false
+            }
+        }
     }
 }
 
@@ -270,7 +373,8 @@ fun RecipeCard(
     servings: String,
     tags: List<String>,
     buttonText: String,
-    width: androidx.compose.ui.unit.Dp
+    width: androidx.compose.ui.unit.Dp,
+    imageUrl: String? = null
 ) {
     Card(
         modifier = Modifier.width(width),
@@ -284,8 +388,17 @@ fun RecipeCard(
                  modifier = Modifier
                      .fillMaxWidth()
                      .height(140.dp)
-                     .background(Color.Gray) // Placeholder for image
+                     .background(Color.Gray)
             ) {
+                 if (!imageUrl.isNullOrEmpty()) {
+                     AsyncImage(
+                         model = imageUrl,
+                         contentDescription = title,
+                         modifier = Modifier.fillMaxSize(),
+                         contentScale = ContentScale.Crop
+                     )
+                 }
+                 
                  // Image placeholder
                  Surface(
                      modifier = Modifier.padding(8.dp).align(Alignment.TopEnd),
@@ -337,7 +450,8 @@ fun RecipeListItem(
     time: String,
     servings: String,
     savedAmount: String,
-    store: String
+    store: String,
+    imageUrl: String? = null
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -351,7 +465,16 @@ fun RecipeListItem(
                 modifier = Modifier
                     .size(80.dp)
                     .background(Color.Gray, RoundedCornerShape(12.dp))
-            )
+            ) {
+                if (!imageUrl.isNullOrEmpty()) {
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = title,
+                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            }
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)

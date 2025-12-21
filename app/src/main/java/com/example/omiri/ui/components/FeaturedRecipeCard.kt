@@ -20,6 +20,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.omiri.ui.theme.AppColors
 import com.example.omiri.ui.theme.Spacing
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 
 @Composable
 fun FeaturedRecipeCard(
@@ -32,6 +34,7 @@ fun FeaturedRecipeCard(
     rating: Double = 4.8,
     reviews: Int = 234,
     costPerServing: String = "€3.20",
+    imageUrl: String? = null,
     onViewRecipeClick: () -> Unit = {}
 ) {
     Card(
@@ -48,6 +51,15 @@ fun FeaturedRecipeCard(
                     .height(220.dp)
                     .background(AppColors.Neutral200)
             ) {
+                if (!imageUrl.isNullOrEmpty()) {
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = title,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+
                 // "Chef's Pick" Badge
                 Surface(
                     modifier = Modifier.padding(Spacing.sm),

@@ -130,6 +130,9 @@ fun AppNavGraph(
                         navController.navigate(Routes.ShoppingList)
 
                     },
+                    onSearchRecipes = { query ->
+                        navController.navigate(Routes.recipes(query))
+                    },
                     shoppingListViewModel = shoppingListViewModel,
                     viewModel = productViewModel
                 )
@@ -167,10 +170,34 @@ fun AppNavGraph(
                     viewModel = productViewModel
                 )
             }
-            composable(Routes.Recipes) {
+            composable(
+                route = Routes.Recipes,
+                arguments = listOf(
+                    navArgument(Routes.RecipesArgQuery) {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) { backStackEntry ->
+                val initialQuery = backStackEntry.arguments?.getString(Routes.RecipesArgQuery)
                 RecipesScreen(
+                    initialQuery = initialQuery,
                     onNotificationsClick = { navController.navigate(Routes.Notifications) },
-                    onProfileClick = { navController.navigate(Routes.Settings) }
+                    onProfileClick = { navController.navigate(Routes.Settings) },
+                    onRecipeClick = { recipeId -> 
+                        navController.navigate(Routes.recipeDetails(recipeId))
+                    }
+                )
+            }
+            composable(
+                route = Routes.RecipeDetails,
+                arguments = listOf(navArgument(Routes.RecipeDetailsArg) { type = NavType.IntType })
+            ) { backStackEntry ->
+                val recipeId = backStackEntry.arguments?.getInt(Routes.RecipeDetailsArg) ?: 0
+                RecipeDetailScreen(
+                    recipeId = recipeId,
+                    onBackClick = { navController.navigateUp() }
                 )
             }
             composable(Routes.AiChat) {

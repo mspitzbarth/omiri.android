@@ -1,6 +1,5 @@
 package com.example.omiri.ui.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -10,59 +9,66 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.omiri.ui.theme.AppColors
+import com.example.omiri.ui.theme.Spacing
 
 @Composable
 fun ShoppingListSummarySection(
-    total: Double,
+    totalItems: Int,
+    checkedItems: Int,
+    estimatedTotal: Double,
     potentialSavings: Double,
     modifier: Modifier = Modifier
 ) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = Color.White.copy(alpha = 0.95f),
-        shadowElevation = 8.dp
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(16.dp)
     ) {
-        Column {
-            HorizontalDivider(thickness = 1.dp, color = AppColors.Neutral200)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Total
-                Column {
-                    Text(
-                        text = "Total",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = AppColors.Neutral500
-                    )
-                    Text(
-                        text = "€${String.format("%.2f", total)}",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = AppColors.Neutral900
-                    )
-                }
+        ShoppingSummaryRow(label = "Total Items", value = totalItems.toString())
+        Spacer(Modifier.height(8.dp))
+        ShoppingSummaryRow(label = "Checked", value = checkedItems.toString())
+        Spacer(Modifier.height(8.dp))
+        ShoppingSummaryRow(
+            label = "Estimated Total", 
+            value = "€${String.format("%.2f", estimatedTotal)}",
+            isBold = true
+        )
+        
+        Spacer(Modifier.height(16.dp))
+        HorizontalDivider(color = AppColors.Neutral100)
+        Spacer(Modifier.height(16.dp))
+        
+        ShoppingSummaryRow(
+            label = "Potential Savings", 
+            value = "€${String.format("%.2f", potentialSavings)}",
+            valueColor = AppColors.Success,
+            isBold = true
+        )
+    }
+}
 
-                // Potential Savings
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = "Potential Savings",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = AppColors.Neutral500
-                    )
-                    Text(
-                        text = "€${String.format("%.2f", potentialSavings)}",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF2E7D32)
-                    )
-                }
-            }
-            // Spacer for navigation bar if needed, but usually handled by scaffold padding
-            Spacer(Modifier.height(8.dp))
-        }
+@Composable
+private fun ShoppingSummaryRow(
+    label: String,
+    value: String,
+    valueColor: Color = AppColors.Neutral900,
+    isBold: Boolean = false
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = AppColors.SubtleText
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = if (isBold) FontWeight.Bold else FontWeight.Medium,
+            color = valueColor
+        )
     }
 }

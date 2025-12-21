@@ -62,6 +62,7 @@ fun HomeScreen(
     onToggleShoppingList: (com.example.omiri.data.models.Deal, Boolean) -> Unit = { _, _ -> },
     onNavigateToShoppingListTab: () -> Unit = {},
     onNavigateToList: (String) -> Unit = {},
+    onSearchRecipes: (String?) -> Unit = {},
     viewModel: ProductViewModel,
     shoppingListViewModel: com.example.omiri.viewmodels.ShoppingListViewModel
 ) {
@@ -128,6 +129,14 @@ fun HomeScreen(
 
                 // Removed global error block as per user request
                 // We will handle errors inside sections (e.g. FeaturedDealsRow)
+
+                Spacer(modifier = Modifier.height(Spacing.lg))
+                
+                // Search Bar
+                com.example.omiri.ui.components.HomeSearchBar(
+                    modifier = Modifier.padding(horizontal = Spacing.md),
+                    onSearchClick = { onSearchRecipes(null) }
+                )
 
                 Spacer(modifier = Modifier.height(Spacing.lg))
 

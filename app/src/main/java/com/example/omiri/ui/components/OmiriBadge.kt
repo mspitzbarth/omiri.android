@@ -19,6 +19,53 @@ import androidx.compose.ui.unit.sp
 import com.example.omiri.ui.theme.AppColors
 
 @Composable
+fun OmiriBadge(
+    text: String,
+    modifier: Modifier = Modifier,
+    color: Color = AppColors.BrandOrange,
+    softBackground: Boolean = false,
+    leadingIcon: ImageVector? = null,
+    trailingIcon: ImageVector? = null
+) {
+    Surface(
+        color = if (softBackground) color.copy(alpha = 0.1f) else color,
+        shape = RoundedCornerShape(6.dp),
+        modifier = modifier
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            if (leadingIcon != null) {
+                Icon(
+                    imageVector = leadingIcon,
+                    contentDescription = null,
+                    tint = if (softBackground) color else Color.White,
+                    modifier = Modifier.size(12.dp)
+                )
+            }
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 10.sp,
+                    color = if (softBackground) color else Color.White
+                )
+            )
+            if (trailingIcon != null) {
+                Icon(
+                    imageVector = trailingIcon,
+                    contentDescription = null,
+                    tint = if (softBackground) color else Color.White,
+                    modifier = Modifier.size(12.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun OmiriStatusBadge(
     text: String,
     modifier: Modifier = Modifier,

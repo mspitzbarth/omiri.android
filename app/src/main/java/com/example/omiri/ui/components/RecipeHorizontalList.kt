@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.omiri.ui.theme.AppColors
 import com.example.omiri.ui.theme.Spacing
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 
 @Composable
 fun RecipeHorizontalList(
@@ -104,6 +106,15 @@ fun RecipeMiniCard(
                     .height(120.dp)
                     .background(AppColors.Neutral200)
             ) {
+                if (!data.imageUrl.isNullOrEmpty()) {
+                    AsyncImage(
+                        model = data.imageUrl,
+                        contentDescription = data.title,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+
                 if (showMatchBadge && data.matchPercentage != null) {
                     Surface(
                         modifier = Modifier.padding(8.dp),
@@ -201,11 +212,13 @@ fun RecipeMiniCard(
 }
 
 data class RecipeMiniData(
+    val id: Int,
     val title: String,
     val description: String? = null,
     val time: String,
     val rating: Double,
     val price: String,
+    val imageUrl: String? = null,
     val matchPercentage: Int? = null
 )
 

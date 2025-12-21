@@ -72,7 +72,7 @@ dependencies {
     implementation("com.google.accompanist:accompanist-swiperefresh:0.34.0")
     
     // Reorderable (Calvin)
-    implementation("sh.calvin.reorderable:reorderable:2.4.2")
+    implementation("sh.calvin.reorderable:reorderable:3.0.0")
     
 
     // Optional icon pack
